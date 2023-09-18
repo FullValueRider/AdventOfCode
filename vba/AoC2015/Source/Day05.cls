@@ -42,14 +42,14 @@ Public Sub Part01()
     myNiceWords = 0
     Dim myWords As Iteritems: Set myWords = Iteritems(s.Words)
     Do
-        Dim myWord As String: myWord = myWords.curitem(0)
+        Dim myWord As String: myWord = myWords.curItem(0)
         If IsNiceV1(myWord) Then
             myNiceWords = myNiceWords + 1
         End If
 
     Loop While myWords.MoveNext
 
-    fmt.dbg "The answer to Day{0} Part 01 is 238. Found is {1}", VBA.Mid$(TODAY, 5, 2), myNiceWords
+    fmt.Dbg "The answer to Day{0} Part 01 is 238. Found is {1}", VBA.Mid$(TODAY, 5, 2), myNiceWords
 
 End Sub
 
@@ -60,14 +60,14 @@ Public Sub Part02()
     Dim myNiceWords As Long
     Dim myWords As Iteritems: Set myWords = Iteritems(s.Words)
     Do
-        Dim myWord As String: myWord = myWords.curitem(0)
+        Dim myWord As String: myWord = myWords.curItem(0)
         If IsNiceV2(myWord) Then
             myNiceWords = myNiceWords + 1
         End If
 
     Loop While myWords.MoveNext
 
-    fmt.dbg "The answer to Day{0} Part 02 is 69. Found is {1}", VBA.Mid$(TODAY, 5, 2), myNiceWords
+    fmt.Dbg "The answer to Day{0} Part 02 is 69. Found is {1}", VBA.Mid$(TODAY, 5, 2), myNiceWords
 
 End Sub
 

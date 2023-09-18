@@ -82,7 +82,7 @@ Private Sub Part01()
     
     Dim myResult As Long: myResult = myNewIndex
     
-    fmt.dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "252594", myResult
+    fmt.Dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "252594", myResult
     
 End Sub
 
@@ -131,7 +131,7 @@ Private Sub Part02()
     
     Dim myResult As Long: myResult = myNewIndex
     
-    fmt.dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "3579328", myResult
+    fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "3579328", myResult
 
 End Sub
 

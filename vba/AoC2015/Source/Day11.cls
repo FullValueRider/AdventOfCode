@@ -48,7 +48,7 @@ Private Sub Part01()
     
     Dim myResult As String: myResult = myString
     
-    fmt.dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "hepxxyzz", myResult
+    fmt.Dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "hepxxyzz", myResult
     
 End Sub
 
@@ -73,7 +73,7 @@ Private Sub Part02()
   
     Dim myResult As String: myResult = myString
     
-    fmt.dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "heqaabcc", myResult
+    fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "heqaabcc", myResult
 
 End Sub
 
@@ -105,8 +105,8 @@ Public Function HasTwoDifferentNonOverlappingPairs(ByRef ipString As String) As 
     Dim myS As seqC: Set myS = seqC.Deb
     Do While myChars.MoveNext
         'Debug.Print myChars.Item(-1), myChars.Item(0)
-        If myChars.curitem(-1) = myChars.curitem(0) Then
-            Dim myPair As String: myPair = myChars.curitem(-1) & myChars.curitem(0)
+        If myChars.curItem(-1) = myChars.curItem(0) Then
+            Dim myPair As String: myPair = myChars.curItem(-1) & myChars.curItem(0)
             If myS.LacksItem(myPair) Then
                 myS.Add myPair
                 If myS.Count = 2 Then
@@ -141,9 +141,9 @@ Public Function HasThreeIncreasingChars(ByVal ipString As String) As Boolean
    ' Debug.Print ipString
     Dim myChars As Iteritems: Set myChars = Iteritems(ipString).FTS(3)
     Do
-       ' Debug.Print mychars.Item(-2), mychars.Item(-1), mychars.Item(0)
-        If VBA.Asc(myChars.curitem(-2)) = VBA.Asc(myChars.curitem(-1)) - 1 Then
-            If VBA.Asc(myChars.curitem(-1)) = VBA.Asc(myChars.curitem(0)) - 1 Then
+        fmt.Dbg "{0},{1},{2}", myChars.curItem(-2), myChars.curItem(-1), myChars.curItem(0)
+        If VBA.Asc(myChars.curItem(-2)) = VBA.Asc(myChars.curItem(-1)) - 1 Then
+            If VBA.Asc(myChars.curItem(-1)) = VBA.Asc(myChars.curItem(0)) - 1 Then
                 Exit Function
             End If
         End If

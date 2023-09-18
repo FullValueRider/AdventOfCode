@@ -45,7 +45,7 @@ Private Sub Part01()
     Dim myItem As Variant
     Dim myItems As Iteritems: Set myItems = Iteritems(s.Instructions)
     Do
-        Set myItem = myItems.curitem(0)
+        Set myItem = myItems.curItem(0)
         Dim myS As seqC
         Set myS = myItem
     
@@ -63,7 +63,7 @@ Private Sub Part01()
     
     Dim myResult As Long: myResult = s.Display.LitBulbs(myArea)
     
-    fmt.dbg "The answer for Day {0} Part 01 is 543903. Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+    fmt.Dbg "The answer for Day {0} Part 01 is 543903. Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
 
 End Sub
 
@@ -83,7 +83,7 @@ Private Sub Part02()
     Dim myItem As Variant
     Dim myItems As Iteritems: Set myItems = Iteritems(s.Instructions)
     Do
-        Set myItem = myItems.curitem(0)
+        Set myItem = myItems.curItem(0)
         Dim myS As seqC
         Set myS = myItem
     
@@ -101,7 +101,7 @@ Private Sub Part02()
     
     Dim myResult As Long: myResult = s.Display.Brightness(myArea)
   
-    fmt.dbg "The answer for Day {0} Part 02 is 14687245. Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+    fmt.Dbg "The answer for Day {0} Part 02 is 14687245. Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
 
 
 End Sub
@@ -111,9 +111,9 @@ Private Sub Initialise()
     Set s.Data = seqC(Filer.GetFileAsArrayOfStrings(AoCRawData & Year & TODAY))
    
     Set s.Instructions = s.Data _
-        .MapIt(mpMultiReplace(Array(Array("through ", vbNullString), Array("turn ", vbNullString), Array(chars.twcomma, chars.twSpace), Array("  ", " ")))) _
-        .MapIt(mpInner(mpsplit(chars.twSpace))) _
-        .MapIt(mpInner(mpConvert(e_ConvertTo.m_Long)))
+        .mapIt(mpMultiReplace(Array(Array("through ", vbNullString), Array("turn ", vbNullString), Array(chars.twcomma, chars.twSpace), Array("  ", " ")))) _
+        .mapIt(mpInner(mpsplit(chars.twSpace))) _
+        .mapIt(mpInner(mpConvert(e_ConvertTo.m_Long)))
    
 End Sub
 

@@ -56,7 +56,7 @@ Public Function ConstructInstance(ByVal ipMoves As SeqA) As Journey
     
     Dim myMoves As Iteritems: Set myMoves = Iteritems(ipMoves)
     Do
-        Dim myMove As String: myMove = myMoves.curitem(0)
+        Dim myMove As String: myMove = myMoves.curItem(0)
         s.x = s.x + s.Directions.Item(myMove)(0)
         s.y = s.y + s.Directions.Item(myMove)(1)
         

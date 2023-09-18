@@ -7,7 +7,7 @@ Debug.Print
     Dim myK As KvpA
     Set myK = KvpA.Deb.AddPairs(Array("One", "Two", "Three"), Array(10, 20, 30))
     Set myS = Permutations.ByKey(myK)
-    fmt.dbg "{0}", myS
+    fmt.Dbg "{0}", myS
 End Sub
 
 

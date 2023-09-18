@@ -41,7 +41,7 @@ Private Sub Part01()
         
         Dim myResult As Long
         myResult = s.Data.Count(UP) - s.Data.Count(DOWN)
-        fmt.dbg "The answer to Day {0} Part 01 is 74.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+        fmt.Dbg "The answer to Day {0} Part 01 is 74.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
         
     End Sub
 
@@ -66,7 +66,7 @@ Private Sub Part01()
             
         Next
         
-        fmt.dbg "The answer to Day {0} part 2 is 1795.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+        fmt.Dbg "The answer to Day {0} part 2 is 1795.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
 
     End Sub
 

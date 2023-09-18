@@ -39,7 +39,7 @@ End Function
 Public Function ConstructInstance(ByVal ipDims As String) As Box
 
     With s.BoxInfo
-        Set .Edges = seqC(VBA.Split(ipDims, SEPARATOR)).MapIt(mpConvert(e_ConvertTo.m_Long))
+        Set .Edges = seqC(VBA.Split(ipDims, SEPARATOR)).mapIt(mpConvert(e_ConvertTo.m_Long))
         Set .Surfaces = seqC(.Edges.Item(1) * .Edges.Item(2), .Edges.Item(2) * .Edges.Item(3), .Edges.Item(3) * .Edges.Item(1))
         Set .Perims = seqC(2 * (.Edges.Item(1) + .Edges.Item(2)), 2 * (.Edges.Item(2) + .Edges.Item(3)), 2 * (.Edges.Item(3) + .Edges.Item(1)))
     End With

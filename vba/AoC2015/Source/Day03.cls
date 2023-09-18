@@ -40,7 +40,7 @@ Private Sub Part01()
     Dim myResult As Long
     myResult = myJourney.Visits.Count
     
-    fmt.dbg "The answer to Day {0} Part 01 is 2572.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+    fmt.Dbg "The answer to Day {0} Part 01 is 2572.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
     
 End Sub
 
@@ -58,6 +58,6 @@ Private Sub Part02()
     Dim myResult As Long
     myResult = seqC(mySantaJourney.Visits.Keys).SetOf(e_Setof.m_Unique, seqC(myRobotJourney.Visits.Keys)).Count
    
-    fmt.dbg "The answer to Day {0} Part 02 is 2631.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+    fmt.Dbg "The answer to Day {0} Part 02 is 2631.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
     
 End Sub

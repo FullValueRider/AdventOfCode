@@ -49,9 +49,9 @@ Private Sub Initialise()
     Dim myOps As seqC
     Set myOps = _
         seqC(myData) _
-            .MapIt(mpMultiReplace(Array(Array(" -> ", chars.twSpace)))) _
-            .MapIt(mpToLower.Deb) _
-            .MapIt(mpsplit(chars.twSpace))
+            .mapIt(mpMultiReplace(Array(Array(" -> ", chars.twSpace)))) _
+            .mapIt(mpToLower.Deb) _
+            .mapIt(mpsplit(chars.twSpace))
 
 '
      Set s.OutputVsLogic = KvpC.Deb
@@ -63,7 +63,7 @@ Private Sub Initialise()
     Do
     
         Dim myS As seqC
-        Set myS = myItems.curitem(0)
+        Set myS = myItems.curItem(0)
 
         s.OutputVsLogic.Add myS.Pop, myS
         
@@ -101,7 +101,7 @@ Public Sub Part01()
     
     Dim myResult As Long
     myResult = s.Resolved.Item("a")
-    fmt.dbg "The answer to Day {0} part 1 is 46065.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+    fmt.Dbg "The answer to Day {0} part 1 is 46065.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
     
 End Sub
 
@@ -135,7 +135,7 @@ Public Sub Part02()
     Dim myResult As Long
     myResult = s.Resolved.Item("a")
 
-    fmt.dbg "The answer to Day {0} part 02 is 14134.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+    fmt.Dbg "The answer to Day {0} part 02 is 14134.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
 
 End Sub
 

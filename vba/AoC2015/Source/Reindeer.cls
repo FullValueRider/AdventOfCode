@@ -39,17 +39,17 @@ End Type
 Private s                       As State
 
 '@DefaultMember
-Public Function Deb(ByRef ipInfo As String) As Reindeer
+Public Function Deb(ByRef ipInfoString As Variant) As Reindeer
 Attribute Deb.VB_UserMemId = 0
     With New Reindeer
-        Set Deb = .ConstructInstance(ipInfo)
+        Set Deb = .ConstructInstance(ipInfoString)
     End With
 End Function
 
-Public Function ConstructInstance(ByRef ipInfo As String) As Reindeer
+Public Function ConstructInstance(ByRef ipInfoString As Variant) As Reindeer
 
     Dim myInfo As String
-    myInfo = strs.MultiReplacer(ipInfo, Array(Array(" can fly", vbNullString), Array(" km/s for", vbNullString), Array(" seconds, but then must rest for", vbNullString), Array(" seconds.", vbNullString)))
+    myInfo = strs.MultiReplacer(VBA.CStr(ipInfoString), Array(Array(" can fly", vbNullString), Array(" km/s for", vbNullString), Array(" seconds, but then must rest for", vbNullString), Array(" seconds.", vbNullString)))
     Dim myTmp As Variant: myTmp = VBA.Split(myInfo, chars.twSpace)
        
     s.Name = myTmp(e_ReindeerInfo.m_name)
@@ -87,7 +87,7 @@ Public Property Get Name() As String
 End Property
 
 Public Property Get FlightSpeed() As Long
-    FlightSpeed = s.flighSpeed
+    FlightSpeed = s.FlightSpeed
 End Property
 
 Public Property Get FlightTime() As Long

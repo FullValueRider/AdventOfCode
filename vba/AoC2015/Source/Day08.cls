@@ -56,7 +56,7 @@ Private Sub Part01()
     Dim myItem As Variant
     Dim myItems As Iteritems: Set myItems = Iteritems(s.Data)
     Do
-        myItem = myItems.curitem(0)
+        myItem = myItems.curItem(0)
         Dim myCodeStr As String
         myCodeStr = myItem
         myCodeStrLen = myCodeStrLen + VBA.Len(myCodeStr)
@@ -89,7 +89,7 @@ Private Sub Part02()
     Dim myItem As Variant
     Dim myItems As Iteritems: Set myItems = Iteritems(s.Data)
     Do
-        myItem = myItems.curitem(0)
+        myItem = myItems.curItem(0)
         Dim myCodeStr As String
         myCodeStr = myItem
         myCodeStrLen = myCodeStrLen + VBA.Len(myCodeStr)
@@ -102,7 +102,7 @@ Private Sub Part02()
    
     Dim myResult As Long
     myResult = myInMemStrLen - myCodeStrLen
-    fmt.dbg "The answer to Day {0} Part 02 is 2046.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+    fmt.Dbg "The answer to Day {0} Part 02 is 2046.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
 
 End Sub
 

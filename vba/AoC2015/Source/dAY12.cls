@@ -33,7 +33,7 @@ Private Sub Part01()
     
     Dim myResult As Long: myResult = SumNumbersInString(s.Data)
     
-    fmt.dbg "The answer to Day {0} part 1 is 191164.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+    fmt.Dbg "The answer to Day {0} part 1 is 191164.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
     
 End Sub
 
@@ -55,7 +55,7 @@ Private Sub Part02()
     
     Dim myResult As Long: myResult = SumNumbersInString(myString)
     
-    fmt.dbg "The answer to Day {0} part 2 is 87842.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+    fmt.Dbg "The answer to Day {0} part 2 is 87842.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
 
 End Sub
 
@@ -89,7 +89,7 @@ Public Sub PurgeObjectsWithRedItems(ByRef ipDecodedJson As Variant)
             
             Set myItems = Iteritems.Deb(ipDecodedJson).MoveToEndIndex
             Do
-                PurgeObjectsWithRedItems myItems.curitem(0)
+                PurgeObjectsWithRedItems myItems.curItem(0)
             Loop While myItems.MovePrev
             
             
@@ -97,7 +97,7 @@ Public Sub PurgeObjectsWithRedItems(ByRef ipDecodedJson As Variant)
         
             Set myItems = Iteritems.Deb(ipDecodedJson).MoveToEndIndex
             Do
-                PurgeObjectsWithRedItems myItems.curitem(0)
+                PurgeObjectsWithRedItems myItems.curItem(0)
             Loop While myItems.MovePrev
             
             
@@ -139,7 +139,7 @@ Private Function SumNumbersInString(ByVal ipString As String) As Long
     Dim myChars As Iteritems: Set myChars = Iteritems.Deb(ipString)
     Do
         Dim myChar As String
-        myChar = myChars.curitem(0)
+        myChar = myChars.curItem(0)
         
         If myChar = "-" Then
         

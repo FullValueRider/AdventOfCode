@@ -31,7 +31,7 @@ Public Sub Part01()
     Initialise
     Dim myLowestNumber As Long
     myLowestNumber = GetLowestNumberStartingWith("00000")
-    fmt.dbg "The answer to Day {0} Part 01 is 117946. Found is {1}", VBA.Mid$(TODAY, 5, 2), myLowestNumber
+    fmt.Dbg "The answer to Day {0} Part 01 is 117946. Found is {1}", VBA.Mid$(TODAY, 5, 2), myLowestNumber
     
 End Sub
 
@@ -40,7 +40,7 @@ Public Sub Part02()
     Initialise
     Dim myLowestNumber As Long
     myLowestNumber = GetLowestNumberStartingWith("000000")
-    fmt.dbg "The answer to Day {0} Part 02 is 3938038. Found is {1}", VBA.Mid$(TODAY, 5, 2), myLowestNumber
+    fmt.Dbg "The answer to Day {0} Part 02 is 3938038. Found is {1}", VBA.Mid$(TODAY, 5, 2), myLowestNumber
     
 End Sub
 

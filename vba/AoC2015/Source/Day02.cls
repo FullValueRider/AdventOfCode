@@ -36,9 +36,9 @@ Public Sub Part01()
     Initialise
     
     Dim myResult As Long
-    myResult = s.Data.MapIt(mpExecDeb(Box)).MapIt(mpCallByName("WrappingSize", VbMethod)).ReduceIt(rdSum)
+    myResult = s.Data.mapIt(mpExecDeb(Box)).mapIt(mpCallByName("WrappingSize", VbMethod)).ReduceIt(rdSum)
 
-    fmt.dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "1598415", myResult
+    fmt.Dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "1598415", myResult
 
 End Sub
 
@@ -48,9 +48,9 @@ Public Sub Part02()
     Initialise
    
     Dim myResult As Long
-    myResult = s.Data.MapIt(mpExecDeb(Box)).MapIt(mpCallByName("RibbonLength", VbMethod)).ReduceIt(rdSum)
+    myResult = s.Data.mapIt(mpExecDeb(Box)).mapIt(mpCallByName("RibbonLength", VbMethod)).ReduceIt(rdSum)
     
-    fmt.dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "3812909", myResult
+    fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(TODAY, 5, 2), "3812909", myResult
     
 End Sub
 

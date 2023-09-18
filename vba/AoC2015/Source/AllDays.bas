@@ -19,7 +19,7 @@ Public Sub Main()
 '    Day06.Execute
 '    Day07.Execute
 '    Day08.Execute
-    Day09.Execute
+'    Day09.Execute
 '    Day10.Execute
 '    Day11.Execute
 '    dAY12.Execute 'part 2 not working

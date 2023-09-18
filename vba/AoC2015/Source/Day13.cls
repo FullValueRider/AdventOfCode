@@ -38,7 +38,7 @@ Option Explicit
     Private Sub Part01()
 
         Initialise
-        maths.Permutations s.Guests.Keys, s.Guests.Count, s.GuestPermutations
+        Set s.GuestPermutations = Permutations.ByKey(s.Guests)
         
         ' s.GuestPermutations now contains all possible unique arrangements of guests
         ' For each permutations we need to examine the happiness level between two guests by
@@ -47,7 +47,7 @@ Option Explicit
         
         Dim myGuestPermutations As Iteritems: Set myGuestPermutations = Iteritems(s.GuestPermutations)
         Do
-            Dim myGuestPermutation As seqC: Set myGuestPermutation = myGuestPermutations.curitem(0)
+            Dim myGuestPermutation As seqC: Set myGuestPermutation = myGuestPermutations.curItem(0)
             Dim myHappiness As Long: myHappiness = 0
             Dim myGuests As Iteritems: Set myGuests = Iteritems.Deb(myGuestPermutation)
             ' we are iterating a single guest plan
@@ -56,14 +56,14 @@ Option Explicit
                 Dim myGuest2 As String
                 If myGuests.HasNoNext Then
 
-                    myGuest1 = myGuests.curitem(0)
-                    myGuest2 = myGuests.curitem(-(myGuestPermutation.Count - 1))
+                    myGuest1 = myGuests.curItem(0)
+                    myGuest2 = myGuests.curItem(-(myGuestPermutation.Count - 1))
 
 
                 Else
 
-                    myGuest1 = myGuests.curitem(0)
-                    myGuest2 = myGuests.curitem(1)
+                    myGuest1 = myGuests.curItem(0)
+                    myGuest2 = myGuests.curItem(1)
 
 
                 End If
@@ -81,7 +81,7 @@ Option Explicit
         Loop While myGuestPermutations.MoveNext
         
         Dim myResult As Long: myResult = myMaxhappiness
-        fmt.dbg "The answer to Day {0} Part 01 is 709.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+        fmt.Dbg "The answer to Day {0} Part 01 is 709.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
         
     End Sub
 
@@ -93,13 +93,13 @@ Option Explicit
         
         Initialise
         
-        maths.Permutations s.Guests.Keys, s.Guests.Count, s.GuestPermutations
+        Set s.GuestPermutations = Permutations.ByKey(s.Guests)
         
         Dim myMaxhappiness As Long: myMaxhappiness = globals.MinLong
         
         Dim myGuestPermutations As Iteritems: Set myGuestPermutations = Iteritems(s.GuestPermutations)
         Do
-            Dim myGuestPermutation As seqC: Set myGuestPermutation = myGuestPermutations.curitem(0)
+            Dim myGuestPermutation As seqC: Set myGuestPermutation = myGuestPermutations.curItem(0)
             Dim myHappiness As Long: myHappiness = 0
             Dim myGuests As Iteritems: Set myGuests = Iteritems.Deb(myGuestPermutation)
             ' we are iterating a single guest plan
@@ -108,8 +108,8 @@ Option Explicit
                 Dim myGuest1 As String
                 Dim myGuest2 As String
 
-                myGuest1 = myGuests.curitem(-1)
-                myGuest2 = myGuests.curitem(0)
+                myGuest1 = myGuests.curItem(-1)
+                myGuest2 = myGuests.curItem(0)
 
                 myHappiness = myHappiness + s.Guests.Item(myGuest1).Item(myGuest2)
                 myHappiness = myHappiness + s.Guests.Item(myGuest2).Item(myGuest1)
@@ -125,7 +125,7 @@ Option Explicit
         
         Dim myResult As Long: myResult = myMaxhappiness
         
-        fmt.dbg "The answer to Day {0} part 2 is 668.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+        fmt.Dbg "The answer to Day {0} part 2 is 668.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
 
     End Sub
     
@@ -144,8 +144,8 @@ Option Explicit
         ' and finally we split the string at the spaces into a seq
         
         Set s.Data = seqC(Filer.GetFileAsArrayOfStrings(AoCRawData & Year & TODAY, vbCrLf)) _
-            .MapIt(mpMultiReplace(seqC(Array("gain ", vbNullString), Array("lose ", "-"), Array("happiness units by sitting next to", vbNullString), Array("would ", vbNullString), Array(chars.twPeriod, vbNullString), Array(chars.twSpace & chars.twSpace, chars.twSpace)))) _
-            .MapIt(mpsplit(chars.twSpace))
+            .mapIt(mpMultiReplace(Array(Array("gain ", vbNullString), Array("lose ", "-"), Array("happiness units by sitting next to", vbNullString), Array("would ", vbNullString), Array(chars.twPeriod, vbNullString), Array(chars.twSpace & chars.twSpace, chars.twSpace)))) _
+            .mapIt(mpsplit(chars.twSpace))
         ' s.data comprises a seq of guest1, happiness, score guest 2
         ' Create a dictionary of guest 1 vs dictionary of guest 2 happiness score
         ' we now have the abiity to get the happiness score of any pairing
@@ -155,7 +155,7 @@ Option Explicit
             
         Dim myGuests As Iteritems: Set myGuests = Iteritems.Deb(s.Data)
         Do
-            Dim myGuest As seqC: Set myGuest = myGuests.curitem(0)
+            Dim myGuest As seqC: Set myGuest = myGuests.curItem(0)
             Dim myLHS As String: myLHS = myGuest.Item(1)
             Dim myHappiness As Long: myHappiness = VBA.CLng(myGuest.Item(2))
             Dim myRHS As String: myRHS = myGuest.Item(3)

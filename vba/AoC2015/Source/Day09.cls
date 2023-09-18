@@ -57,13 +57,13 @@ Attribute VB_Exposed = True
          myDistance = 0
          
          Dim myroute As seqC
-         Set myroute = myRoutes.curitem(0)
+         Set myroute = myRoutes.curItem(0)
          
          Dim myNodes As Iteritems
          Set myNodes = Iteritems(myroute)
          Do While myNodes.MoveNext
              DoEvents
-             myDistance = myDistance + s.NodeLinks.Item(myNodes.curitem(0)).Item(myNodes.curitem(-1))
+             myDistance = myDistance + s.NodeLinks.Item(myNodes.curItem(0)).Item(myNodes.curItem(-1))
          Loop
          
          If myDistance < myMinDistance Then
@@ -74,7 +74,7 @@ Attribute VB_Exposed = True
      
      Dim myResult As Long
      myResult = myMinDistance
-     fmt.dbg "The answer to Day {0} part 1 is 251.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+     fmt.Dbg "The answer to Day {0} part 1 is 251.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
      
  End Sub
 
@@ -83,7 +83,6 @@ Attribute VB_Exposed = True
      Initialise
      Set s.Routes = Permutations.ByKey(s.NodeLinks)
     
-    's.NodeLinks.Keys,
      Dim myMaxDistance As Long
      myMaxDistance = globals.MinLong
      
@@ -97,13 +96,13 @@ Attribute VB_Exposed = True
          myDistance = 0
          
          Dim myroute As seqC
-         Set myroute = myRoutes.curitem(0)
+         Set myroute = myRoutes.curItem(0)
          
          Dim myNodes As Iteritems
          Set myNodes = Iteritems(myroute)
          Do While myNodes.MoveNext
              DoEvents
-             myDistance = myDistance + s.NodeLinks.Item(myNodes.curitem(0)).Item(myNodes.curitem(-1))
+             myDistance = myDistance + s.NodeLinks.Item(myNodes.curItem(0)).Item(myNodes.curItem(-1))
          Loop
          
          If myDistance > myMaxDistance Then
@@ -115,15 +114,15 @@ Attribute VB_Exposed = True
      Dim myResult As Long
      myResult = myMaxDistance
              
-     fmt.dbg "The answer to Day {0} part 2 is 898.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
+     fmt.Dbg "The answer to Day {0} part 2 is 898.  Found is {1}", VBA.Mid$(TODAY, 5, 2), myResult
 
  End Sub
 
  Private Sub Initialise()
  
      Set s.Data = seqC(Filer.GetFileAsArrayOfStrings(AoCRawData & Year & TODAY)) _
-         .MapIt(mpMultiReplace(Array(Array(" = ", chars.twcomma), Array(" to ", chars.twcomma)))) _
-         .MapIt(mpsplit(chars.twcomma))
+         .mapIt(mpMultiReplace(Array(Array(" = ", chars.twcomma), Array(" to ", chars.twcomma)))) _
+         .mapIt(mpsplit(chars.twcomma))
      
      Set s.Visited = KvpC.Deb
      Set s.NodeLinks = BuildNodeToNodeDictionary(s.Data)
@@ -145,7 +144,7 @@ Attribute VB_Exposed = True
      Do
      
          Dim myLink As seqC
-         Set myLink = myLinks.curitem(0)
+         Set myLink = myLinks.curItem(0)
          
          Dim myStartNode As String
          myStartNode = myLink.Item(1)
