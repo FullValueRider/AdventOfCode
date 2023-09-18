@@ -7,3 +7,5 @@ Such an upload requires that
 Attribute VB_Creatable
 ```
 is set to True.  I typically do this after exporting but it is wise to check that I have done so.
+
+The VBALib used is located at https://github.com/FullValueRider/VBALib
