@@ -1,0 +1,194 @@
+Class Hkvp
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '@Description("Dictionary derived from cHashD by Olaf Schmidt")
+    
+    Private Const MY_TYPENAME                       As String = "Hkvp"
+    
+    
+    Implements Chashd Via Host = New chashd
+  
+
+    Private CurrentIndex As Long
+    Private Const MinValue As Long = 65
+    Private Const MaxValue As Long = 123
+    Private Const E_INVALIDARGS As Long = &H80070057
+    Private Const S_OK As Long = 0
+    Private Const S_FALSE As Long = 1
+    
+    ' Private Sub New()
+    '     Set Host = cHashD.Deb
+    ' End Sub
+
+    Public Function Deb() As Hkvp
+        With New Hkvp
+            Return .ConstructInstance
+        End With
+    End Function
+
+    Friend Function ConstructInstance() As Hkvp
+        Return Me
+    End Function
+
+    ' Public Function ReInit(Optional ByVal ExpectedMaxCount As Long, Optional ByVal EnsureUniqueKeys As Boolean) As Hkvp
+    '     Return Host.ReInit(ExpectedMaxCount, EnsureUniqueKeys)
+    ' End Function
+    Public Function HoldsKey(ByRef ipKey As Variant) As Boolean
+        Return Host.Exists(ipKey)
+    End Function
+
+    Public Function LacksKey(ByRef ipKey As Variant) As Boolean
+        Return Not Me.Exists(ipKey)
+    End Function
+
+    Public Function HoldsItem(ByRef ipItem As Variant) As Boolean
+        HoldsItem = True
+        Dim myItem As Variant
+        Dim myItems As Variant = Me.Items
+        For Each myItem In myItems
+            If myItem = ipItem Then Exit Function
+        Next
+        Return False
+    End Function
+
+    Public Function LacksItem(ByRef ipItem As Variant) As Boolean
+        LacksItem = False
+        Dim myItem As Variant
+        For Each myItem In Me.Items
+            If myItem = ipItem Then Exit Function
+        Next
+        Return True
+    End Function
+
+    Public Function AddPairs(ByRef ipKeys As Variant, ByRef ipItems As Variant) As Hkvp
+        
+        Dim myKey As IterItems = IterItems.Deb(ipKeys)
+        Dim myItem As IterItems = IterItems.Deb(ipItems)
+    
+        Do
+           
+             Add myKey.Item, myItem.Item
+          
+        Loop While myKey.MoveNext And myItem.MoveNext
+        
+        Return Me
+        
+    End Function
+    
+    Friend Function AddKnownArrayPairs(ByRef ipKeysArray As Variant, ByRef ipItemsArray As Variant) As Hkvp
+    
+        AddPairs ipKeysArray, ipItemsArray
+        ' Dim myItemIndex As Long = LBound(ipItemsArray)
+        ' Dim myKey As Variant
+        ' For Each myKey In ipKeysArray
+        
+        '     If myItemIndex <= UBound(ipItemsArray) Then
+            
+        '         Add myKey, ipItemsArray(myItemIndex)
+        '         myItemIndex += 1
+                
+        '     End If
+            
+        ' Next
+        
+        Return Me
+        
+    End Function
+
+    Public Function Reverse() As Hkvp
+        Dim myD As Hkvp = Hkvp.Deb
+        Dim myI As IterItems = IterItems.Deb(Me).MoveToEnd
+        Do
+            myD.Add myI.Key, myI.Item
+        Loop While myI.MovePrev
+        Return myD
+    End Function
+    
+    Public Function TypeName() As String
+        Return MY_TYPENAME
+    End Function
+    
+     Public Function MapIt(ByVal ipMapper As IMapper) As Seq
+
+        Dim myH As Hkvp = Hkvp.Deb
+   
+        'Dim myI As IterNum = IterNum(FirstIndex, LastIndex)
+        Dim myI As IterItems = IterItems.Deb(Me)
+        Do
+            myH.Add myI.Key, ipMapper.ExecMapper(myI.Item)    '(s.Host(myI.Item))
+        Loop While myI.MoveNext
+
+         Return myH
+
+    End Function
+    
+    Public Function FilterIt(ByVal ipComparer As IComparer) As Seq
+
+        Dim myH As Hkvp = Hkvp.Deb
+        Dim myI As IterItems = IterItems.Deb(Me)
+        Do
+            If ipComparer.ExecCmp(myI.Item) Then
+                myH.Add myI.Key, myI.Item
+            End If
+        Loop While myI.MoveNext
+        
+        Return myH
+        
+    End Function
+    
+    Public Function CountIt(ByVal ipComparer As IComparer) As Long
+        
+        Dim myCount As Long = 0
+        Dim myI As IterItems = IterItems.Deb(Me)
+        Do
+       	    DoEvents
+            If ipComparer.ExecCmp(myI.Item) Then
+                myCount += 1
+            End If
+        Loop While myI.MoveNext
+
+        Return myCount
+
+    End Function
+    
+    Public Function ReduceIt(ByRef ipReducer As IReducer) As Variant
+        Return ipReducer.ExecReduction(Host.Items)
+    End Function
+
+    Public Function KeysSeq() As Seq
+        Dim myKeys As Variant = Host.Keys
+        Return Seq.Deb(myKeys)
+    End Function
+    
+    Public Function ItemsSeq() As Seq
+        Return Seq.Deb(Host.Items)
+    End Function
+    
+    
+    Public Function FirstKey() As Variant
+        Return KeyByIndex(0)
+    End Function
+    
+    Public Function LastKey() As Variant
+        Return KeyByIndex(Count - 1)
+    End Function
+    
+    Public Function FirstItem() As Variant
+        Return Item(0)
+    End Function
+    
+    Public Function LastItem() As Variant
+        Return Item(Count - 1)
+    End Function
+    
+    Public Function FirstPair() As KVPair
+        Return KVPair.Deb(FirstKey, FirstItem)
+    End Function
+    
+    Public Function LastPair() As KVPair
+        Return KVPair.Deb(LastKey, LastItem)
+    End Function
+End Class

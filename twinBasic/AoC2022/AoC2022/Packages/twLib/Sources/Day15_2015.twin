@@ -1,0 +1,149 @@
+Class Day15_2015
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+
+    Private Const Today             As String = "\2015\Day15.txt"
+    
+
+    Private Type State
+
+        Data                            As lookup
+       
+    End Type
+
+    Private s                           As State
+
+    
+    Public Sub Execute()
+        
+            Part01
+          '  Part02
+            
+    End Sub
+
+    Private Sub Part01()
+
+        Initialise
+        ' create a recipe seq which indicates how much of an ingredient is used for n ingredients
+        ' the sum of the recipe seq must be 100
+        Dim myMaxCookieScore As Long = enums.Preset(MinLong)
+        Dim myRecipie As Seq = Seq.Deb.Repeat(0, s.Data.Count)
+        myRecipie.Last = 100
+        ' we start with a recipie of 0,0,0,100
+        Dim mycounter As Long = 0
+        Do
+           
+        	'Dim myCookieScore As Long = CalculateCookieScore(myRecipie)
+            
+            ' If myCookieScore > myMaxCookieScore Then
+            ' 	myMaxCookieScore = myCookieScore
+            ' End If
+            UpdateRecipie myRecipie
+            mycounter += 1
+            If mycounter Mod 10000 = 0 Then
+                Debug.Print mycounter
+            End If
+        Loop Until myRecipie.Item(myRecipie.Count - 1) = 100
+        
+        Dim myResult As Long = myMaxCookieScore
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 5, 2), "251", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+
+        Initialise
+        
+       
+        
+        Dim myResult As Long
+                
+        
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 5, 2), "1795", myResult
+
+    End Sub
+
+    Private Sub Initialise()
+    
+        Dim myInput As Seq = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC & Today)) _   
+            .MapIt(mpReplacer(Array(Char.twColon, Char.twComma), Array(Char.twComma & Char.twSpace, Char.twComma))) _
+            .MapIt(mpConcat("Name ", Prepend)) _
+            .MapIt(mpStrConv(vbLowerCase)) _
+            .MapIt(mpSplitToSubStr(ToSeq, Char.twComma)) _
+            .MapIt(mpInner(mpSplitToSubStr(ToSeq, Char.twSpace))) _
+            .MapIt(mpInner(mpConvert.Deb(ToLong))) _
+           ' .First
+           
+        Set s.Data = Lookup.Deb
+        Dim myIngredients As IterItems = IterItems.Deb(myInput)
+        Do
+            Dim myIngredient As Seq = myIngredients(0)
+        	s.Data.Add myIngredient.Item(1).Item(2), Lookup.Deb
+            Dim myProperties As IterItems = IterItems.Deb(myIngredient).SetFTS(1)
+            Do
+                Dim myItem As Seq = myProperties(0)
+                s.Data(myIngredient.Item(1).Item(2)).add myProperties(0).item(1), myProperties(0).item(2)
+            
+            Loop While myProperties.MoveNext
+            
+        Loop While myIngredients.MoveNext
+        
+     End Sub
+  
+
+    
+    
+    Public Sub UpdateRecipie(ByRef iopRecipie As Seq)
+    
+        Dim myIngredients As IterItems = IterItems.Deb(iopRecipie).SetFTS(ipto:=iopRecipie.Count - 1)
+        Dim myIndex As Long
+        For myIndex = 1 To iopRecipie.Count - 1
+            
+            If iopRecipie.Item(myIndex) = 100 Then
+            
+                iopRecipie.Item(myIndex) = 0
+                iopRecipie.Item(myIndex + 1) += 1
+                Exit For
+            Else
+            	iopRecipie.Item(myIndex) += 1
+                Exit For
+            End If
+                
+        Next
+       ' Debug.Print iopRecipie.ReduceIt(rdSum(ipFTS:=FTS.Deb(ipTo:=iopRecipie.Count - 2)))
+        iopRecipie.Last = 100 - iopRecipie.ReduceIt(rdSum(ipFTS:=FTS.Deb(ipTo:=iopRecipie.Count - 2)))
+    End Sub
+    
+    
+    Public Function CalculateCookieScore(ByRef ipRecipie As Seq) As Long
+    
+        
+        
+        ' Dim mySums As IterItems = IterItems.Deb(Seq.Deb.Repeat(0, ipRecipie.Count))
+        ' Dim myIngredients As IterItems = IterItems.Deb(ipRecipie)
+        ' Do
+        ' 	Dim myingredient As Lookup = myIngredients(0)
+            
+        '     mySums(0) += myIngredients(0).Item(1) * s.Data.Item(myIngredients(0).first).Item("capacity")
+        '     myDurability += myIngredients(0).Item(2) * s.Data.Item(myIngredients(0).first).Item("durability")
+        '     myFlavour += myIngredients(0).Item(3) * s.Data.Item(myIngredients(0).first).Item("flavor")
+        '     myTexture += myIngredients(0).Item(4) * s.Data.Item(myIngredients(0).first).Item("texture")
+        ' Loop While myIngredients.MoveNext
+        
+        ' If myCapacity < 0 Then myCapacity = 0
+        ' If myDurability < 0 Then myDurability = 0
+        ' If myFlavour < 0 Then myFlavour = 0
+        ' If myTexture < 0 Then myTexture = 0
+        
+        ' Return myCapacity * myDurability * myFlavour * myTexture
+        
+    End Function
+
+End Class

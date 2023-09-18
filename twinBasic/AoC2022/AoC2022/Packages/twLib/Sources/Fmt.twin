@@ -1,0 +1,297 @@
+Class Fmt
+
+	Option Explicit
+    '@Folder("StringyStuff")
+    '@PredeclaredId
+    '@Exposed
+    '@ModuleDescription("Class Fmt enables substitution of variables and controls characters in strings using fields delineated by {} markers.  It does not support control characters preceded by a '\'")
+
+    '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    ' This module enables fields within strings which represent variables or
+    ' control characters.
+    '
+    ' Variables are indicated by {x} where x is a positive integer.
+    ' e.g.
+    '       Fmt("this string {0} {1}", "Hello", 9)
+    '
+    ' gives 'this string Hello 9'
+    '
+    ' Layout fields represent control characters and are of the form {zz(x)}
+        
+     '  x  = an optional positive integer to indicate the number of times the control character is repeated.
+         
+    '   zz can be
+    '       nl = new line
+    '       nt = newline(s) followed by a tab (x applies to the newline only)
+    '       tb = tab
+    '       sq = single ordinary quote
+    '       dq = double ordinary quote
+    '       so = single smart quote - open
+    '       sc = single smart quote - close
+    '       do = double smart quote - open
+    '       dc = double smart quote - close
+    '
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    ' Code line limit should be 120 characters.
+    ' Comment line limit should be 80 characters
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+    Private Type State
+
+        FormatFields                                As hkvp
+
+    End Type
+
+    Private s                                       As State
+
+
+    'Field openers - definitions
+    Private Const NEWLINES                           As String = "{nl"
+    Private Const TABS                               As String = "{tb"
+    Private Const NEWLINES_TAB                       As String = "{nt" ' 1 or more newlines followed by one Tab
+    Private Const DQUOTE                             As String = "{dq"
+    Private Const SQUOTE                             As String = "{sq"
+    Private Const SMART_SQUOTE_OPEN                  As String = "{so"
+    Private Const SMART_SQUOTE_CLOSE                 As String = "{sc"
+    Private Const SMART_DQUOTE_OPEN                  As String = "{do"
+    Private Const SMART_DQUOTE_CLOSE                 As String = "{dc"
+
+    ' Field closures - definitions
+    Private Const FIELD_COUNT_IS_NONE                   As String = "}"
+    Private Const FIELD_COUNT_IS_ZERO               As String = "0}"
+    Private Const FIELD_COUNT_IS_ONE                      As String = "1}"
+
+   
+    Public Sub Class_Initialize()
+
+            
+        If s.FormatFields Is Nothing Then
+            
+            Set s.FormatFields = Hkvp.Deb
+            
+        Else
+            
+            Exit Sub
+                
+        End If
+            
+        With s.FormatFields
+            
+            .Add NEWLINES, vbCrLf                           ' {nl
+            .Add TABS, vbTab                                ' {tb
+            .Add NEWLINES_TAB, vbCrLf                       ' {nt
+            .Add DQUOTE, Char.twPlainDQuote                 ' {dq
+            .Add SQUOTE, Char.twPlainSQuote                 ' {sq
+            .Add SMART_SQUOTE_OPEN, Char.twLSmartSQuote     ' {so
+            .Add SMART_SQUOTE_CLOSE, Char.twRSmartSQuote    ' {sc
+            .Add SMART_DQUOTE_OPEN, Char.twLSMartDQuote     ' {do
+            .Add SMART_DQUOTE_CLOSE, Char.twRSmartDQuote    ' {dc
+                
+        End With
+            
+    End Sub
+
+    '@Description("Sends the formatted output to Debug.Print")
+    Public Function Dbg(ByRef ipFormatTemplate As String, ParamArray ipParamArray() As Variant) As String
+    
+       
+    	Dim myresult As String
+        If ArrayInfo.IsNotAllocated(ipParamArray) Then
+            myresult = ipFormatTemplate
+        Else
+            myresult = TextByVar(ipFormatTemplate, ipParamArray)
+        End If
+        Debug.Print myresult
+        Return myresult
+    End Function
+    
+    '@Description("Returns a string representing the paramArray")
+    Public Function Text(ByRef ipformatTemplate As String, ParamArray ipParamarray() As Variant) As String
+       
+        If ArrayInfo.IsNotAllocated(ipParamarray) Then
+            Return ipformatTemplate
+        Else
+            Return TextByVar(ipformatTemplate, ipParamarray)
+        End If
+    End Function
+        
+    Private Function TextByVar(ByRef ipFormatTemplate As String, ParamArray ipParamarray() As Variant) As String
+        
+       Dim myParamArray As Variant = VarOp.ResolveParamArray(ipParamarray)
+        
+        Dim mys As Seq = Seq.Deb
+        
+        If TypeInfo.IsString(myParamArray) Then
+            mys.Add myParamArray
+        Else
+        
+            Dim myIter As IterItems = IterItems.Deb(myParamArray)
+            Do
+                mys.Add Stringifier.ToString(myIter(0))
+            Loop While myIter.MoveNext
+            
+        End If
+
+        If VBA.Len(ipFormatTemplate) = 0 Then
+            Return mys.Join(Char.twComma)
+        End If
+        
+        If mys.IsNOtQueryable Then
+            Return ipFormatTemplate
+        End If
+        
+        
+        Dim myReturn  As String
+        myReturn = ReplaceFormatFieldWithZeroCountByvbNullString(ipFormatTemplate)
+        myReturn = ReplaceFormatFieldWithNoCountByFormatFieldWithCountOfOne(myReturn)
+        myReturn = ReplaceFormatFieldWithCountByControlCharacters(myReturn)
+        myReturn = ReplaceVariableFieldByVariableString(myReturn, mys)
+        
+        Return myReturn
+        
+    End Function
+
+ 
+    
+
+    ' Friend Function GetFormattedParameters(ByVal ipFormatTemplate As String, ByVal ipFPA As Variant) As String
+
+    '     Dim myReturn  As String
+    '     myReturn = ReplaceFormatFieldWithZeroCountByvbNullString(ipFormatTemplate)
+    '     myReturn = ReplaceFormatFieldWithNoCountByFormatFieldWithCountOfOne(myReturn)
+    '     myReturn = ReplaceFormatFieldWithCountByControlCharacters(myReturn)
+    '     myReturn = ReplaceVariableFieldsToStringRepresentations(myReturn, ipFPA)
+            
+    '     GetFormattedParameters = myReturn
+            
+    ' End Function
+
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    '
+    ' Methods below need to be made public for the test module to run correctly
+    '
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    '@Description("Replace formatting fields of the form '{WithZeroCount}' with NoString")
+    Friend Function ReplaceFormatFieldWithZeroCountByvbNullString(ByVal ipLayoutTemplate As String) As String
+    Attribute ReplaceFormatFieldWithZeroCountByvbNullString.VB_Description = "Replace formatting fields of the form '{WithZeroCount}' with NoString"
+
+        Dim myLayoutTemplate                        As String
+        Dim myItem                                  As Variant
+
+        myLayoutTemplate = ipLayoutTemplate
+            
+        For Each myItem In s.FormatFields.Keys
+            
+            myLayoutTemplate = VBA.Replace(myLayoutTemplate, myItem & FIELD_COUNT_IS_ZERO, Char.twNoString)
+                
+        Next
+
+        ReplaceFormatFieldWithZeroCountByvbNullString = myLayoutTemplate
+            
+    End Function
+    
+
+    '@Description("Replace non numbered LayoutObj.Format fields {XX} to {XX1}")
+    '@Ignore AssignedByValParameter
+    Friend Function ReplaceFormatFieldWithNoCountByFormatFieldWithCountOfOne(ByVal ipFormatTemplate As String) As String
+    Attribute ReplaceFormatFieldWithNoCountByFormatFieldWithCountOfOne.VB_Description = "Replace non numbered LayoutObj.Format fields {XX} to {XX1}"
+
+        Dim myItem                              As Variant
+
+        For Each myItem In s.FormatFields.Keys
+            
+            ipFormatTemplate = VBA.Replace(ipFormatTemplate, myItem & FIELD_COUNT_IS_NONE, myItem & FIELD_COUNT_IS_ONE)
+                
+        Next
+            
+        ReplaceFormatFieldWithNoCountByFormatFieldWithCountOfOne = ipFormatTemplate
+            
+    End Function
+
+    '@Description("return the number in a format field")
+    Friend Function GetRepeatCountForFormatField(ByRef ipFormatTemplate As String, ByVal ipFormatField As String) As Long
+    Attribute GetRepeatCountForFormatField.VB_Description = "return the number in a format field"
+
+        Dim myFormatFieldRepeatLocation         As Long
+        Dim myRepeatCount                       As String
+
+        myFormatFieldRepeatLocation = InStr(ipFormatTemplate, ipFormatField) + Len(ipFormatField)
+            
+        Do While VBA.Mid$(ipFormatTemplate, myFormatFieldRepeatLocation, 1) Like "#"
+                
+            myRepeatCount = myRepeatCount & VBA.Mid$(ipFormatTemplate, myFormatFieldRepeatLocation, 1)
+            myFormatFieldRepeatLocation = myFormatFieldRepeatLocation + 1
+                
+        Loop
+            
+        GetRepeatCountForFormatField = CLng(myRepeatCount)
+            
+    End Function
+
+    '@Description("Replace {XXn} layout field to fomatting characters 'XX' repeated 'n' times")
+    Friend Function ReplaceFormatFieldWithCountByControlCharacters(ByRef ipFormatTemplate As String) As String
+    Attribute ReplaceFormatFieldWithCountByControlCharacters.VB_Description = "Replace {XXn} layout field to fomatting characters 'XX' repeated 'n' times"
+
+        Dim myItem                              As Variant
+        Dim myReplace                           As String
+        Dim myField                             As String
+        Dim myCount                             As Long
+
+        For Each myItem In s.FormatFields.Keys
+                    
+            If InStr(ipFormatTemplate, myItem) > 0 Then
+                
+                myCount = GetRepeatCountForFormatField(ipFormatTemplate, myItem)
+                myField = myItem & CStr(myCount) & "}"
+                myReplace = GetFormattingFieldReplacementString(myItem, myCount)
+                ipFormatTemplate = VBA.Replace(ipFormatTemplate, myField, myReplace)
+                    
+            End If
+            
+        Next
+                    
+        ReplaceFormatFieldWithCountByControlCharacters = ipFormatTemplate
+            
+    End Function
+
+    '@Description("Returns a string of formatting characters in line with the formatting tag")
+    Friend Function GetFormattingFieldReplacementString(ByVal ipFormatString As String, ByVal ipRepeatCount As Long) As String
+            
+        Dim myReturn As String = VBA.String$(ipRepeatCount, s.FormatFields.Item(ipFormatString))
+        
+        If ipFormatString = NEWLINES_TAB Then
+            
+            myReturn = myReturn & vbTab
+            
+        End If
+            
+        Return myReturn
+            
+    End Function
+
+    '@Description("Replace each ocurrence of '{<number>}' with the corresponding stringified item from the parameters list")
+    Friend Function ReplaceVariableFieldByVariableString _
+    ( _
+        ByVal ipFormatTemplate As String, _
+        ByVal ipSeq As Seq _
+    ) As String
+
+        Dim myReturn                        As String
+
+        myReturn = ipFormatTemplate
+        
+            
+        Dim myIter As IterItems = IterItems.Deb(ipSeq)
+        Do
+            Dim myItem As String = myIter(0)
+            Dim myReplace As String = Char.twLCurly & CStr(myIter.Index) & Char.twRCurly
+            myReturn = VBA.Replace(myReturn, myReplace, myItem)
+
+        Loop While myIter.MoveNext
+            
+        Return myReturn
+            
+    End Function
+
+End Class

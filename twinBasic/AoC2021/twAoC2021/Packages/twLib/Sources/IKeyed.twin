@@ -1,0 +1,6 @@
+Interface IKeyed
+
+	Function HoldsKey(ByRef ipKey As Variant) As Boolean
+    Function LacksKey(ByRef ipKey As Variant) As Boolean
+
+End Interface

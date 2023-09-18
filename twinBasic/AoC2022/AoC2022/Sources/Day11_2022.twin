@@ -1,0 +1,164 @@
+Class Day11_2022
+
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+Option Explicit
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+
+    Private Const Today             As String = "\2022\Day11.txt"
+    
+
+    Private Type State
+
+        Data                            As seq
+        Monkeys                         As hkvp
+        Primes                          As longlong
+    End Type
+
+    Private s                           As State
+
+    
+    Public Sub Execute()
+        
+        Part01
+        Part02
+            
+    End Sub
+
+ 
+    Private Sub Part01()
+
+        Initialise
+        
+        Dim myRound As Long
+        For myRound = 1 To 20
+            
+            Dim myMonkeys As IterItems = IterItems.Deb(s.Monkeys)
+            Do
+                Dim myMonkey As Monkey = myMonkeys(0)
+                If myMonkey.HasNoItems Then
+                    Continue Do
+                End If
+            
+                myMonkey.InspectItems True
+                
+                ' now the monkey throws items to other monkeys
+                Dim myThrows As IterItems = IterItems.Deb(myMonkey.Throws)
+                Do
+                
+                	Dim mykey As String = myThrows.Key(0)
+                    Dim myRecipientMonkey As Monkey = s.Monkeys.Item(mykey)
+                    Dim myItems As IterItems = IterItems.Deb(myThrows(0))
+                    Do
+                        Dim myItem As LongLong = myItems(0)
+                        myRecipientMonkey.Add myItem
+                    Loop While myItems.MoveNext
+                    
+                Loop While myThrows.MoveNext
+                
+            Loop While myMonkeys.MoveNext
+        
+        Next
+        
+        Dim myInspectioncounts As Seq = Seq.Deb
+        myMonkeys.MoveToStart
+        Do
+        	myInspectioncounts.Add myMonkeys(0).inspectioncount
+        Loop While myMonkeys.MoveNext
+        myInspectioncounts.Sort
+        Dim myResult As Long = myInspectioncounts.Pop * myInspectioncounts.Pop
+        
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "(Test 10605) 110888", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+        
+        Initialise
+        
+        Dim myRound As Long
+        For myRound = 1 To 10000
+            'If myRound Mod 50 = 0 Then Debug.Print myRound ;
+            Dim myMonkeys As IterItems = IterItems.Deb(s.Monkeys)
+            Do
+                Dim myMonkey As Monkey = myMonkeys(0)
+                If myMonkey.HasNoItems Then
+                    Continue Do
+                End If
+            	
+                
+                myMonkey.InspectItems False
+                
+                ' now the monkey throws items to other monkeys
+                Dim myThrows As IterItems = IterItems.Deb(myMonkey.Throws)
+                Do
+                
+                	Dim mykey As String = myThrows.Key(0)
+                    Dim myRecipientMonkey As Monkey = s.Monkeys.Item(mykey)
+                    Dim myItems As IterItems = IterItems.Deb(myThrows(0))
+                    Do
+                        'Debug.Print myRound ;
+                        'Dim myvar As Variant = myItems(0)
+                        myRecipientMonkey.Add myItems(0)
+                    Loop While myItems.MoveNext
+        
+                   ' s.Monkeys.Item(myThrows.Key(0)).additems myThrows(0)
+                    
+                Loop While myThrows.MoveNext
+                
+            Loop While myMonkeys.MoveNext
+        
+        Next
+        
+        Dim myInspectioncounts As Seq = Seq.Deb
+        myMonkeys.MoveToStart
+        Do
+        	myInspectioncounts.Add myMonkeys(0).inspectioncount
+        Loop While myMonkeys.MoveNext
+        myInspectioncounts.Sort
+        Dim myResult As LongLong = myInspectioncounts.Pop * myInspectioncounts.Pop
+    
+        ' 32398560016 too high         
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "YYYYYY", myResult
+
+    End Sub
+    
+
+    Private Sub Initialise()
+    
+        ' The tempate for the monkey information is invariant so we can remove
+        ' extraneous information from the monkey info string
+        Set s.Data = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC & Today, vbCrLf & vbCrLf)) _
+            .MapIt(mpStrConv.Deb) _
+            .MapIt _
+            ( _
+                mpReplacer _
+                ( _
+                    Array(Char.twColon, vbNullString), _
+                    Array("= ", vbNullString), _
+                    Array("monkey ", vbNullString), _
+                    Array(" starting items ", vbNullString), _
+                    Array(" operation new ", vbNullString), _
+                    Array(" test divisible by ", vbNullString), _
+                    Array("  if true throw to ", vbNullString), _
+                    Array("  if false throw to ", vbNullString) _
+                ) _
+            ) _
+            .MapIt(mpExecDeb(Monkey))
+            
+            Set s.Monkeys = Hkvp.Deb
+            Dim myMonkeys As IterItems = IterItems.Deb(s.Data)
+            Do
+                Dim mymonkey As Monkey = myMonkeys(0)
+            	s.Monkeys.Add myMonkeys(0).name, myMonkeys(0)
+            Loop While myMonkeys.MoveNext
+          
+            'Set s.BigCalc = New BigNum
+            
+     End Sub
+
+End Class

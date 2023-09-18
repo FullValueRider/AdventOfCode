@@ -1,0 +1,52 @@
+Class mpStrConv
+    Attribute VB_Name = "mpStrConv"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+        
+    Implements IMapper
+
+    
+    Private Const MY_TYPENAME       As String = "mpStrConv"
+    
+    
+    Private Type State
+        Conversion                  As vbStrConv
+    End Type
+
+    Private s                       As State
+
+    Public Function ExecMap(Byref ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+            
+        If VBA.VarType(ipHostItem) <> vbString Then
+                
+            Return ipHostItem
+            
+        Else
+                
+            Return StrConv(ipHostItem, s.Conversion)
+                
+        End If
+            
+    End Function
+
+
+    '@DefaultMember
+    Public Function Deb(Optional ByVal ipStrConv As VbStrConv = vbLowerCase) As mpStrConv
+        With New mpStrConv
+            Return .ConstructInstance(ipStrConv)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipStrConv As VbStrConv) As mpStrConv
+        s.Conversion = ipStrConv
+        Return Me
+    End Function
+
+    Public Property Get TypeName() As String Implements IMapper.TypeName
+        Return MY_TYPENAME
+    End Property
+
+End Class

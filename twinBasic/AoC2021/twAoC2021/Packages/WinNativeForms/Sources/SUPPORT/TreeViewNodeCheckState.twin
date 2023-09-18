@@ -1,0 +1,37 @@
+[ ClassId ("977F140F-8CD7-46B0-85AF-23A861C36836") ]
+[ InterfaceId ("FEE4C1AC-6D58-404F-ABAD-AD255CF1F968") ]
+[ COMCreatable (False) ]
+Private Class TreeViewNodeCheckState
+    
+    Private tv As TreeView
+    Private node As Node
+    Private IsClicked As Boolean
+    Private MouseButtonDown As Long
+    Private ShiftState As Long
+    Private X As Double
+    Private Y As Double
+    
+    Implements WinNativeFormsBASE.IScheduledCallback
+    
+    Public Sub New(tv As TreeView, node As Node, IsClicked As Boolean, MouseButtonDown As Long, ShiftState As Long, X As Double, Y As Double)
+    	Set Me.tv = tv
+        Set Me.node = node
+        Me.IsClicked = IsClicked
+        Me.MouseButtonDown = MouseButtonDown
+        Me.ShiftState = ShiftState
+        Me.X = X
+        Me.Y = Y
+        
+        Dim A As WinNativeFormsBase.RECT
+    End Sub
+    
+    Private Sub IScheduledCallback_Execute() Implements WinNativeFormsBASE.IScheduledCallback.Execute
+        RaiseEventByName(tv, "NodeCheck", Array(node))
+        
+        If IsClicked = True Then
+            RaiseEventByName(tv, "MouseUp", Array(MouseButtonDown, ShiftState, X, Y))
+            RaiseEventByName(tv, "Click", Array())
+        End If
+    End Sub
+
+End Class

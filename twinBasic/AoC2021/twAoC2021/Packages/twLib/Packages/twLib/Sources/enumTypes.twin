@@ -1,0 +1,643 @@
+Class enumTypes
+
+    Attribute VB_Name = "enumTypes"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    '@IgnoreModule UntypedFunctionUsage, FunctionReturnValueDiscarded
+    '@Exposed
+    '@PredeclaredId
+    Option Explicit
+
+
+    Private Const MY_NAME               As String = "enumTypes"
+
+
+    Public Enum VARENUM
+    ' VARENUM is preallocated by COM
+    ' This library provides Ids for all types through the TYpeId enumeration below
+    ' TypeId and VARENUM are the same for all VBA Types that have a VarType
+
+    ' enumeration of the types that can be managed by a variant
+    'only a small subsection of these types are available in VBA.
+    ' https://docp.microsoft.com/en-us/windows/win32/api/wtypes/ne-wtypes-varenum
+    ' better explanations at
+    ' https://docp.microsoft.com/en-us/openspecs/windows_protocols/ms-oaut/3fe7db9f-5803-4dc4-9d14-5425d3f5461f
+        VT_EMPTY = 0                 ' Not specified.
+        VT_NULLV = 1                 ' Null.
+        VT_I2 = 2                    ' A 2-byte integer.
+        VT_I4 = 3                    ' A 4-byte integer.
+        VT_R4 = 4                    ' A 4-byte real.
+        VT_R8 = 5                    ' An 8-byte real.
+        VT_CY = 6                    ' Currency.
+        VT_DATE = 7                  ' A date.
+        VT_BSTR = 8                  ' A string.
+        VT_DISPATCH = 9              ' An IDispatch pointer.
+        VT_ERROR = 10                ' An SCODE value.
+        VT_BOOL = 11                 ' A Boolean value. True is -1 and false is 0.
+        VT_VARIANT = 12              ' A variant pointer.
+        VT_UNKNOWN = 13              ' An IUnknown pointer.
+        VT_DECIMAL = 14              ' A 16-byte fixed-pointer value.
+        VT_I1 = 16                   ' A character.
+        VT_UI1 = 17                  ' An unsigned character.
+        VT_UI2 = 18                  ' An unsigned short.
+        VT_UI4 = 19                  ' An unsigned long.
+        VT_I8 = 20                   ' A 64-bit integer.
+        VT_UI8 = 21                  ' A 64-bit unsigned integer.
+        VT_INT = 22                  ' An integer.
+        VT_UINT = 23                 ' An unsigned integer.
+        VT_VOID = 24                 ' A C-style void.
+        VT_HRESULT = 25              ' An HRESULT value.
+        VT_PTR = 26                  ' A pointer type.
+        VT_SAFEARRAY = 27            ' A safe array. Use VT_ARRAY in VARIANT.
+        VT_CARRAY = 28               ' A C-style array.
+        VT_USERDEFINED = 29          ' A user-defined type.
+        VT_LPSTR = 30                ' A null-terminated string.
+        VT_LPWSTR = 31               ' A wide null-terminated string.
+        VT_RECORD = 36               ' A user-defined type.
+        VT_INT_PTR = 37              ' A signed machine register size width.
+        VT_UINT_PTR = 38             ' An unsigned machine register size width.
+        VT_FILETIME = 64             ' A FILETIME value.
+        VT_BLOB = 65                 ' Length -prefixed bytep.
+        VT_STREAM = 66               ' The name of the stream followp.
+        VT_STORAGE = 67              ' The name of the storage followp.
+        VT_STREAMED_OBJECT = 68      ' The stream contains an object.
+        VT_STORED_OBJECT = 69        ' The storage contains an object.
+        VT_BLOB_OBJECT = 70          ' The blob contains an object.
+        VT_CFValue = 71              ' A clipboard format.
+        VT_CLSID = 72                ' A class ID.
+        VT_VERSIONED_STREAM = 73     ' A stream with a GUID version.
+        VT_BSTR_BLOB = &HFFF         ' Reserved.
+        VT_VECTOR = &H1000           ' A simple counted array.
+        VT_ARRAY = &H2000            ' A SAFEARRAY pointer.
+        VT_BYREF = &H4000            ' A void pointer for local use.
+        VT_RESERVED = &H8000
+        VT_ILLEGAL = &HFFFF
+        VT_ILLEGALMASKED = &HFFF
+        VT_TYPEMASK = &HFFF
+        
+    End Enum
+
+    'TypeEnum replicates VARENUM and allows to to give Ids
+    ' to user types
+
+    Public Enum TypeOrd
+        
+        ' VARENUM is not so much a type indicator as used by VBA VarType
+        ' Instead VARENUM should be viewed as an instruction on how
+        ' to interpret a variant structure
+        idNoType = -1
+        idEmpty = 0                   ' VT_EMPTY = 0                 ' Not specified.
+        idNull                      ' VT_NULLV = 1                 ' Null.
+        idInteger                   ' VT_I2 = 2                    ' A 2-byte integer.
+        idLong                      ' VT_I4 = 3                    ' A 4-byte integer.
+        idSingle                    ' VT_R4 = 4                    ' A 4-byte real.
+        idDouble                    ' VT_R8 = 5                    ' An 8-byte real.
+        idCurrency                  ' VT_CY = 6                    ' Currency.
+        idDate                      ' VT_DATE = 7                  ' A date.
+        idString                    ' VT_BSTR = 8                  ' A string.
+        idIDispatchPtr              ' VT_DISPATCH = 9              ' An IDispatch pointer.
+        idObject = idIDispatchPtr
+        idError                     ' VT_ERROR = 10                ' An SCODE value.
+        idBoolean                   ' VT_BOOL = 11                 ' A Boolean value. True is -1 and false is 0.
+        idVariant                   ' VT_VARIANT = 12              ' A variant pointer.
+        idIUnKnownPtr                ' VT_UNKNOWN = 13              ' An IUnknown pointer.
+        idUnknown = idIUnKnownPtr
+        idDataObject = idIUnknownPtr
+        idDecimal                   ' VT_DECIMAL = 14              ' A 16-byte fixed-pointer value.
+                                    ' No 15?
+        idChar = 16                   ' VT_I1 = 16                   ' A character.
+        idUChar                     ' VT_UI1 = 17                  ' An unsigned character.
+        idByte = idUChar
+        idUInteger                  ' VT_UI2 = 18                  ' An unsigned short.
+        idULong                     ' VT_UI4 = 19                  ' An unsigned long.
+        idLongLong                  ' VT_I8 = 20                   ' A 64-bit integer.
+        idLongPtr = idLongLong
+        idULongLong                 ' VT_UI8 = 21                  ' A 64-bit unsigned integer.
+        idSystemInteger             ' VT_INT = 22                  ' An integer.
+        idSystemUInteger            ' VT_UINT = 23                 ' An unsigned integer.
+        idCStyleVoid                ' VT_VOID = 24                 ' A C-style void.
+        idHResult                   ' VT_HRESULT = 25              ' An HRESULT value.
+        idPointer                   ' VT_PTR = 26                  ' A pointer type.
+        idSafeArray                 ' VT_SAFEARRAY = 27            ' A safe array. Use VT_ARRAY in VARIANT.
+        idCArray                    ' VT_CARRAY = 28               ' A C-style array.
+        idUserDefined               ' VT_USERDEFINED = 29          ' A user-defined type.
+        idCString                   ' VT_LPSTR = 30                ' A null-terminated string.
+        idWideCString               ' VT_LPWSTR = 31               ' A wide null-terminated string.
+        idRecord                    ' VT_RECORD = 36               ' A user-defined type.
+        idUserDefinedType = idRecord
+        idSystemPointer             ' VT_INT_PTR = 37              ' A signed machine register size width.
+        idSystemUPointer            ' VT_UINT_PTR = 38             ' An unsigned machine register size width.
+        idFileTime = 64             ' VT_FILETIME = 64             ' A FILETIME value.
+        idBlob                      ' VT_BLOB = 65                 ' Length -prefixed bytep.
+        idStreamNameFlag            ' VT_STREAM = 66               ' The name of the stream followp.
+        idStoragNameFlag            ' VT_STORAGE = 67              ' The name of the storage followp.
+        idSteamObject               ' VT_STREAMED_OBJECT = 68      ' The stream contains an object.
+        idStoredObject              ' VT_STORED_OBJECT = 69        ' The storage contains an object.
+        idBlobObject                ' VT_BLOB_OBJECT = 70          ' The blob contains an object.
+        idClipBoardFormat           ' VT_CFValue = 71              ' A clipboard format.
+        idClassId                   ' VT_CLSID = 72                ' A class ID.
+        idGuidStream                ' VT_VERSIONED_STREAM = 73     ' A stream with a GUID version.
+        idBStrBlob = &HFFF          ' VT_BSTR_BLOB = &HFFF         ' Reserved.
+        idVector = &H1000           ' VT_VECTOR = &H1000           ' A simple counted array.
+        idSafeArrayPointer = &H2000 ' VT_ARRAY = &H2000            ' A SAFEARRAY pointer.
+        idArray = idSafeArrayPointer
+        idLocalVoidPointer = &H4000 ' VT_BYREF = &H4000            ' A void pointer for local use.
+        idReserved = &H8000         ' VT_RESERVED = &H8000
+        idIllegal = &HFFFF          ' VT_ILLEGAL = &HFFFF
+        idIllegalMasked = &HFFF     ' VT_ILLEGALMASKED = &HFFF
+        idTypeMask = &HFFF          ' VT_TYPEMASK = &HFFF
+        
+        ' User types should go here in strict alphabetical order
+        ' start at &H100
+        
+       
+       'array subtypes
+        idListArray
+        idTableArray
+        idMathArray
+
+        'User defined types
+        idArrayList
+        idcHashD
+        idCollection
+        idDictionary
+        idExtent
+        idHkvp
+        idIterArray
+        idIterConst
+        idIterItems
+        idIterNum
+        idIterStrings
+       
+        idEnumMessage
+        idEnumPreset
+        idEnumTypes
+    
+        idKVPair
+        idLookup
+        idMeta
+        idNothing ' vartype of nothing is 9 (same as Object) but we want to specifically identify nothing
+        idItemObject
+        
+        idQueue
+        idRank
+        idSeq                 ' &H100
+        idScriptingDictionary
+        idSpan
+      '  idSeqIterator
+        idStack
+        ' ' type groups go here in strict alphabetical order
+        ' ' start at &H800
+        
+      ' Group[ed Types
+        idNumber
+        idPrimitive
+        idAdmin
+        
+        idItemByIndex0
+        idItemByIndex1
+        idItemByKey
+        idItemByToArray
+        
+        idWrappedEnum
+        
+        
+        
+        
+    End Enum
+
+
+    Private Type Properties
+
+        OrdToValue                          As Hkvp
+        OrdToOrdName                        As Hkvp
+        OrdToTypeName                       As Hkvp
+        TypeNameToOrd                       As Hkvp
+        
+        
+    End Type
+
+
+    Private p                   As Properties
+
+
+    Private Sub Class_Initialize()
+
+        If Not Me Is enumTypes Then
+        
+            Err.Raise _
+                vbObjectError + "Cannot Perform Requested Operation", _
+                "Types", _
+                "New on class enumTypes is disallowed"
+                
+        End If
+        
+        SetupDictionaries
+        
+    End Sub
+
+
+
+        
+    Public Sub SetupDictionaries()
+
+
+        ' Values associated with the enumeration member may be defined at runtime
+        Set p.OrdToValue = Hkvp.Deb
+        
+        With p.OrdToValue
+            
+            .Add idEmpty, VT_EMPTY                              ' Not specified.
+            .Add idNull, VT_NULLV                               ' Null.
+            .Add idInteger, VT_I2                               ' A 2-byte integer.
+            .Add idLong, VT_I4                                  ' A 4-byte integer.
+            .Add idSingle, VT_R4                                ' A 4-byte real.
+            .Add idDouble, VT_R8                                ' An 8-byte real.
+            .Add idCurrency, VT_CY                              ' Currency.
+            .Add idDate, VT_DATE                                ' A date.
+            .Add idString, VT_BSTR                              ' A string.
+            .Add idIDispatchPtr, VT_DISPATCH                    ' An IDispatch pointer.
+            .Add idObject, VT_DISPATCH
+            .Add idError, VT_ERROR                              ' An SCODE value.
+            .Add idBoolean, VT_BOOL                             ' A Boolean value. True is -1 and false is 0.
+            .Add idVariant, VT_VARIANT                          ' A variant pointer.
+            .Add idIUnKnownPtr, VT_UNKNOWN                      ' An IUnknown pointer.
+            .Add idDecimal, VT_DECIMAL                          ' A 16-byte fixed-pointer value.
+            .Add idChar, VT_I1                                  ' A character.
+            .Add idUChar, VT_UI1                                ' An unsigned character.
+            .Add idUInteger, VT_UI2                             ' An unsigned short.
+            .Add idULong, VT_UI4                                ' An unsigned long.
+            .Add idLongLong, VT_I8                              ' A 64-bit integer.
+            .Add idLongPtr, VT_I8
+            .Add idULongLong, VT_UI8                            ' A 64-bit unsigned integer.
+            .Add idSystemInteger, VT_INT                        ' An integer.
+            .Add idSystemUInteger, VT_UINT                      ' An unsigned integer.
+            .Add idCStyleVoid, VT_VOID                          ' A C-style void.
+            .Add idHResult, VT_HRESULT                          ' An HRESULT value.
+            .Add idPointer, VT_PTR                              ' A pointer type.
+            .Add idSafeArray, VT_SAFEARRAY                      ' A safe array. Use VT_ARRAY in VARIANT.
+            .Add idCArray, VT_CARRAY                            ' A C-style array.
+            .Add idUserDefined, VT_USERDEFINED                  ' A user-defined type.
+            .Add idCString, VT_LPSTR                            ' A null-terminated string.
+            .Add idWideCString, VT_LPWSTR                       ' A wide null-terminated string.
+            .Add idRecord, VT_RECORD                            ' VBA user-defined type.
+            .Add idSystemPointer, VT_INT_PTR                    ' A signed machine register size width.
+            .Add idSystemUPointer, VT_UINT_PTR                  ' An unsigned machine register size width.
+            .Add idFileTime, VT_FILETIME                        ' A FILETIME value.
+            .Add idBlob, VT_BLOB                                ' Length -prefixed bytep.
+            .Add idStreamNameFlag, VT_STREAM                    ' The name of the stream followp.
+            .Add idStoragNameFlag, VT_STORAGE                   ' The name of the storage followp.
+            .Add idSteamObject, VT_STREAMED_OBJECT              ' The stream contains an object.
+            .Add idStoredObject, VT_STORED_OBJECT               ' The storage contains an object.
+            .Add idBlobObject, VT_BLOB_OBJECT                   ' The blob contains an object.
+            .Add idClipBoardFormat, VT_CFValue                  ' A clipboard format.
+            .Add idClassId, VT_CLSID                            ' A class ID.
+            .Add idGuidStream, VT_VERSIONED_STREAM              ' A stream with a GUID version.
+            .Add idBStrBlob, VT_BSTR_BLOB                       ' Reserved.
+            .Add idVector, VT_VECTOR                            ' A simple counted array.
+            .Add idSafeArrayPointer, VT_ARRAY                   ' A SAFEARRAY pointer.
+            .Add idLocalVoidPointer, VT_BYREF                   ' A void pointer for local use.
+            .Add idReserved, VT_RESERVED
+            .Add idIllegal, VT_ILLEGAL
+            .Add idIllegalMasked, VT_ILLEGALMASKED
+            .Add idTypeMask, VT_TYPEMASK
+
+        ' User types should go here in strict alphabetical order
+        ' start at &H100
+        
+            .Add idListArray, NextOrd(&H100)
+            .Add idTableArray, NextOrd
+            .Add idMathArray, NextOrd
+            
+            .Add idArrayList, NextOrd
+            .Add idCollection, NextOrd
+            .Add idDictionary, NextOrd
+            .Add idExtent, NextOrd
+            .Add idcHashD, NextOrd
+            .Add idHkvp, NextOrd
+            
+            .Add idIterArray, NextOrd
+            .Add idIterConst, NextOrd
+            .Add idIterItems, NextOrd
+            .Add idIterNum, NextOrd
+            .Add idIterStrings, NextOrd
+        
+            .Add idKVPair, NextOrd
+            .Add idNothing, NextOrd
+            .Add idItemObject, NextOrd
+            .Add idMeta, NextOrd
+            .Add idQueue, NextOrd
+            .Add idRank, NextOrd
+            .Add idSeq, NextOrd
+            .Add idSpan, NextOrd
+            .Add idStack, NextOrd
+            .Add idSeq, NextOrd
+            .Add idScriptingDictionary, NextOrd
+        
+        ' type groups go here in strict alphaabetical order
+        ' start at &H800
+           
+            
+        '    .Add idItemByForEachObject, myIterator.Nxt
+            .Add idItemByIndex0, NextOrd
+            .Add idItemByIndex1, NextOrd
+            .Add idItemByKey, NextOrd
+            .Add idItemByToArray, NextOrd
+            .Add idWrappedEnum, NextOrd
+            
+            .Add idEnumMessage, NextOrd(&H800)
+            .Add idEnumPreset, NextOrd
+            .Add idEnumTypes, NextOrd
+    '
+        End With
+            
+        Set p.OrdToOrdName = Hkvp.Deb
+        With p.OrdToOrdName
+            
+            .Add idEmpty, "idempty"                              ' Not specified.
+            .Add idNull, "idnull"                              ' Null.
+            .Add idInteger, "idinteger"                              ' A 2-byte integer.
+            .Add idLong, "idlong"                                  ' A 4-byte integer.
+            .Add idSingle, "idsingle"                              ' A 4-byte real.
+            .Add idDouble, "iddouble"                              ' An 8-byte real.
+            .Add idCurrency, "idcurrency"                             ' Currency.
+            .Add idDate, "iddate"                                ' A date.
+            .Add idString, "idstring"                              ' A string.
+            .Add idIDispatchPtr, "ididespatchptr"                    ' An IDispatch pointer.
+            .Add idError, "iderror"                             ' An SCODE value.
+            .Add idBoolean, "idboolean"                            ' A Boolean value. True is -1 and false is 0.
+            .Add idVariant, "idvariant"                          ' A variant pointer.
+            .Add idIUnKnownPtr, "idiuknownptr"                       ' An IUnknown pointer.
+            .Add idDecimal, "iddecimal"                         ' A 16-byte fixed-pointer value.
+            .Add idChar, "idchar"                                ' A character.
+            .Add idUChar, "iduchar"                                ' An unsigned character.
+            .Add idUInteger, "iduinteger"                          ' An unsigned short.
+            .Add idULong, "idulong"                              ' An unsigned long.
+            .Add idLongLong, "idlonglong"                             ' A 64-bit integer.
+            .Add idLongPtr, "idlongptr"
+            .Add idULongLong, "idulonglong"                          ' A 64-bit unsigned integer.
+            .Add idSystemInteger, "idsysteminteger"                      ' An integer.
+            .Add idSystemUInteger, "idsystemuinteger"                      ' An unsigned integer.
+            .Add idCStyleVoid, "idcstylevoid"                          ' A C-style void.
+            .Add idHResult, "idhresult"                          ' An HRESULT value.
+            .Add idPointer, "idpointer"                             ' A pointer type.
+            .Add idSafeArray, "idsafearray"                     ' A safe array. Use VT_ARRAY in VARIANT.
+            .Add idCArray, "idcarray"                          ' A C-style array.
+            .Add idUserDefined, "iduserdefined"                  ' A user-defined type.
+            .Add idCString, "idcstring"                           ' A null-terminated string.
+            .Add idWideCString, "idwidecstring"                       ' A wide null-terminated string.
+            .Add idRecord, "idvbaserdefinedtype"                           ' A user-defined type.
+            .Add idSystemPointer, "idsystempointer"                    ' A signed machine register size width.
+            .Add idSystemUPointer, "idsystemupointer"                  ' An unsigned machine register size width.
+            .Add idFileTime, "dfiletime "                        ' A FILETIME value.
+            .Add idBlob, "idblob"                               ' Length -prefixed bytep.
+            .Add idStreamNameFlag, "idstreamnameflag"                    ' The name of the stream followp.
+            .Add idStoragNameFlag, "idstoragnameflag"                   ' The name of the storage followp.
+            .Add idSteamObject, "idsteamobject"              ' The stream contains an object.
+            .Add idStoredObject, "idstoredobject"               ' The storage contains an object.
+            .Add idBlobObject, "idblobobject"                   ' The blob contains an object.
+            .Add idClipBoardFormat, "idclipboardformat"                 ' A clipboard format.
+            .Add idClassId, "idclassid"                           ' A class ID.
+            .Add idGuidStream, "idguidstream"              ' A stream with a GUID version.
+            .Add idBStrBlob, "idbstrblob"                       ' Reserved.
+            .Add idVector, "idvector"                            ' A simple counted array.
+            .Add idSafeArrayPointer, "idsafeAaraypointer"                   ' A SAFEARRAY pointer.
+            .Add idLocalVoidPointer, "idlocalvoidpointer"                   ' A void pointer for local use.
+            .Add idReserved, "idreserved"
+            .Add idIllegal, "idillegal"
+            .Add idIllegalMasked, "idillegalmasked"
+            .Add idTypeMask, "idtypemask"
+
+        ' User types should go here in strict alphabetical order
+        ' start at &H100
+            
+           
+            .Add idListArray, "islistarray"
+            .Add idTableArray, "idtablearray"
+            .Add idMathArray, "idmatharray"
+            
+            .Add idArrayList, "idarraylist"
+            .Add idcHashD, "idchashd"
+            .Add idCollection, "idcollection"
+            .Add idDictionary, "iddictionary"
+            .Add idExtent, "idextent"
+            .Add idHkvp, "idhkvp"
+            
+            .Add idIterArray, "iditerarray"
+            .Add idIterConst, "iditerconst"
+            .Add idIterItems, "iditeritems"
+            .Add idIterNum, "iditernum"
+            .Add idIterStrings, "iditerstrings"
+            .Add idKVPair, "idkvPair"
+            .Add idMeta, "idmeta"
+            .Add idNothing, "idnothing"
+
+            .Add idQueue, "idqueue"
+            .Add idSeq, "idseq"
+            .Add idSpan, "idspan"
+            .Add idStack, "idstack"
+            .Add idScriptingDictionary, "idscriptingdictionary"
+            
+        ' ' type groups go here in strict alphaabetical order
+        '     .Add idItemByForEachObject, "idItemByForEachObject"
+            .Add idItemByIndex0, "idItemIndex0"
+            .Add idItemByIndex1, "idItemIndex1"
+            .Add idItemByKey, "idItemByKey"
+            .Add idItemByToArray, "idItemByToArray"
+            .Add idWrappedEnum, "idWrappedEnum"
+            
+            .Add idEnumMessage, "idenummessage"
+            .Add idEnumPreset, "idenumpreset"
+            .Add idEnumTypes, "idenumtypes"
+            
+        End With
+        
+        Set p.OrdToTypeName = Hkvp.Deb
+        With p.OrdToTypeName
+            
+            .Add idEmpty, VBA.LCase("Empty")                                    ' Not specified.
+            .Add idNull, VBA.LCase("Null")                                      ' Null.
+            .Add idInteger, VBA.LCase("Integer")                                ' A 2-byte integer.
+            .Add idLong, VBA.LCase("Long")                                      ' A 4-byte integer.
+            .Add idSingle, VBA.LCase("Single")                                  ' A 4-byte real.
+            .Add idDouble, VBA.LCase("Double")                                  ' An 8-byte real.
+            .Add idCurrency, VBA.LCase("Currency")                              ' Currency.
+            .Add idDate, VBA.LCase("Date")                                      ' A date.
+            .Add idString, VBA.LCase("String")                                  ' A string.
+            .Add idIDispatchPtr, VBA.LCase("IDespatchPtr")                      ' An IDispatch pointer.
+            .Add idError, VBA.LCase("Error")                                   ' An SCODE value.
+            .Add idBoolean, VBA.LCase("Boolean")                                ' A Boolean value. True is -1 and false is 0.
+            .Add idVariant, VBA.LCase("Variant")                               ' A variant pointer.
+            .Add idIUnKnownPtr, VBA.LCase("IUknownPtr")                         ' An IUnknown pointer.
+            .Add idDecimal, VBA.LCase("dDecimal")                               ' A 16-byte fixed-pointer value.
+            .Add idChar, VBA.LCase("Char")                                      ' A character.
+            .Add idUChar, VBA.LCase("UChar")                                   ' An unsigned character.
+            .Add idUInteger, VBA.LCase("UInteger")                              ' An unsigned short.
+            .Add idULong, VBA.LCase("ULong")                                   ' An unsigned long.
+            .Add idLongLong, VBA.LCase("LongLong")                              ' A 64-bit integer.
+            .Add idLongPtr, VBA.LCase("LongPtr")
+            .Add idULongLong, VBA.LCase("ULongLong")                            ' A 64-bit unsigned integer.
+            .Add idSystemInteger, VBA.LCase("SystemInteger")                    ' An integer.
+            .Add idSystemUInteger, VBA.LCase("SystemUInteger")                  ' An unsigned integer.
+            .Add idCStyleVoid, VBA.LCase("CStyleVoid")                          ' A C-style void.
+            .Add idHResult, VBA.LCase("HResult")                                ' An HRESULT value.
+            .Add idPointer, VBA.LCase("Pointer")                                ' A pointer type.
+            .Add idSafeArray, VBA.LCase("SafeArray")                            ' A safe array. Use VT_ARRAY in VARIANT.
+            .Add idCArray, VBA.LCase("CArray")                                  ' A C-style array.
+            .Add idUserDefined, VBA.LCase("UserDefined")                        ' A user-defined type.
+            .Add idCString, VBA.LCase("CString")                                ' A null-terminated string.
+            .Add idWideCString, VBA.LCase("WideCString")                        ' A wide null-terminated string.
+            .Add idRecord, VBA.LCase("VBAUserDefinedType")                      ' A user-defined type.
+            .Add idSystemPointer, VBA.LCase("SystemPointer")                    ' A signed machine register size width.
+            .Add idSystemUPointer, VBA.LCase("SystemUPointer")                  ' An unsigned machine register size width.
+            .Add idFileTime, VBA.LCase("FileTime ")                            ' A FILETIME value.
+            .Add idBlob, VBA.LCase("Blob")                                      ' Length -prefixed bytep.
+            .Add idStreamNameFlag, VBA.LCase("StreamNameFlag")                  ' The name of the stream followp.
+            .Add idStoragNameFlag, VBA.LCase("StoragNameFlag")                  ' The name of the storage followp.
+            .Add idSteamObject, VBA.LCase("SteamObject")                        ' The stream contains an object.
+            .Add idStoredObject, VBA.LCase("StoredObject")                      ' The storage contains an object.
+            .Add idBlobObject, VBA.LCase("BlobObject")                          ' The blob contains an object.
+            .Add idClipBoardFormat, VBA.LCase("ClipBoardFormat")                ' A clipboard format.
+            .Add idClassId, VBA.LCase("ClassId")                                ' A class ID.
+            .Add idGuidStream, VBA.LCase("GuidStream")                          ' A stream with a GUID version.
+            .Add idBStrBlob, VBA.LCase("BStrBlob")                              ' Reserved.
+            .Add idVector, VBA.LCase("Vector")                                  ' A simple counted array.
+            .Add idSafeArrayPointer, VBA.LCase("SafeArrayPointer")              ' A SAFEARRAY pointer.
+            .Add idLocalVoidPointer, VBA.LCase("LocalVoidPointer")              ' A void pointer for local use.
+            .Add idReserved, VBA.LCase("Reserved")
+            .Add idIllegal, VBA.LCase("Illegal")
+            .Add idIllegalMasked, VBA.LCase("IllegalMasked")
+            .Add idTypeMask, VBA.LCase("TypeMask")
+
+
+            .Add idListArray, "listarray"
+            .Add idTableArray, "tablearray"
+            .Add idMathArray, "matharray"
+            
+            .Add idArrayList, "arraylist"
+            .Add idcHashD, "chashd"
+            .Add idCollection, "collection"
+            .Add idDictionary, "dictionary"
+            .Add idExtent, "extent"
+            .Add idHkvp, "hkvp"
+            .Add idIterArray, "iterarray"
+            .Add idIterConst, "iterconst"
+            .Add idIterItems, "iteritems"
+            .Add idIterNum, "iternum"
+            .Add idIterStrings, "iditerstrings"
+            .Add idKVPair, "kvPair"
+            .Add idMeta, "meta"
+            .Add idNothing, "nothing"
+            .Add idItemObject, "itemobject"
+
+            .Add idQueue, "queue"
+     '       .Add idScriptingDictionary, "scriptingdicitoanry"
+            .Add idSeq, "seq"
+            .Add idStack, "stack"
+            .Add idScriptingDictionary, "scripting.dictionary"
+        
+        ' ' type groups go here in strict alphaabetical order
+            .Add idItemByIndex0, "itembyindex0"
+            .Add idItemByIndex0, "itembyindex1"
+            .Add idItemByKey, "itembykey"
+            .Add idItemByToArray, "itembytoarray"
+            .Add idWrappedEnum, "wrappedenum"
+            
+            .Add idEnumMessage, "enummessage"
+            .Add idEnumPreset, "enumpreset"
+            .Add idEnumTypes, "enumtypes"
+            
+        End With
+        
+        ' also compile the reverse lookup
+        Set p.TypeNameToOrd = Hkvp.Deb
+        Dim myItem As Variant
+        For Each myItem In p.OrdToTypeName.Pairs
+            p.TypeNameToOrd.Add myItem(1), myItem(0)
+        Next
+        
+            
+    End Sub
+
+
+    Private Sub ValidateOrdinal(ByVal ipTypesOrd As TypeOrd)
+    
+        If p.OrdToValue.LacksItem(ipTypesOrd) Then
+            
+            Err.Raise _
+                17 + vbObjectError, _
+                "No such member", _
+                "The enumeration member does not exist"
+                
+                
+            Exit Sub
+        End If
+    End Sub
+
+
+    Public Function OrdToTypeName() As Hkvp
+        Return p.OrdToTypeName
+    End Function
+
+    Public Function OrdToValue() As Hkvp
+        Return p.OrdToValue
+    End Function
+
+    Public Function OrdToOrdName() As Hkvp
+        Return p.OrdToValue
+    End Function
+
+    '@Description("Returns the Typename to Ord dictionary")
+    Public Function TypeNameToOrd() As Hkvp
+        Return p.TypeNameToOrd
+    End Function
+
+   
+    '@Description("Returns the value of a TypeOrd member. for VBA types, the value returned is the same value as returned by vartype")
+    Public Property Get Value(ByVal ipTypeOrd As TypeOrd) As VbVarType
+    Attribute Value.VB_UserMemId = 0
+        
+        ValidateOrdinal ipTypeOrd
+        Return p.OrdToValue.Item(ipTypeOrd)
+
+    End Property
+
+    '@Description("True is tthe value is equvalent to a TypeOrd member")
+    Public Property Get HoldsOrd(ByVal ipTypeOrd As TypeOrd) As Boolean
+        HoldsOrd = p.OrdToValue.HoldsKey(ipTypeOrd)
+    End Property
+
+    '@Description("True is the value is not equivalent to a TypeOrd member")
+    Public Property Get LacksOrd(ByVal ipTypeOrd As TypeOrd) As Boolean
+        LacksOrd = p.OrdToValue.LacksKey(ipTypeOrd)
+    End Property
+
+
+    Public Property Get Name() As String
+        Name = MY_NAME
+    End Property
+
+
+    Public Property Get Count() As Long
+        Count = p.OrdToValue.Count
+    End Property
+
+    Private Function NextOrd(Optional ByVal ipBase As Variant) As Long
+
+        Static myBase As Long
+        If Not VBA.IsMissing(ipBase) Then
+
+            myBase = ipBase
+            Return myBase
+
+
+        End If
+
+        myBase += 1
+        Return myBase
+
+    End Function
+
+End Class

@@ -1,0 +1,50 @@
+Class mpLookup
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+    Implements IMapper
+
+    
+    Private Const MY_TYPENAME               As String = "mpLookup"
+    
+    
+    Private Type State
+            
+        Lookup                              As Variant
+            
+    End Type
+
+    Private s                           As State
+
+    '@Description("return the item in the lookup dictionary")
+    Public Function ExecMapper(Byref ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+        Return s.Lookup.item(ipHostItem)
+    End Function
+    
+    '@DefaultMember
+    Public Function Deb(ByVal ipLookup As Variant) As mpLookup
+        
+        If TypeInfo.IsNotItemByKey(ipLookup) Then
+            Err.Raise 17 + vbObjectError, "mpLookup", Fmt.Text("Expecting an ItemByKey object. Found '{0}'  ", VBA.TypeName(ipLookup))
+        End If
+        
+        With New mpLookup
+            Return .ConstructInstance(ipLookup)
+        End With
+        
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipLookup As Variant) As mpLookup
+        Set s.Lookup = ipLookup
+        Return Me
+    End Function
+
+    Public Property Get TypeName() As String Implements IMapper.TypeName
+        Return MY_TYPENAME
+    End Property
+
+End Class

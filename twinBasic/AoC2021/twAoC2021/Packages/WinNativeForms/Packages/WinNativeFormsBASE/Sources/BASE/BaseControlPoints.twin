@@ -1,0 +1,83 @@
+[ ClassId ("EDC4755E-A852-4CD8-9FEA-462C66582821") ]
+[ InterfaceId ("E2C6BAC0-598E-4C7C-B975-9D31F06AF707") ]
+[ COMCreatable (False) ]
+Private Class BaseControlPoints
+    
+    Implements BaseControl Via BaseControl
+
+'    [ DispId (-859) ]
+    [ Description ("") ]
+        Public X1 As Double
+        Attribute X1.VB_VarUserMemId = -859
+'    [ DispId (-860) ]
+    [ Description ("") ]
+        Public Y1 As Double
+        Attribute Y1.VB_VarUserMemId = -860
+'    [ DispId (-861) ]
+    [ Description ("") ]
+        Public X2 As Double
+        Attribute X2.VB_VarUserMemId = -861
+'    [ DispId (-862) ]
+    [ Description ("") ]
+        Public Y2 As Double
+        Attribute Y2.VB_VarUserMemId = -862
+
+        Private X1Cached As Double
+        Private Y1Cached As Double
+        Private X2Cached As Double
+        Private Y2Cached As Double
+     
+    Sub New(ByVal ControlType As ControlTypeConstants)
+        Set Me.BaseControl = New BaseControl(ControlType)
+    End Sub
+
+    Private Sub OnPropertyChanged_X1() _
+            Handles X1.OnPropertyLet
+
+        Me.ControlContext.EnsureFormIsLoaded()
+        If X1 <> X1Cached Then
+            If Me.ControlContext IsNot Nothing Then Me.ControlContext.ChangedPosition()
+            X1Cached = X1
+        End If
+    End Sub
+
+    Private Sub OnPropertyChanged_Y1() _
+            Handles Y1.OnPropertyLet
+
+        Me.ControlContext.EnsureFormIsLoaded()
+        If Y1 <> Y1Cached Then
+            If Me.ControlContext IsNot Nothing Then Me.ControlContext.ChangedPosition()
+            Y1Cached = Y1
+        End If
+    End Sub
+
+    Private Sub OnPropertyChanged_X2() _
+            Handles X2.OnPropertyLet
+
+        Me.ControlContext.EnsureFormIsLoaded()
+        If X2 <> X2Cached Then
+            If Me.ControlContext IsNot Nothing Then Me.ControlContext.ChangedPosition()
+            X2Cached = X2
+        End If
+    End Sub
+
+    Private Sub OnPropertyChanged_Y2() _
+            Handles Y2.OnPropertyLet
+
+        Me.ControlContext.EnsureFormIsLoaded()
+        If Y2 <> Y2Cached Then
+            If Me.ControlContext IsNot Nothing Then Me.ControlContext.ChangedPosition()
+            Y2Cached = Y2
+        End If
+    End Sub
+
+    Private Sub OnTouchedFormProperties() _
+            Handles X1.OnPropertyGet, _
+                    Y1.OnPropertyGet, _
+                    X2.OnPropertyGet, _
+                    Y2.OnPropertyGet
+                    
+        Me.ControlContext.EnsureFormIsLoaded()
+    End Sub
+
+End Class

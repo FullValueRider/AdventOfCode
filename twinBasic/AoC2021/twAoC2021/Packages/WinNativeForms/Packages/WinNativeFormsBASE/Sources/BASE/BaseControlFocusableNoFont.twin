@@ -1,0 +1,142 @@
+[ ClassId ("628679CC-8C97-4AA2-9C60-F112F1E82FFD") ]
+[ InterfaceId ("BC11FDD9-D213-454D-AF5A-2CDA348D18CB") ]
+[ COMCreatable (False) ]
+Private Class BaseControlFocusableNoFont
+
+    Implements BaseControlRect Via BaseControlRect
+
+    [ Serialize (False) ]
+        Private RootWindowElementBase As WindowsControls.WindowElement
+    [ Description ("Determines how the sides of this control are anchored to its container") ]
+        Public ReadOnly Anchors As Anchors = New Anchors
+    [ Description ("Adjusts how the control is docked inside of its container") ]
+        Public ReadOnly Dock As VBRUN.DockModeConstants = VBRUN.DockModeConstants.vbDockNone
+    [ Description ("Adjusts the TAB key order of this control at runtime") ]
+        Public TabIndex As Long
+    [ Description ("") ]
+        Public MousePointer As VBRUN.MousePointerConstants = VBRUN.MousePointerConstants.vbDefault
+    [ Serialize (True, "MouseIcon") ]
+    [ CustomDesigner ("designer_IconBytes") ]
+        Private ReadOnly MouseIconINIT() As Byte
+    [ Serialize (False) ]
+        Public MouseIcon As StdPicture
+        
+    [ Description ("Adjusts the visibility of this control at runtime") ]
+    [ Serialize (True, "Visible") ]
+        Private VisibleINIT As Boolean = True
+    [ Description ("") ]
+    [ Serialize (True, "Enabled") ]
+        Private EnabledINIT As Boolean = True
+    [ Description ("Indicates if the user can use the TAB key to focus on this control at runtime") ]
+    [ Serialize (True, "TabStop") ]
+        Friend TabStopINIT As Boolean = True
+        
+    Sub New(ByVal ControlType As ControlTypeConstants)
+        Set Me.BaseControlRect = New BaseControlRect(ControlType)
+    End Sub
+
+    Friend Function CreateRootWindowElement(ByVal _ControlContext As stdole.IUnknown, _
+                                        ByVal ClassName As String, ByVal Caption As String, _
+                                        ByVal WindowStyles As Long, ByVal ExtendedStyles As Long, _
+                                        Optional ByVal SubClass As Boolean = False) As WindowElement
+        Set Me.ControlContext = _ControlContext ' FIXME passed as IUnknown to prevent COM exposure of type
+        WindowStyles += If(Me.EnabledINIT, 0, WS_DISABLED)
+        WindowStyles += If(Me.VisibleINIT, WS_VISIBLE, 0)
+        WindowStyles += If(Me.TabStopINIT, WS_TABSTOP, 0)
+        Set Me.RootWindowElementBase = ControlContext.CreateWindowElement(ClassName, Caption, WindowStyles, ExtendedStyles, SubClass)
+
+        If IsArrayInitialized(Me.MouseIconINIT) AndAlso (UBound(Me.MouseIconINIT) > -1) Then
+            ' LoadPicture can now be passed a byte-array containing an in-memory stream
+            On Error Resume Next
+            Set Me.MouseIcon = Global.LoadPicture(Me.MouseIconINIT)
+        End If
+        
+        Return Me.RootWindowElementBase
+    End Function
+         
+    [ Serialize (False) ]
+    [ Description ("") ]
+    [ DispId (-854) ]
+    Property Get TabStop() As Boolean
+        Me.ControlContext.EnsureFormIsLoaded()
+        Return WindowsAPI.USER32_GetStyleFlag(Me.RootWindowElementBase, WS_TABSTOP)
+    End Property
+    
+    [ Serialize (False) ]
+    [ Description ("") ]
+    [ DispId (-854) ]
+    Property Let TabStop(Value As Boolean)
+        Me.ControlContext.EnsureFormIsLoaded()
+        WindowsAPI.USER32_SetStyleFlag(Me.RootWindowElementBase, WS_TABSTOP, Value)
+    End Property
+    
+    [ Serialize (False) ]
+    [ Description ("") ]
+    Property Get Enabled() As Boolean
+        Me.ControlContext.EnsureFormIsLoaded()
+        Return Not WindowsAPI.USER32_GetStyleFlag(Me.RootWindowElementBase, WS_DISABLED)
+    End Property
+    
+    [ Serialize (False) ]
+    [ Description ("") ]
+    Property Let Enabled(Value As Boolean)
+        Me.ControlContext.EnsureFormIsLoaded()
+        WindowsAPI.USER32_EnableWindow(Me.RootWindowElementBase, Value)
+    End Property
+
+    [ Serialize (False) ]
+    [ Description ("Adjusts the visibility of this control at runtime") ]
+    Property Get Visible() As Boolean
+        Me.ControlContext.EnsureFormIsLoaded()
+        Return WindowsAPI.USER32_GetStyleFlag(Me.RootWindowElementBase, WS_VISIBLE)
+    End Property
+    
+    [ Serialize (False) ]
+    [ Description ("Adjusts the visibility of this control at runtime") ]
+    Property Let Visible(Value As Boolean)
+        Me.ControlContext.EnsureFormIsLoaded()
+        WindowsAPI.USER32_ShowWindow(Me.RootWindowElementBase, CLng(If(Value, SW_NORMAL, SW_HIDE)))
+        
+        If Dock <> DockModeConstants.vbDockNone Then
+            ' FIXME bodge, this forces layout to be recalculated
+            WindowsAPI.USER32_SendMessageHandle(WindowsAPI.USER32_GetParent(Me.RootWindowElementBase), WM_SIZE, -1, 0)
+        End If
+    End Property
+    
+    Public Sub SetFocus()
+        Me.ControlContext.EnsureFormIsLoaded()
+        WindowsAPI.USER32_SetFocus(Me.RootWindowElementBase)
+    End Sub
+    
+    ' Public Sub Refresh()
+    '     Me.ControlContext.EnsureFormIsLoaded()
+    '     WindowsAPI.USER32_RedrawWindow(Me.RootWindowElementBase, 0, 0, RDW_ERASE Or RDW_INVALIDATE)
+    ' End Sub
+
+    Public Sub ScheduleCallback(ByVal Callback As IScheduledCallback)
+        Me.ControlContext.ScheduleCallback(ObjPtr(Callback))
+    End Sub
+
+    Public Function CreateDeferredDispatchWrapper(ByRef Object As Object) As Object
+    	Return Me.ControlContext.CreateDeferredDispatchWrapper(Object)
+    End Function
+
+    [ DispId (-856) ]
+    Public Property Get Container() As Object
+        On Error Resume Next
+        Me.ControlContext.EnsureFormIsLoaded()
+    	Return Me.RootWindowElementBase.Container
+    End Property
+
+    Private Sub OnTouchedFormProperties() _
+            Handles Anchors.OnPropertyGet, _
+                    Dock.OnPropertyGet, _
+                    TabIndex.OnPropertyGet, _
+                    TabIndex.OnPropertyLet, _
+                    MousePointer.OnPropertyGet, _
+                    MousePointer.OnPropertyLet
+
+        Me.ControlContext.EnsureFormIsLoaded()
+    End Sub
+
+End Class

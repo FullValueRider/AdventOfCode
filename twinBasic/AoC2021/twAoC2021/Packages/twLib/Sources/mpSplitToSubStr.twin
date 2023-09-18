@@ -1,0 +1,87 @@
+Class mpSplitToSubStr
+    Attribute VB_Name = "mpSplitToSubStr"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+
+    Implements IMapper
+    
+    Public Enum SplitType
+        ToArray = 0
+        ToSeq = 1
+    End Enum
+    
+    
+    Private Const MY_TYPENAME               As String = "mpSplitToSubStr"
+    Private Const DEFAULT_SPLIT_ALL         As Long = -1
+    Private Const DEFAULT_SEPARATOR         As String = char.twspace
+    Private Const DEFAULT_COMPARE_BINARY    As Long = vbBinaryCompare  ' not allowed to decalre a constant as an enum type
+    Private Const DEFAULT_SPLIT_TOSEQ       As Long = splittype.ToSeq
+    Private Type State
+        
+        Separator                           As String
+        Count                               As Long
+        Compare                             As vbcomparemethod
+        Conversion                          As SplitType
+        
+    End Type
+
+    Private s                               As State
+
+    
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant Implements IMApper.ExecMapper
+        If TypeInfo.IsNotString(ipHostItem) Then
+            Return ipHostItem
+        Else
+            If s.Conversion = ToSeq Then
+                Return Seq.Deb(VBA.Split(ipHostItem, s.Separator, s.Count, s.Compare))
+            Else
+                Return VBA.Split(ipHostItem, s.Separator, s.Count, s.Compare)
+            End If
+        End If
+    End Function
+    
+    Private Sub Class_Initialize()
+        ' Allows mpSPlit to be used without calling .Deb
+        s.Conversion = DEFAULT_SPLIT_TOSEQ
+        s.Separator = DEFAULT_SEPARATOR
+        s.Count = DEFAULT_SPLIT_ALL
+        s.Compare = DEFAULT_COMPARE_BINARY
+    End Sub
+
+    '@DefaultMember
+    Public Function Deb _
+    ( _
+        Optional ByVal ipSplitType As SplitType = ToSeq, _
+        Optional ByVal ipSeparator As String = DEFAULT_SEPARATOR, _
+        Optional ByVal ipCount As Long = DEFAULT_SPLIT_ALL, _
+        Optional ByVal ipCompare As VbCompareMethod = DEFAULT_COMPARE_BINARY _
+    ) As mpSplitToSubStr
+        With New mpSplitToSubStr
+           Return .ConstructInstance(ipSplitType, ipSeparator, ipCount, ipCompare)
+        End With
+    End Function
+
+    
+    Friend Function ConstructInstance _
+    ( _
+        ByVal ipSplitType As SplitType, _
+        ByVal ipSeparator As String, _
+        ByVal ipCount As Long, _
+        ByVal ipCompare As VbCompareMethod _
+    ) As mpSplitToSubStr
+        s.Conversion = ipSplitType
+        s.Separator = ipSeparator
+        s.Count = ipCount
+        s.Compare = ipCompare
+        Return Me
+    End Function
+    
+    Public Property Get TypeName() As String Implements Imapper.TypeName
+        Return MY_TYPENAME
+    End Property
+    
+End Class

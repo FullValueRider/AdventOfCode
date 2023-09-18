@@ -1,0 +1,47 @@
+Interface IMeta
+
+    Property Get Cargo() As Variant
+    
+    Property Let Cargo(ByRef ipCargo As Variant)
+
+    Property Set Cargo(ByRef ipCargo As Variant)
+    
+    Function HoldsCargo() As Boolean
+ 
+    Property Get LacksCargo() As Boolean
+
+    Property Get IsArray() As Boolean
+ 
+    Property Get IsNotArray() As Boolean
+
+	Function FirstRank() As Rank
+   
+    Function LastRank() As Rank
+  
+    Property Get FirstIndex(ByRef ipIndex As Long) As Long
+     
+    Property Get LastIndex(ByRef ipIndex As Long) As Long
+  
+    Function Size(Optional ByVal ipIndex As Long = 0) As Long
+    
+    Function RanksCount() As Long
+
+    Property Get Ranks() As Collection
+   
+    Function HasRank(ByVal ipRank As Long) As Boolean
+  
+    Function LacksRank(ByVal ipRank As Long) As Boolean
+   
+    Function IsQueryable() As Boolean
+
+    Function IsNotQueryable() As Boolean
+
+    Property Get TypeName() As String
+ 
+    Function HasOneItem() As Long
+   
+    Function HasItems() As Long
+   
+    Function HasAnyItems() As Long
+
+End Interface

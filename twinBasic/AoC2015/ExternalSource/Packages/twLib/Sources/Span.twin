@@ -1,0 +1,61 @@
+Class Span
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "A Class that provides from to step data to iterxxxx and other classes"
+
+    Private Const MY_TYPENAME                   As String = "Span"
+
+    Private Type Properties
+
+        From                                    As Variant
+        To                                      As Variant
+        Step                                    As Variant
+        Rank                                    As Long
+
+    End Type
+
+    Private p                                   As Properties
+
+
+    [ DefaultMember ]
+    Public Function Deb(ByRef ipFrom As Variant, ByRef ipTo As Variant, Optional ByRef ipStep As Variant = 1, Optional ByVal ipRank As Long = 1) As Span
+        With New Span
+            Return .ConstructInstance(ipFrom, ipTo, ipStep, ipRank)
+        End With
+    End Function
+
+    Public Function ConstructInstance(ByRef ipFrom As Variant, ByRef ipTo As Variant, ByRef ipStep As Variant, ByVal ipRank As Long) As Span
+
+        p.Rank = ipRank
+        p.From = ipFrom
+        p.To = ipTo
+        p.Step = IIf(ipStep = 0, 1, ipStep)
+        p.Step = VBA.Abs(p.Step) * IIf(ipFrom <= ipTo, 1, -1)
+        Return Me
+
+    End Function
+
+    Public Property Get Rank() As Long
+        Return p.Rank
+    End Property
+
+    Public Property Get From() As Long
+        Return p.From
+    End Property
+
+    Public Property Get To() As Long
+        Return p.To
+    End Property
+
+    Public Property Get Step() As Double
+        Return p.Step
+    End Property
+
+    Public Property Get TypeName() As String
+        Return MY_TYPENAME
+    End Property
+    
+End Class

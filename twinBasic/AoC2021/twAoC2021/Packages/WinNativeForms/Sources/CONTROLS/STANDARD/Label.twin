@@ -1,0 +1,627 @@
+[ Description ("A Win32 native Label") ]
+[ WindowsControl ("/miscellaneous/LabelNew.png") ]
+[ ClassId ("33AD4ED8-6699-11CF-B70C-00AA0060D393") ]
+[ InterfaceId ("A44614D4-CFFF-4E35-AFE1-CC2AF376B234") ]    ' FIXME implement {33AD4ED9-6699-11CF-B70C-00AA0060D393} for backcompat
+[ COMCreatable (False) ]
+Class Label
+
+    ' FIXME labels don't actually have a HWND assigned to them, need to be drawn as part of the container WM_PAINT instead
+
+
+    #Region "INHERITANCE"
+
+        [ WithDispatchForwarding ] Implements Control
+        Implements WindowsControls.IWindowsControl
+        Implements WinNativeFormsBase.BaseControlWindowlessNoFocus Via _BaseControl = New WinNativeFormsBase.BaseControlWindowlessNoFocus(ControlTypeConstants.vbLabel)
+    
+    #End Region
+        
+    #Region "STATE"
+    
+        [ Description ("") ]
+            Public BorderStyle As VBRUN.ControlBorderStyleConstants = ControlBorderStyleConstants.vbNoBorder    ' FIXME
+        [ CustomDesigner ("designer_SpectrumWindows") ]
+        [ Description ("") ]
+            Public BackColor As OLE_COLOR = VBRUN.SystemColorConstants.vb3DFace   ' FIXME this is linked to Appearance
+        [ CustomDesigner ("designer_SpectrumWindows") ]
+        [ Description ("") ]
+            Public ForeColor As OLE_COLOR = VBRUN.SystemColorConstants.vbButtonText   ' FIXME this is linked to Appearance
+        [ Description ("") ]
+            Public UseMnemonic As Boolean = True
+        [ Description ("") ]
+        [ Serialize (True, "Caption") ]
+            Public CaptionINIT As String
+        [ Description ("") ]
+            Public Alignment As VBRUN.AlignmentConstants = VBRUN.AlignmentConstants.vbLeftJustify
+
+        [ Serialize (False) ]
+            Public Font As StdFont
+            
+            ' FIXME need a font picker, then hide these from the property sheet
+            Public FontBold As Boolean = False
+            Public FontItalic As Boolean = False
+            Public FontName As String = "Segoe UI"
+            Public FontSize As Single = 8
+            Public FontStrikethru As Boolean = False
+            Public FontUnderline As Boolean = False
+            
+            Public ToolTipText As String                ' FIXME, needs to be supported in the engine
+            Public Enabled As Boolean = True
+
+        [ Description ("") ]
+            Public Appearance As VBRUN.AppearanceConstants = VBRUN.AppearanceConstants.vbAppear3d   ' FIXME
+
+            Private WithEvents RootWindowElement As WindowsControls.WindowElement
+            Private IsDesignMode As Boolean
+            Private FontHandle As LongPtr
+            Private InternalCaption As String
+            
+        [ Unimplemented ]
+        [ Serialize (True, "DragIcon") ]
+        [ CustomDesigner ("designer_PictureBytes") ]
+            Private ReadOnly DragIconINIT() As Byte
+        [ Unimplemented ]
+        [ Serialize (False) ]
+            Public DragIcon As StdPicture
+        [ Unimplemented ]
+            Public AutoSize As Boolean = False  ' this is correct for import purposes.
+
+            Public BackStyle As BackFillStyleConstants = BackFillStyleConstants.vbBFOpaque
+        [ Unimplemented ]
+            Public DataField As String
+        [ Unimplemented ]
+            Public DataFormat As StdDataFormat
+        [ Unimplemented ]
+            Public DataMember As String
+        [ Unimplemented ]
+        [ Serialize (True, "DataSource") ]          ' Any string value is allowed, gets resolved at runtime to a Form.Controls(DataSourceName)
+            Public DataSourceINIT As String
+        [ Unimplemented ]
+            Public DragMode As VBRUN.DragModeConstants
+        [ Unimplemented ]
+            Public LinkItem As String
+        [ Unimplemented ]
+            Public LinkMode As VBRUN.LinkModeConstants
+        [ Unimplemented ]
+            Public LinkTopic As String
+        [ Unimplemented ]
+            Public LinkTimeout As Long = 50
+        [ Unimplemented ]
+            Public OLEDropMode As VBRUN.OLEDropConstants
+        [ Unimplemented ]
+            Public RightToLeft As Boolean
+        [ Unimplemented ]
+            Public WhatsThisHelpID As Long
+
+        [ Unimplemented ]
+            Public WordWrap As Boolean
+
+        [ Serialize (False) ]
+        [ Unimplemented ]
+            Public DataChanged As Boolean
+        [ Serialize (False) ]
+        [ Unimplemented ]
+            Public DataSource As DataSource         ' See DataSourceINIT
+
+        [ Description ("") ]
+            Public MousePointer As VBRUN.MousePointerConstants = VBRUN.MousePointerConstants.vbDefault
+        [ Serialize (True, "MouseIcon") ]
+        [ CustomDesigner ("designer_IconBytes") ]
+            Private ReadOnly MouseIconINIT() As Byte
+        [ Serialize (False) ]
+            Public MouseIcon As StdPicture
+
+        [ Unimplemented ]
+            Public Sub Drag(Optional ByVal Action As Variant)
+            End Sub
+            
+        [ Unimplemented ]
+            Public Sub LinkExecute(ByVal Command As String)
+            End Sub
+
+        [ Unimplemented ]
+            Public Sub LinkPoke()
+            End Sub
+            
+        [ Unimplemented ]
+            Public Sub LinkRequest()
+            End Sub
+
+        [ Unimplemented ]
+            Public Sub LinkSend()
+            End Sub
+
+        [ Unimplemented ]
+            Public Sub OLEDrag()
+            End Sub
+            
+        [ Unimplemented ]
+            Public Sub ShowWhatsThis()
+            End Sub
+            
+        [ Unimplemented ]
+            Public Sub ZOrder(Optional ByVal Position As Variant)
+            End Sub
+
+    #End Region
+
+    #Region "EVENTS"
+
+        [ Description ("") ]
+            Event Change()
+        [ DefaultDesignerEvent ]
+        [ Description ("") ]
+            Event Click()
+        [ Description ("") ]
+            Event DblClick()
+        [ Description ("") ]
+            Event MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            Event MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            Event MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            Event Initialize()
+            
+        [ Unimplemented ] Event DragDrop(Source As Control, X As Single, Y As Single)
+        [ Unimplemented ] Event DragOver(Source As Control, X As Single, Y As Single, State As Integer)
+        [ Unimplemented ] Event LinkClose()
+        [ Unimplemented ] Event LinkError(LinkErr As Integer)
+        [ Unimplemented ] Event LinkNotify()
+        [ Unimplemented ] Event LinkOpen(Cancel As Integer)
+        [ Unimplemented ] Event OLECompleteDrag(Effect As Long)
+        [ Unimplemented ] Event OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Unimplemented ] Event OLEDragOver(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single, State As Integer)
+        [ Unimplemented ] Event OLEGiveFeedback(Effect As Long, DefaultCursors As Boolean)
+        [ Unimplemented ] Event OLESetData(Data As DataObject, DataFormat As Integer)
+        [ Unimplemented ] Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
+
+    #End Region
+               
+    #Region "MEMBERS"
+    
+        Public Sub New()
+            ' This constructor is useful for allowing control inheritance
+        End Sub
+        
+        Private Sub InitializeDefaultValues()
+        	CaptionINIT = "Label"
+            AutoSize = True     ' for new controls, this should be True, as per VB
+        End Sub
+        
+        Public Sub New(Serializer As WindowsControls.SerializationInfo)
+            If Not Serializer.Deserialize(Me) Then
+                InitializeDefaultValues
+            End If
+            IsDesignMode = Serializer.IsDesignMode
+        End Sub
+        
+        Private Sub HandleInitialize(ByVal ControlContext As WindowsControls.WindowsControlContext) _
+                Implements IWindowsControl.Initialize
+            
+            ControlContext.SetControlArrayIndex(Me.IndexINIT)
+            Set Me.RootWindowElement = CreateRootWindowElement(ControlContext)
+            Me.RootWindowElement.RequiresWindowlessPainting(True)
+           ' Me.RootWindowElement.NoAutoPositioning()
+            
+            Me.InternalCaption = CaptionINIT
+            
+            If IsArrayInitialized(Me.MouseIconINIT) AndAlso (UBound(Me.MouseIconINIT) > -1) Then
+                ' LoadPicture can now be passed a byte-array containing an in-memory stream
+                On Error Resume Next
+                Set Me.MouseIcon = Global.LoadPicture(Me.MouseIconINIT)
+            End If
+        End Sub
+        
+        Private Sub HandleCreate() _
+                Handles RootWindowElement.Create
+            
+            RaiseEvent Initialize()
+        End Sub
+        
+        Private Sub HandleDestroy() _
+                Implements IWindowsControl.Destroy
+
+'            Stop
+            If Me.FontHandle <> 0 Then WinNativeFormsBASE.GDI32_DeleteObject(Me.FontHandle)
+            Me.FontHandle = 0
+            Set Me.Font = Nothing
+            ' disconnect anything that causes a circular reference here
+        End Sub
+
+        Private Sub Class_Terminate()
+            ' Debug.Print "Label.Terminated"
+        End Sub
+                                
+        [ Serialize (False) ]
+        [ DefaultMember ]
+        Public Property Get _Default() As String
+            Return Me.Caption
+        End Property
+        
+        [ Serialize (False) ]
+        [ DefaultMember ]
+        Public Property Let _Default(ByVal Value As String)
+            Me.Caption = Value
+        End Property
+        
+        Private Sub ColorsChanged() _
+                Handles BackColor.OnPropertyLet, _
+                        ForeColor.OnPropertyLet, _
+                        BackStyle.OnPropertyLet, _
+                        UseMnemonic.OnPropertyLet, _
+                        Alignment.OnPropertyLet, _
+                        Appearance.OnPropertyLet, _
+                        BackStyle.OnPropertyLet, _
+                        BorderStyle.OnPropertyLet, _
+                        Enabled.OnPropertyLet
+            
+            Me.ControlContext.EnsureFormIsLoaded()
+            Me.Container.Refresh
+        End Sub
+        
+              
+        [ Serialize (False) ]
+        Public Property Get Caption() As String
+            Me.ControlContext.EnsureFormIsLoaded()
+            Return Me.InternalCaption
+        End Property
+        
+        [ Serialize (False) ]
+        Public Property Let Caption(ByVal NewValue As String)
+            Me.ControlContext.EnsureFormIsLoaded()
+            If Me.InternalCaption <> NewValue Then
+                Me.InternalCaption = NewValue
+                Me.Container.Refresh
+                RaiseEvent Change
+            End If
+        End Property
+
+        Private Sub OnTouchedFormProperties() _
+                Handles BackColor.OnPropertyGet, _
+        	            ForeColor.OnPropertyGet, _
+        	            BorderStyle.OnPropertyGet, _
+                        UseMnemonic.OnPropertyGet, _
+                        FontBold.OnPropertyGet, _
+                        FontItalic.OnPropertyGet, _
+                        FontName.OnPropertyGet, _
+                        FontSize.OnPropertyGet, _
+                        FontStrikethru.OnPropertyGet, _
+                        FontUnderline.OnPropertyGet, _
+                        Font.OnPropertyGet, _
+                        Enabled.OnPropertyGet
+
+            'Me.ControlContext.EnsureFormIsLoaded()
+        End Sub
+        
+        [ Serialize (False) ]
+        Public Property Get Parent() As Form
+            Return ControlContext.GetForm
+        End Property
+                
+        Private Sub InitializeOLEFont()
+
+            Dim NewFont As StdFont = New StdFont
+            With NewFont
+                .Bold = Me.FontBold
+                .Italic = Me.FontItalic
+                .Name = Me.FontName
+                .Size = Me.FontSize
+                .Strikethrough = Me.FontStrikethru
+                .Underline = Me.FontUnderline
+            End With
+            Set Me.Font = NewFont
+            
+            Dim ifont As IFont = Me.Font
+            Dim LF As WinNativeFormsBASE.LOGFONT
+            WinNativeFormsBASE.GetObjectW(ifont.hFont, LenB(LF), LF)
+            LF.LFQuality = WinNativeFormsBASE.CLEARTYPE_QUALITY
+            
+            If Me.FontHandle <> 0 Then WinNativeFormsBASE.GDI32_DeleteObject(Me.FontHandle)
+            Me.FontHandle = WinNativeFormsBASE.CreateFontIndirectW(LF)
+    
+        End Sub
+        
+        Private Function GetFontMetrics() As WinNativeFormsBASE.TEXTMETRIC
+            If Me.Font Is Nothing Then
+                InitializeOLEFont
+            End If
+            
+            Dim font As IFont = Me.Font
+            Dim hdc As LongPtr = WinNativeFormsBASE.WindowsAPI.GDI32_CreateCompatibleDC()
+            font.SetRatio(RootWindowElement.DPI, 2540)
+            Dim oldFont As LongPtr = WinNativeFormsBASE.WindowsAPI.GDI32_SelectObject(hdc, font.hFont)
+            WinNativeFormsBASE.WindowsAPI.GDI32_GetTextMetrics(hdc, GetFontMetrics)
+            WinNativeFormsBASE.WindowsAPI.GDI32_SelectObject(hdc, oldFont)
+            WinNativeFormsBASE.WindowsAPI.GDI32_DeleteDC(hdc)
+        End Function
+        
+        Private Sub SyncFontProperties() _
+            Handles FontBold.OnPropertyLet, _
+                    FontItalic.OnPropertyLet, _
+                    FontName.OnPropertyLet, _
+                    FontSize.OnPropertyLet, _
+                    FontStrikethru.OnPropertyLet, _
+                    FontUnderline.OnPropertyLet
+                        
+            InitializeOLEFont()
+            Me.Container.Refresh
+        End Sub
+
+        Private Sub HandlePaint(ByRef Handled As Boolean) _
+                Handles RootWindowElement.Paint
+
+            If Visible = False And Me.IsDesignMode = False Then Exit Sub
+
+            Dim brush As LongPtr = 0
+            If Me.BackStyle = vbBFOpaque Then
+                brush = WinNativeFormsBASE.CreateSolidBrush(TranslateColor(BackColor))
+            End If
+            
+            Dim ps As WinNativeFormsBASE.PAINTSTRUCT
+            Me.RootWindowElement.BeginPaint(ps)    ' you MUST use this method, and NOT the BeginPaint API directly
+                
+                Dim rect As WinNativeFormsBASE.RECT
+                rect.Left = Me.Left * RootWindowElement.UnitPixelScale
+                rect.Top = Me.Top * RootWindowElement.UnitPixelScale
+                rect.Right = rect.Left + (Me.Width * RootWindowElement.UnitPixelScale)
+                rect.Bottom = rect.Top + (Me.Height * RootWindowElement.UnitPixelScale)
+
+                If (rect.Right > rect.Left) And (rect.Bottom > rect.Top) Then
+                    Dim _width As Long = rect.Right - rect.Left
+
+                    'If BorderStyle = vbNoBorder Then
+                        If brush <> 0 Then
+                            WinNativeFormsBASE.USER32_FillRectangle(ps.hdc, rect, brush)
+                        End If
+                    'End If
+                    
+                    Dim actualForeColor As Long = If(Me.Enabled, TranslateColor(ForeColor), TranslateColor(vbGrayText))
+                    Dim oldTextColor As Long = WinNativeFormsBASE.WindowsAPI.GDI32_SetTextForeColor(ps.hdc, actualForeColor)
+                    Dim oldBackColor As Long = WinNativeFormsBASE.WindowsAPI.SetBkColor(ps.hdc, TranslateColor(BackColor))
+                    Dim oldBkMode As Long = WinNativeFormsBASE.WindowsAPI.GDI32_SetBackMode(ps.hdc, 1)
+                    
+                    If BorderStyle = vbFixedSingleBorder Then
+                        Dim bfStyle As Long
+                        Dim bfFlags As Long = BorderFlags.BF_RECT Or BorderFlags.BF_ADJUST
+                        
+                        If Appearance = vbAppearFlat Then
+                            bfFlags += BorderFlags.BF_MONO
+                            bfStyle = BorderStyles.BDR_SUNKENOUTER
+                        Else
+                            bfStyle = BorderStyles.BDR_SUNKENOUTER Or BorderStyles.BDR_SUNKENINNER
+                        End If
+                        WinNativeFormsBASE.DrawEdge(ps.hdc, rect, bfStyle, bfFlags)
+                    End If
+                                    
+                    If Me.FontHandle = 0 Then
+                        InitializeOLEFont()
+                    End If
+                    
+                    Dim oldFont As LongPtr = WinNativeFormsBASE.SelectObject(ps.hdc, Me.FontHandle)
+                    
+                    Dim Str As String = Me.Caption
+                    Dim startPos As Long = 1
+                    Dim currentLine As String
+                    Dim lastWidth As Long = 0
+                    Dim whitespaceType As Long
+                    Dim Ended As Boolean = False
+                    Dim BufferedOutput As String
+                    Dim MnemonicPositionOnThisLine As Long = -1
+                    Dim MnemonicPositionInThisPart As Long = -1
+                    Dim countOfMeuemonicsInThisPart As Long
+                    Dim mneumonicOffset As Long
+                    Dim countLines As Long = 0
+                    
+                    ' FIXME this algo turned out a mess.
+                    
+                    While Ended = False
+                        Dim nextSplitPointPos As Long = [_HiddenModule].[_InStrBreak](startPos + mneumonicOffset, Str, whitespaceType)
+                        mneumonicOffset = 0
+                        Dim numCharsInSection As Long = nextSplitPointPos - startPos
+                        
+                        Select Case whitespaceType
+                            Case 1 ' SPACE
+                                If numCharsInSection = 0 Then
+                                    If (Len(BufferedOutput) = 0) And (countLines > 0) Then
+                                        startPos += 1
+                                        Continue While
+                                    Else
+                                        numCharsInSection = 1
+                                    End If
+                                End If
+                            Case 2 ' vbTab
+                                If numCharsInSection = 0 Then
+                                    startPos += 1
+                                    Continue While
+                                End If
+                            Case 3 ' vbCrLf
+                                If numCharsInSection = 0 Then
+                                    startPos += 2
+                                End If
+                            Case 4 ' vbCr / vbLf
+                                If numCharsInSection = 0 Then
+                                    startPos += 1
+                                End If
+                            Case 5 ' vbNullChar / EOL
+                                Ended = True
+                                If numCharsInSection = 0 And Len(BufferedOutput) = 0 Then
+                                    Exit While
+                                End If
+                            Case 6 ' "&"
+                                If Me.UseMnemonic = False Then
+                                    mneumonicOffset += numCharsInSection + 1
+                                    Continue While
+                                End If
+                                
+                                If Mid(Str, nextSplitPointPos + 1, 1) = "&" Then
+                                    ' A double && means to output just a single &, and not treat as a mnuemonic
+                                    Str = Left(Str, nextSplitPointPos - 1) & ChrW(&HE026) & Right(Str, (Len(Str) - nextSplitPointPos) - 1)
+                                    mneumonicOffset += numCharsInSection + 1
+                                    Continue While
+                                End If
+                                MnemonicPositionInThisPart = Len(BufferedOutput) + numCharsInSection - countOfMeuemonicsInThisPart
+                                countOfMeuemonicsInThisPart += 1
+                                mneumonicOffset += numCharsInSection + 1
+                                Continue While
+                        End Select
+                        
+                        Dim size As WinNativeFormsBASE.SIZE
+                        size.cx = 0
+                        size.cy = 0
+        
+                        Dim BufferedOutputLenBefore As Long = Len(BufferedOutput)
+                        Dim ThisPart As String = Mid(Str, startPos, numCharsInSection)
+                        If MnemonicPositionInThisPart <> -1 Then
+                            ThisPart = Replace(ThisPart, "&", "")
+                            ThisPart = Replace(ThisPart, ChrW(&HE026), "&")
+                        End If
+                        BufferedOutput += ThisPart
+                        Dim success As Long = WinNativeFormsBASE.GetTextExtentPointW(ps.hdc, BufferedOutput, Len(BufferedOutput), size)
+                        If success = False Then Exit While
+
+                        'Debug.Print "GetTextExtentPointW -> x=" & size.cx & ", y=" & size.cy & " ('" & BufferedOutput & "', ThisPart: " & ThisPart & ")"
+                        
+                        ' Does the current text fit into one line?
+                        If (size.cx > _width) Or (numCharsInSection = 0) Then
+
+                            If BufferedOutputLenBefore = 0 Then
+                                ' whole line of text is too long to fit
+                                BufferedOutput = ThisPart
+                                startPos += numCharsInSection
+                                BufferedOutputLenBefore = numCharsInSection
+                                lastWidth = size.cx
+                            End If
+                            
+                            If size.cy = 0 Then
+                                WinNativeFormsBASE.GetTextExtentPointW(ps.hdc, " ", 1, size)   ' handle linefeed on first line
+                            End If
+                            
+                            Dim _left As Long = 0
+                            If Me.Alignment = vbCenter Then
+                                _left += (_width - lastWidth) / 2
+                            ElseIf Me.Alignment = vbRightJustify Then
+                                _left += _width - lastWidth
+                            End If
+                            
+                            Const ETO_CLIPPED As Long = 4
+                            WinNativeFormsBASE.ExtTextOutW(ps.hdc, rect.Left + _left, rect.Top, ETO_CLIPPED, rect, BufferedOutput, BufferedOutputLenBefore, 0)
+                            
+                            If MnemonicPositionOnThisLine <> -1 Then
+                                Dim sizeTemp As WinNativeFormsBASE.SIZE
+                                
+                                ' Work out the X position of the underlined character
+                                WinNativeFormsBASE.GetTextExtentPointW(ps.hdc, BufferedOutput, MnemonicPositionOnThisLine, sizeTemp)
+                                Dim lineX As Long = rect.Left + _left + sizeTemp.cx
+                                
+                                ' Get width of the underlined character
+                                WinNativeFormsBASE.GetTextExtentPointW(ps.hdc, Mid(BufferedOutput, MnemonicPositionOnThisLine + 1, 1), 1, sizeTemp)
+                                
+                                Dim underlinePen As LongPtr = GDI32_CreatePen(PS_SOLID, 1 * RootWindowElement.UnitPixelScale, actualForeColor)
+                                Dim _origPen As LongPtr = WinNativeFormsBASE.SelectObject(ps.hdc, underlinePen)
+                            
+                                Dim underlineOffset As Long = GetFontMetrics().TMAscent + 2
+                                GDI32_MoveToEx(ps.hdc, lineX, rect.Top + underlineOffset, 0)
+                                GDI32_LineTo(ps.hdc, lineX + sizeTemp.cx, rect.Top + underlineOffset)
+                                
+                                WinNativeFormsBASE.SelectObject(ps.hdc, _origPen)
+                                WinNativeFormsBASE.DeleteObject(underlinePen)
+                            End If
+                            
+                            countLines += 1
+                            BufferedOutput = vbNullString
+                            rect.Top += size.cy
+                            nextSplitPointPos = -1
+                            Ended = False
+                            MnemonicPositionOnThisLine = -1
+                            countOfMeuemonicsInThisPart = 0
+                        Else
+                            If MnemonicPositionInThisPart <> -1 Then
+                                MnemonicPositionOnThisLine = MnemonicPositionInThisPart
+                                MnemonicPositionInThisPart = -1
+                            End If
+                            startPos += numCharsInSection
+                            countOfMeuemonicsInThisPart = 0
+                        End If
+                        
+                        lastWidth = size.cx
+                    Wend
+                    
+                    If Len(BufferedOutput) > 0 Then
+                        _left = 0
+                        If Me.Alignment = vbCenter Then
+                            _left += (_width - lastWidth) / 2
+                        ElseIf Me.Alignment = vbRightJustify Then
+                            _left += _width - lastWidth
+                        End If
+
+                        WinNativeFormsBASE.ExtTextOutW(ps.hdc, rect.Left + _left, rect.Top, ETO_CLIPPED, rect, BufferedOutput, Len(BufferedOutput), 0)
+                    End If
+                    
+                ' Debug.Print "---------------------------------"
+                    
+                    WinNativeFormsBASE.WindowsAPI.GDI32_SetBackMode(ps.hdc, oldBkMode)
+                    WinNativeFormsBASE.WindowsAPI.SetBkColor(ps.hdc, oldBackColor)
+                    WinNativeFormsBASE.WindowsAPI.GDI32_SetTextForeColor(ps.hdc, oldTextColor)
+                    WinNativeFormsBASE.SelectObject(ps.hdc, oldFont)
+                
+                End If
+                
+            Me.RootWindowElement.EndPaint(ps)
+            Handled = True     ' swallow up the event
+
+            If brush <> 0 Then WinNativeFormsBASE.WindowsAPI.GDI32_DeleteObject(brush)
+
+        End Sub
+        
+        Private Sub HandleCommand(ByVal NotificationCode As StaticNotifications, _
+                                    ByVal Identifier As Integer) _
+                Handles RootWindowElement.Command
+                
+            Select Case NotificationCode
+                Case StaticNotifications.STN_CLICKED
+                    If Me.Enabled = True Then RaiseEvent Click()
+            End Select
+        End Sub
+
+        Private Sub HandleMouseDoubleClick(ByVal Button As VBRUN.MouseButtonConstants, _
+                                            ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseDoubleClick
+                
+            If Me.Enabled = True Then RaiseEvent DblClick()
+        End Sub
+
+        Private Sub HandleMouseDown(ByVal Button As VBRUN.MouseButtonConstants, _
+                                        ByVal ShiftState As VBRUN.ShiftConstants, _
+                                        ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseDown
+                
+                BeginMouseCapture(Me.RootWindowElement)
+                If Me.Enabled = True Then RaiseEvent MouseDown(CInt(Button), CInt(ShiftState), X, Y)
+            End Sub
+        
+        Private Sub HandleMouseMove(ByVal Button As VBRUN.MouseButtonConstants, _
+                                        ByVal ShiftState As VBRUN.ShiftConstants, _
+                                        ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseMove
+                
+            If Me.Enabled = True Then RaiseEvent MouseMove(CInt(Button), CInt(ShiftState), X, Y)
+        End Sub
+        
+        Private Sub HandleMouseUp(ByVal Button As VBRUN.MouseButtonConstants, _
+                                    ByVal ShiftState As VBRUN.ShiftConstants, _
+                                    ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseUp
+
+            Dim WasCaptured As Boolean = EndMouseCapture()
+            If Me.Enabled = True Then RaiseEvent MouseUp(CInt(Button), CInt(ShiftState), X, Y)
+            If WasCaptured And IsInRect(X, Y) And (Me.Enabled = True) Then RaiseEvent Click()
+        End Sub
+        
+        Private Sub ToolTipChanged() Handles ToolTipText.OnPropertyLet
+            Me.RootWindowElement.ToolTipChanged()
+        End Sub
+    
+    #End Region
+
+End Class

@@ -1,0 +1,45 @@
+Class mpConstruct
+    Attribute VB_Name = "mpConstruct"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    '@Description("return the object created by executing the Deb constructor method on the supplied PredecalredId using ipHostItem as the input for Deb")
+    Option Explicit
+   
+    Implements IMapper
+    
+    Private Const MY_TYPENAME           As String = "mpConstruct"
+    
+    Private Type State
+            
+        PredeclaredId                       As object
+            
+            
+    End Type
+
+    Private s                               As State
+
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+        Return s.PredeclaredId.Deb(ipHostItem)
+    End Function
+
+    '@DefaultMember
+    Public Function Deb(ByVal ipPredeclaredId As Object) As mpConstruct
+        With New mpConstruct
+            Set Deb = .ConstructInstance(ipPredeclaredId)
+        End With
+    End Function
+
+
+    Friend Function ConstructInstance(ByVal ipPredeclaredId As Object) As mpConstruct
+        Set s.PredeclaredId = ipPredeclaredId
+       Return Me
+    End Function
+
+
+    Public Function TypeName() As String Implements Imapper.TypeName
+        Return MY_TYPENAME
+    End Function
+    
+End Class

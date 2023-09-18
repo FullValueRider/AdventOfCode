@@ -1,0 +1,58 @@
+Class mpDeDup
+    Attribute VB_Name = "mpDedup"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Implements IMapper
+    
+    
+    Private Const MY_TYpeNAME           As String = "mpDeDup"
+    
+    
+    Private Type State
+
+        DedupItems                  As Variant
+            
+        
+    End Type
+
+    Private s                       As State
+
+    
+    Public Function ExecMapper(Byref ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+
+        If TypeInfo.IsNotString(ipHostItem) Then
+        
+            Return ipHostItem
+            
+            
+        Else
+        
+            Return Strs.Dedup(ipHostItem, s.DedupItems)
+            
+        
+        End If
+            
+    End Function
+
+    '@DefaultMember
+    Public Function Deb(ParamArray ipDedupItems() As Variant) As mpDeDup
+        With New mpDeDup
+            Set Deb = .ConstructInstance(CVar(ipDedupItems))
+        End With
+    End Function
+
+    Friend Function ConstructInstance(Optional ByRef ipFPA As Variant) As mpDeDup
+        ' Processing of dedupitems is delegated to Strs.Dedup
+        s.DedupItems = ipFPA
+        Return Me
+    End Function
+
+    Public Function TypeName() As String Implements IMapper.TypeName
+        Return MY_TYpeNAME
+    End Function
+
+End Class

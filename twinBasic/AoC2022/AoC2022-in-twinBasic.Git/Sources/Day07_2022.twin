@@ -1,0 +1,152 @@
+Class Day07_2022
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+    ' Day 07 is based on binary trees.
+    Private Const Today             As String = "\2022\Day07.txt"
+    Private Const IS_COMMAND        As string = "$"
+    
+    Private Type State
+
+        Data                            As seq
+       
+    End Type
+
+    Private s                           As State
+
+    Private Enum Command
+        Type = 1
+        Action = 2
+        Target = 3
+    End Enum
+        
+    Public Sub Execute()
+        
+        'Part01
+        Part02
+            
+    End Sub
+
+ 
+    Private Sub Part01()
+
+        Initialise
+        Dim myFS As ElfComDir = ConstructFileSystem(s.Data)
+        Dim myDirectorySizes As Lookup = CalculateDirectorySizes(myFS)
+        Dim myResult As Long = myDirectorySizes.ReduceIt(rdSum(cmpLTEQ(100000)))
+        
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "1792222", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+        ' The only change from part 1 was increasing the count from 4 to 14
+        Initialise
+       
+        Initialise
+        Dim myFS As ElfComDir = ConstructFileSystem(s.Data)
+        Dim myDirectorySizes As Lookup = CalculateDirectorySizes(myFS)
+        
+        Dim myUsedSpace As Long = myDirectorySizes.SortByItem.Last.Item(0)
+        Dim myUnusedSpace As Long = 70000000 - myUsedSpace
+        Dim myMinDeletion As Long = 30000000 - myUnusedSpace
+        Dim myResult As Long = myDirectorySizes.FilterIt(cmpMT.Deb(myMinDeletion)).SortByItem.First.Item(0) '.sort.first
+                
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "1112963", myResult
+
+    End Sub
+
+    Private Sub Initialise()
+         Set s.Data = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC & Today, vbCrLf)) _
+            .MapIt(mpSplitToSubStr(ToSeq, Char.twSpace))
+    End Sub
+
+    Private Function ConstructFileSystem(ByRef ipLog As Seq) As ElfComDir
+
+        Dim myFS As ElfComDir = ElfComDir.Deb("/")
+        
+        Dim myLogItems As IterItems = IterItems.Deb(ipLog)
+        Do
+        	
+                        If LogItemIsCommand(myLogItems(0)) Then
+            	
+                Dim myCommand As Seq = Seq.Deb
+                Do
+                	myCommand.Add myLogItems(0)
+                   
+                    If myLogItems.HasNext Then
+                        If LogItemIsCommand(myLogItems(1)) Then
+                            Exit Do
+                        End If
+                    End If
+                    
+                Loop While myLogItems.MoveNext
+                
+                updateFS myFS, myCommand
+                
+            End If
+           
+        Loop While myLogItems.MoveNext
+        
+        Dim myReturn As ElfComDir = myFS.cd("/")
+        Return myReturn
+        
+    End Function
+    
+    Private Function LogItemIsCommand(ByRef ipLogItem As Seq) As Boolean
+        
+    	Return ipLogItem.Item(1) = "$"
+       
+    End Function
+    
+    Private Sub updateFS(ByRef ipFS As ElfComDir, ByRef ipCommand As Seq)
+    
+        
+        Select Case ipCommand(1)(Action)
+        	
+            Case "cd"
+                
+                Dim myDir As String = VBA.CStr(ipCommand(1)(Target))
+                Set ipFS = ipFS.cd(myDir)
+            
+            Case "ls"
+            
+                Dim myItems As IterItems = IterItems.Deb(ipCommand).SetFTS(1)
+                Do
+                    Dim myItem As Seq = myItems(0)
+                	Select Case myItem(1)
+                    
+                        Case "dir"
+                            Dim myNewDir As String = myItem(2)
+                            If ipFS.Dirs.LacksItem(myNewDir) Then
+                                ipFS.Dirs.Add myNewDir, ElfComDir.Deb(myNewDir, ipFS)
+                            End If
+                    
+                        Case Else
+                        
+                            ipFS.Files.Add myItem(2), VBA.CLng(myItem(1))
+                            
+                    End Select
+                    
+                Loop While myItems.MoveNext
+                
+        End Select
+    
+    End Sub
+    
+    
+    Private Function CalculateDirectorySizes(ipFS As ElfComDir) As Lookup
+    
+        Dim mysizes As Lookup = Lookup.Deb
+        ipFS.cd("/")
+        ipFS.Size mysizes
+        Return mysizes
+    End Function
+    
+End Class

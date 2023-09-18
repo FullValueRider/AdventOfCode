@@ -1,0 +1,28 @@
+Class Permutator
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Private Type State
+        Members                         As SEQ
+        Size                            As long
+        SwapIndex                       As long
+    End Type
+    
+    Private s                           As State
+    
+    Public Function Deb(ByRef ipMembers As Seq) As Permutator
+        With New Permutator
+            Return .ConstructInstance(ipMembers)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByRef ipMembers As Seq) As Permutator
+        Set s.Members = ipMembers
+    End Function
+    
+    
+End Class

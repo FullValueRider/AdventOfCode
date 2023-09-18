@@ -1,0 +1,60 @@
+Class mpSelect
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Implements IMapper
+    
+    
+    Private Const MY_TYPENAME               As String = "mpSelect"
+    
+    
+    Private Type State
+            
+        Index                           As Long
+            
+            
+    End Type
+
+    Private s                           As State
+
+    
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+        
+        If TypeInfo.IsString(ipHostItem) Then
+                
+            Return VBA.Mid(ipHostItem, s.Index, 1)
+                
+                
+        Else
+                
+            Return ipHostItem(s.Index)
+                
+                
+        End If
+            
+    End Function
+    
+    '@DefaultMember
+    Public Function Deb(Optional ByVal ipIndex As Long) As mpSelect
+        With New mpSelect
+            Set Deb = .ReadyToUseInstance(ipIndex)
+        End With
+    End Function
+
+    Friend Function ReadyToUseInstance(ByVal ipIndex As Variant) As mpSelect
+        
+        s.Index = ipIndex
+        Return Me
+            
+    End Function
+
+  
+    Public Function TypeName() As String Implements IMapper.TypeName
+        Return MY_TYPENAME
+    End Function
+
+End Class

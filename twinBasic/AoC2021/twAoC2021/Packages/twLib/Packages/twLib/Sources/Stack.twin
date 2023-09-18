@@ -1,0 +1,154 @@
+Class Stack
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+
+    Option Explicit
+    Private Const MY_NAME           As String = "Stack"
+    Private Const DEFAULT_CHUNK             As Long = 16
+
+    Private Type state
+
+        Host                        As variant()
+        LastIndex                   As Long
+        Size                        As Long
+        
+    End Type
+
+    Private s                       As state
+
+
+    Public Function Deb() As Stack
+        With New Stack
+            Return .ConstructInstance
+        End With
+    End Function
+
+    Friend Function ConstructInstance() As Stack
+        s.Size = DEFAULT_CHUNK - 1
+        Resize
+        s.LastIndex = -1
+        Return Me
+    End Function
+
+
+    Public Property Get IsEmpty() As Boolean
+        IsEmpty = s.LastIndex < 0
+    End Property
+
+    Public Property Get IsNotEmpty() As Boolean
+        IsNotEmpty = s.LastIndex >= 0
+    End Property
+
+
+    Public Function Peek() As Variant
+    
+        If Me.IsEmpty Then
+            
+        Return Null
+            
+
+        Else
+            
+        Return s.Host(s.LastIndex)
+            
+            
+        End If
+    
+    End Function
+
+    
+    Public Function Push(ByRef ipItem As Variant) As Stack
+        
+        If VBA.IsObject(ipItem) Then
+            Set s.Host(GetNextIndex) = ipItem
+        Else
+            s.Host(GetNextIndex) = ipItem
+        End If
+        Return Me
+    End Function
+
+
+    Private Function GetNextIndex() As Long
+        s.LastIndex += 1
+        If s.LastIndex >= s.Size Then
+            Resize
+        End If
+        Return s.LastIndex
+    End Function
+
+
+    Public Function Pop() As Variant
+    
+        If s.LastIndex >= 0 Then
+            
+            Dim myitem As Variant
+            If VBA.IsObject(s.Host(s.LastIndex)) Then
+                Set myitem = s.Host(s.LastIndex)
+            Else
+                myitem = s.Host(s.LastIndex)
+            End If
+            
+            s.Host(s.LastIndex) = Empty
+            s.LastIndex -= 1
+            
+            If s.LastIndex < 0 Then
+                Resize ipreset:=True
+            End If
+            
+            Return myitem
+            
+        Else
+            
+            Return Null
+        
+        End If
+
+    End Function
+
+
+    Private Sub Resize(Optional ipReset As Boolean = False)
+        s.Size = IIf(ipReset, DEFAULT_CHUNK, s.Size + DEFAULT_CHUNK)
+        ReDim Preserve s.Host(0 To s.Size - 1)
+    End Sub
+    
+
+    Public Function Count() As Long
+        Count = s.LastIndex + 1
+    End Function
+
+
+    Public Function PushElements(ParamArray ipParamArray() As Variant) As Stack
+        
+        If ArrayInfo.IsNotAllocated(ipParamArray) Then
+            Return Me
+        End If
+        
+        Dim myMeta As Meta = Meta.Deb(ipParamArray)
+        
+        Dim myItem As IterItems = IterItems.Deb(myMeta.Cargo)
+        Do
+            Me.Push myItem.Item
+        Loop While myItem.MoveNext
+        
+    Return Me
+        
+    End Function
+
+
+    Public Function ToArray() As Variant
+        Dim myArray As Variant = s.Host
+        ReDim Preserve myArray(0 To s.LastIndex)
+        Return myArray
+    End Function
+
+    Public Function ToSeq() As Seq
+        Return Seq.Deb(Me.ToArray)
+    End Function
+
+    Public Function Name() As String
+        Return MY_NAME
+    End Function
+    
+End Class

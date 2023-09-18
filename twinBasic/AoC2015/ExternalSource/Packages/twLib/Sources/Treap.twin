@@ -1,0 +1,202 @@
+' Derived from https://www.tutorialandexample.com/treap-data-structure
+' and 
+Public Class Treap
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+    Private Type State
+        root                                As TreapNode
+        Count                               As long
+    End Type
+    
+    Private s                               As State
+        
+    Public Function Deb() As Treap
+        With New Treap
+            Return PopulatedInstance
+        End With
+    End Function
+    
+    Friend Function PopulatedInstance() As Treap
+        Return Me
+    End Function
+        
+        
+	Public Sub rotLeft(ByRef ipParent As TreapNode)
+	   Dim R As TreapNode = ipParent.Right
+	   Dim X As TreapNode = ipParent.Right.Left
+	   Set R.Left = ipParent
+	   Set ipParent.Right = X
+	   Set ipParent = R
+	End Sub
+    
+    
+	Public Sub rotRight(ByRef ipParent As TreapNode)
+	   Dim L As TreapNode = ipParent.Left
+	   Dim Y As TreapNode = ipParent.Left.Right
+	   Set L.Right = ipParent
+	   Set ipParent.Left = Y
+	   Set ipParent = L
+	End Sub
+    
+    Public Function Add(ByRef ipKey As Variant, ByRef ipItem As Variant) As Treap
+    	
+        Dim myNode As TreapNode = TreapNode.Deb
+        
+        With myNode
+        	
+            If VBA.IsObject(ipItem) Then
+                Set .Item = ipItem
+            Else
+            	.Item = ipItem
+            End If
+            
+            If VBA.IsObject(ipKey) Then
+            	Set .Key = ipKey
+            Else
+            	.Key = ipKey
+            End If
+            
+            .Priority = Maths.GetRndLong
+            
+        End With
+        
+        insertNode s.root, myNode
+        
+    	Return Me
+        
+    End Function
+
+
+	Public Sub insertNode(ByRef ipParent As TreapNode, ByRef ipChild As TreapNode)
+    
+      
+       
+	   If ipParent Is Nothing Then
+		    Set ipParent = ipChild
+            s.Count += 1
+		    Exit Sub
+	   End If
+       
+       ' if the child key is less than parent key we insert to the left
+       'else insert to the right
+	   If ipChild.Key <= ipParent.Key Then
+       
+            InsertLeft ipParent, ipChild
+	   Else
+            
+            InsertRight ipParent, ipChild
+          
+	   End If
+       
+       
+	End Sub
+
+    Private Sub InsertLeft(ByRef ipParent As TreapNode, ByRef ipchild As TreapNode)
+        If ipParent.Left Is Nothing Then
+            Set ipParent.Left = ipchild
+            s.Count += 1
+            
+            If ipParent.Left.Priority > ipParent.Priority Then
+                rotLeft(ipParent) 'rotate left
+            
+            End If
+        Else
+            insertNode(ipParent.Left, ipchild)
+        
+         End If
+    End Sub
+    
+    Private Sub InsertRight(ByRef ipParent As TreapNode, ByRef ipChild As TreapNode)
+        If ipParent.Right Is Nothing Then
+            Set ipParent.Right = ipChild
+            s.Count += 1
+            
+        Else
+            insertNode(ipParent.Right, ipChild)
+        End If
+        
+    End Sub
+    
+    Public Function HoldsKey(ByVal ipParent As TreapNode, ByRef ipKey As Variant) As Boolean
+    
+	   If ipParent Is Nothing Then
+            Return False
+	   End If
+       
+       If ipParent.Key = ipKey Then
+		  Return True
+        End If
+          
+	   If ipKey < ipParent.Key Then
+       
+		  Return HoldsKey(ipParent.Left, ipKey)
+          
+          
+	   Else
+       
+		  Return HoldsKey(ipParent.Right, ipKey)
+          
+          
+	   End If
+       
+	End Function
+
+
+
+	Public Sub deleteNode(ByRef ipParent As TreapNode, ByRef ipItem As Variant)
+	   'node to be deleted which is a leaf node  
+	   If ipParent Is Nothing Then
+		  Exit Sub
+	   End If
+       
+     
+	   If ipItem < ipParent.Item Then
+       
+		  deleteNode(ipParent.Left, ipItem)
+          
+	   ElseIf ipItem > ipParent.Item Then
+       
+		  deleteNode(ipParent.Right, ipItem)
+		  'node to be deleted which has two children  
+	   Else
+       
+		  If ipParent.Left Is Nothing AndAlso ipParent.Right Is Nothing Then
+			 ipParent = Nothing
+			 ipParent = Nothing
+             
+		  ElseIf ipParent.Left <> 0 AndAlso ipParent.Right IsNot Nothing Then
+          
+			 If ipParent.Left.Priority < ipParent.Right.Priority Then
+             
+				rotLeft(ipParent) 'rotate left
+				deleteNode(ipParent.Left, ipItem)
+                
+                
+			 Else
+             
+				rotRight(ipParent) 'rotate right
+				deleteNode(ipParent.Right, ipItem)
+                
+                
+			 End If
+             
+		  'node to be deleted has only one child  
+		  Else
+          
+			 Dim child As TreapNode = If(ipParent.Left <> 0, ipParent.Left, ipParent.Right)
+			 Dim curr As TreapNode = ipParent
+			 ipParent = child
+			 curr = Nothing
+             
+		  End If
+          
+	   End If
+        s.Count -= 1
+	End Sub
+
+End Class

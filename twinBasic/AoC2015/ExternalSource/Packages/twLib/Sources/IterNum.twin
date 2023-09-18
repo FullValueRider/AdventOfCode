@@ -1,0 +1,190 @@
+[ PredeclaredId, COMCreatable ]
+Class IterNum
+    Option Explicit
+    '@ModuleDescription("Allows a sequence of numbers to be iterated.")
+ 
+    Implements IIterator
+
+    Const MY_NAME                               As String = "IterNum"
+    
+    Private Type Properties
+
+        Span                                    As Span
+        Offset                                  As Double ' offset from p.span.From
+        StepsCount                              As long
+    End Type
+
+    Private p                                   As Properties
+
+    [ DefaultMember ]
+    Public Function Deb _
+    ( _
+        Optional ByVal ipFrom As Variant = Empty, _
+        Optional ByVal ipTo As Variant = Empty, _
+        Optional ByVal ipStep As Variant = 1 _
+    ) As IterNum
+        With New IterNum
+            Set Deb = .ConstructInstance(ipFrom, ipTo, ipStep)
+        End With
+    End Function
+
+
+    Friend Function ConstructInstance _
+    ( _
+        ByVal ipFromOrSpan As Variant, _
+        ByVal ipTo As Variant, _
+        ByVal ipStep As Variant _
+    ) As IterNum
+
+        If VBA.TypeName(ipFromOrSpan) = Span.TypeName Then
+            Set p.Span = ipFromOrSpan
+            
+        Else
+            Dim myFRom As Variant = IIf(VBA.IsEmpty(ipFromOrSpan), enums.Preset.Value(MinLong), ipFromOrSpan)
+            Dim myTo As Variant = IIf(VBA.IsEmpty(ipTo), enums.Preset.Value(MaxLong), ipTo)
+            Dim myStep As Variant = IIf(VBA.IsEmpty(ipStep), 1, VBA.Abs(ipStep))
+            myStep = VBA.Abs(myStep) * IIf(myFRom <= myTo, 1, -1)
+            Set p.Span = Span(myFRom, myTo, myStep)
+        End If
+        
+        p.Offset = 0
+        p.StepsCount = 0
+            
+        Return Me
+        
+    End Function
+
+    Public Function SetSpan _
+    ( _
+        Optional ByRef ipFromOrSpan As Variant = Empty, _
+        Optional ByRef ipTo As Variant = Empty, _
+        Optional ByRef ipStep As Variant = 1, _
+        Optional ByVal ipRank As Long = 1 _
+    ) As IIterator Implements IIterator.SetSpan
+
+       ' Any input of iprank is ignored
+    
+        If VBA.TypeName(ipFromOrSpan) = Span.TypeName Then
+            Set p.Span = ipFromOrSpan
+        Else
+            
+            
+            Dim myFrom As Variant = IIf(VBA.IsEmpty(ipFromOrSpan), enums.Preset.Value(MinLong), ipFromOrSpan)
+            Dim myTo As Variant = IIf(VBA.IsEmpty(ipTo), enums.Preset.Value(MaxLong), ipTo)
+            Dim mystep As Variant = IIf(ipStep = 0, 1, ipStep)
+            mystep = VBA.Abs(mystep) * IIf(myFrom <= ipTo, 1, -1)
+            Set p.Span = Span(myFrom, myTo, mystep)
+
+        End If
+        p.Offset = 0
+        p.StepsCount = 0
+        Return Me
+
+    End Function
+    
+    Private Function CanIncOffset() As Boolean
+    
+        Dim myTryIndex As Long = p.Span.From + p.Offset + p.Span.Step
+        
+        If p.Span.Step > 0 Then
+            Return IIf(myTryIndex <= p.Span.To, True, False)
+        Else
+            Return IIf(myTryIndex >= p.Span.To, True, False)
+        End If
+        
+     
+        
+    End Function
+    
+    
+    Private Function CanDecOffset() As Boolean
+    
+        Dim myIndex As Long = p.Span.From + p.Offset - p.Span.Step
+        
+        If p.Span.Step > 0 Then
+            Return IIf(myIndex >= p.Span.From, True, False)
+        Else
+            Return IIf(myIndex <= p.Span.From, True, False)
+        End If
+        
+    End Function
+    
+    
+    Public Function MoveNext() As Boolean Implements IIterator.MoveNext
+
+       If CanIncOffset Then
+            p.Offset += p.Span.Step
+            p.StepsCount += 1
+            Return True
+        	
+        Else
+            Return False
+        End If
+
+    End Function
+    
+    Public Function MovePrev() As Boolean Implements IIterator.MovePrev
+    
+        If CanDecOffset Then
+            p.Offset -= p.Span.Step
+            p.StepsCount -= 1
+            Return True
+        Else
+            Return False
+        End If
+        
+    End Function
+
+    Public Function Index(Optional ByRef ipOffset As Long = 0) As Long Implements IIterator.Index
+        Return p.StepsCount + ipOffset
+    End Function
+    
+    Public Function Item(Optional ByRef ipOffset As Long = 0) As Variant Implements IIterator.Item
+        Return p.Span.From + p.Offset
+    End Function
+        
+    Public Function Key(Optional ByRef ipOffset As Long = 0) As Variant Implements IIterator.Key
+        Return p.Offset + ipOffset
+    End Function
+        
+
+   Public Function HasNext() As Boolean Implements IIterator.HasNext
+       Return CanIncOffset
+    End Function
+    
+    Public Function HasNoNext() As Boolean Implements IIterator.HasNoNext
+       Return Not CanIncOffset
+    End Function
+    
+    Public Function HasPrev() As Boolean Implements IIterator.HasPrev
+       Return CanDecOffset
+    End Function
+    
+    Public Function HasNoPrev() As Boolean Implements IIterator.HasNoPrev
+       Return Not CanDecOffset
+    End Function
+    
+    
+    Public Function Count() As Long Implements IIterator.Count
+        Return VBA.Abs(Abs(VBA.Abs(p.Span.To) - VBA.Abs(p.Span.From))) + 1
+    End Function
+    
+    
+   Public Function MoveToStart() As IIterator Implements IIterator.MoveToStart
+        p.Offset = 0
+        p.StepsCount = 0
+        Return Me
+    End Function
+    
+    Public Function MoveToEnd() As IIterator Implements IIterator.MoveToEnd
+        p.Offset = ((p.Span.To - p.Span.From) \ VBA.Abs(p.Span.Step)) * VBA.Abs(p.Span.Step)
+        p.StepsCount = ((p.Span.To - p.Span.From) \ VBA.Abs(p.Span.Step))
+        Return Me
+    End Function
+    
+    
+    Public Property Get TypeName() As String Implements IIterator.TypeName
+        Return MY_NAME
+    End Property
+    
+End Class

@@ -1,0 +1,581 @@
+Class Strs
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+    ' The strs class is for methods that process **strings**
+    ' To convert to a string, see class 'Stringifier'
+    
+    Private Type Properties
+            
+        DefaultSeparator                As String
+        DefaultDedupAsSingleSpace       As Variant
+        
+        Number                          As String
+        Lower                           As String
+        Upper                           As String
+        AlphaNumeric                    As String
+        Whitespace                      As String
+        
+    End Type
+
+    Private p                   As Properties
+
+    Private Sub Class_Initialize()
+    
+        p.DefaultSeparator = Char.twComma
+        p.DefaultDedupAsSingleSpace = Char.twSpace
+        
+        p.Number = "0123456789"
+        p.Lower = "abcdefghijklmnopqrstuvwxyz"
+        p.Upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        p.Whitespace = Char.twSpace & Char.twTab & Char.twLf & Char.twCr & Char.twCrLf & Char.twNBsp
+        p.AlphaNumeric = p.Number & p.Upper & p.Lower
+        
+    End Sub
+
+    Public Function WhiteSpace() As String: Return p.Whitespace: End Function
+    Public Function WhitespaceSeq() As Variant: Return Seq.Deb(p.Whitespace): End Function
+    
+    Public Function Numbers() As String: Return p.Number: End Function
+    Public Function Lowercase() As String: Return p.Lower: End Function
+    Public Function Uppercase() As String: Return p.Upper: End Function
+    Public Function AlphaNumeric() As String: Return p.AlphaNumeric: End Function
+        
+    Public Function NumberSeq() As Variant: Return Seq.Deb(p.Number): End Function
+    Public Function LowerSeq() As Variant: Return Seq.Deb(p.Lower): End Function
+    Public Function UpperSeq() As Variant: Return Seq.Deb(p.Upper): End Function
+    Public Function AlphaNumericSeq() As Variant: Return Seq.Deb(p.AlphaNumeric): End Function
+
+
+        
+    ' Public Property Get DefaultSeparator() As String
+    '     DefaultSeparator = p.DefaultSeparator
+    ' End Property
+
+    ' Public Property Let DefaultSeparator(ByVal ipSeparator As String)
+    '     p.DefaultSeparator = ipSeparator
+    ' End Property
+
+    '@Description("Converts a string containing a binary number to Long")
+    Public Function BinToLong(ByVal ipBinary As String) As Long
+
+        Dim myValue As Long
+        myValue = 0
+        Dim myIndex As Long
+        For myIndex = 1 To VBA.Len(ipBinary)
+            
+            Dim myChar As String
+            myChar = VBA.Mid$(ipBinary, myIndex, 1)
+            
+            myValue <<= 1
+            If myChar = "1" Then
+                
+                myValue += 1
+                    
+            End If
+                
+        Next
+            
+        
+        Return myValue
+            
+    End Function
+
+    '@Description("Removes duplicates of strings in ipDedup. Dedup items may by a single character string, a string, a comma seperated string, or an iterable of any of the previous")
+    Public Function Dedup(ByVal ipSource As String, ParamArray ipDedupItems() As Variant) As String
+        ' dedup by default will deduplicate spaces
+        
+        If VBA.Len(ipSource) = 0 Then
+            Return vbNullString
+        End If
+        
+        Dim myMeta As Meta = Meta(ipDedupItems)
+        
+        Dim myDedupItem As IterItems
+        Select Case True
+        
+            Case myMeta.IsNotQueryable
+                
+                Set myDedupItem = IterItems.Deb(p.DefaultDedupAsSingleSpace)
+            
+            Case myMeta.HasOneItem
+            
+                Set myDedupItem = IterItems.Deb(ipDedupItems(0))
+                
+            Case Else
+            
+                Set myDedupItem = IterItems.Deb(ipDedupItems)
+
+        End Select
+        
+        
+        
+        Do
+        	
+            DoEvents
+           
+            If TypeInfo.IsNotString(myDedupItem.GetItem) Then
+                Continue Do
+            End If
+                
+            Dim myDedupDedup As String = myDedupItem.GetItem & myDedupItem.GetItem
+                
+            Do
+            
+                DoEvents
+                Dim mySourceLen As Long = VBA.Len(ipSource)
+                ipSource = VBA.Replace(ipSource, myDedupDedup, myDedupItem.GetItem)
+                    
+            Loop Until mySourceLen = VBA.Len(ipSource)
+                
+        Loop While myDedupItem.MoveNext
+            
+        Return ipSource
+            
+    End Function
+
+
+    '@Description("Takes a Seq of characters and removes them from both ends _
+    of the target string.  Strings in the paramarray may be a single character, _
+    string of characters,  or an iterable of the previous")
+    Public Function Trimmer(ByVal ipSource As String, ParamArray ipTrimChars() As Variant) As String
+
+        If BailOut.When(VBA.Len(ipSource) = 0, StringIsEmpty) Then
+            Return vbNullString
+        End If
+    
+        
+        ' treat the param array as if it is a forwarded paramarray
+        ' In the next line ipTrimChars may be mutated to a seq
+        ' we capture in an array to avoid isobject assignment
+        Dim myTmp As Variant = VarOp.ResolveParamArray(ipTrimChars)
+
+        Dim myMeta As Meta = Meta.Deb(myTmp)
+        Dim myTrimChars As Seq
+        
+        Select Case True
+        
+            Case VBA.IsNull(myTmp)
+            
+                Set myTrimChars = Strs.WhitespaceSeq
+        	
+            Case myMeta.IsNotQueryable
+            
+                Set myTrimChars = Strs.WhitespaceSeq
+                
+                
+            Case myMeta.IsType(idSeq)
+            
+                ' error without the cvar wrapper
+                Set myTrimChars = myTmp
+                
+                
+            Case Else
+            
+                Set myTrimChars = Seq.Deb(myTmp)
+                    
+                    
+        End Select
+
+        
+        
+        Dim myString As String = ipSource
+        Do While VBA.Len(myString) > 0
+    
+            If myTrimChars.LacksItem(VBA.Left$(myString, 1)) Then
+                Exit Do
+            End If
+            myString = VBA.Mid$(myString, 2)
+                
+            
+        Loop
+        
+        
+        Do While VBA.Len(ipSource) > 0
+    
+            If myTrimChars.LacksItem(VBA.Right$(myString, 1)) Then
+                Exit Do
+            End If
+           myString = VBA.Left$(myString, VBA.Len(myString) - 1)
+            
+                
+        Loop
+        
+        Return myString
+            
+    End Function
+
+    Public Function PadRight(ByVal ipString As String, ByVal ipWidth As Long, Optional ByVal ipPadChars As String) As String
+
+        PadRight = ipString
+        If Len(ipString) >= ipWidth Then Exit Function
+            
+        Dim myPadchars As String
+        myPadchars = IIf(VBA.Len(ipPadChars) = 0, Char.twSpace, ipPadChars)
+        
+        Dim myReturn As String
+        myReturn = VBA.String$(ipWidth, Char.twSpace)
+        LSet myReturn = ipString
+        
+        If Len(ipString) < ipWidth Then
+            myReturn = ipString & Replace(myReturn, Char.twSpace, myPadchars, Len(ipString) + 1)
+        End If
+    
+        PadRight = myReturn
+            
+    End Function
+
+    Public Function PadLeft(ByVal ipString As String, ByVal ipWidth As Long, Optional ByVal ipPadChars As String) As String
+        
+        PadLeft = ipString
+        If Len(ipString) >= ipWidth Then Exit Function
+            
+        Dim myPadchars As String
+        myPadchars = IIf(VBA.Len(ipPadChars) = 0, Char.twSpace, ipPadChars)
+        
+        Dim myReturn As String
+        myReturn = VBA.String$(ipWidth, Char.twSpace)
+        RSet myReturn = ipString
+        
+        Dim myCount As Long
+        myCount = ipWidth - Len(ipString)
+        
+        If myCount > 0 Then
+            myReturn = Replace(myReturn, Char.twSpace, myPadchars, 1, myCount)
+        End If
+    
+        PadLeft = myReturn
+            
+    End Function
+
+    Public Function CountOf(ByVal ipCountIn As String, ByVal ipCountMe As String) As Long
+        If VBA.Len(ipCountMe) = 0 Then Return -1
+        If VBA.Len(ipCountIn) = 0 Then Return -1
+        Return (Len(ipCountIn) - VBA.Len(VBA.Replace(ipCountIn, ipCountMe, vbNullString))) \ VBA.Len(ipCountMe)
+    End Function
+
+'     'ToDo: This method should be in the Areas Module
+'     '@Description("Takes string in the form of X,Y and returns array containing X Long, Y Long")
+'     Public Function CoordsToXY(ByVal ipCoord As String) As Variant
+'     Attribute CoordsToXY.VB_Description = "Takes string in the form of X,Y and returns array containing X Long, Y Long"
+'         CoordsToXY = Array(CLng(Split(ipCoord, ",")(0)), CLng(Split(ipCoord, ",")(1)))
+'     End Function
+
+'@Description("Converts a string to an List of trimmed substrings")
+Public Function ToSubStr _
+( _
+    ByVal ipString As String, _
+    Optional ByVal ipSeparator As String = char.twcomma, _
+    Optional ByVal ipTrimChars As Variant _
+) As Seq
+
+    If BailOut.When(VBA.Len(ipString) = 0, StringIsEmpty) Then
+         Return Seq.Deb
+    End If
+
+    Dim mySeparator As String = IIf(VBA.Len(ipSeparator) = 0, Char.twComma, ipSeparator)
+    
+    If VBA.IsMissing(ipTrimChars) Then
+    
+        Set myTrimchars = Strs.WhitespaceSeq
+        
+    Else
+    
+    
+        Dim myMeta As Meta = Meta.Deb(ipTrimChars)
+        Dim myTrimchars As Variant
+        If myMeta.IsQueryable Then
+            
+            Set myTrimchars = Seq.Deb(ipTrimChars)
+            
+        Else
+            
+            Set myTrimchars = Strs.WhitespaceSeq
+            
+        End If
+        
+    End If
+    
+    Dim mystring As String = Trimmer(ipString, myTrimchars)
+    Dim myArray As Variant = VBA.Split(mystring, mySeparator)
+        
+    Dim myItem As Variant
+    Dim mySeq As Seq = Seq.Deb
+    For Each myItem In myArray
+
+        Dim myString2 As String = Trimmer(myItem, myTrimchars)
+        mySeq.Add myString2
+    Next
+
+    Return mySeq
+        
+End Function
+
+'@Description("Repeats the replace action until the string no longer changes in lengtth")
+Public Function RepeatReplacer(ByVal ipHost As String, Optional ByVal ipFind As String, Optional ByVal ipReplace As String) As String
+Attribute RepeatReplacer.VB_Description = "Repeats the replace action until the string no longer changes in lengtth"
+    
+    RepeatReplacer = ipHost
+    If BailOut.When(VBA.Len(ipHost) = 0, StringIsEmpty) Then Exit Function
+    ipFind = IIf(VBA.Len(ipFind) = 0, Char.twSpace, ipFind)
+    ipReplace = IIf(VBA.Len(ipReplace) = 0, Char.twNoString, ipReplace)
+        
+    Dim myFind As String
+    Dim myReplace As String
+    
+    If VBA.VarType(ipFind) <> vbString Then
+        
+        myFind = Stringifier.ToString(ipFind)
+        
+        
+    Else
+        
+        myFind = ipFind
+        
+        
+    End If
+    
+    If VBA.VarType(ipReplace) <> vbString Then
+        
+        myReplace = Stringifier.ToString(ipReplace)
+        
+        
+    Else
+        
+        myReplace = ipReplace
+        
+        
+    End If
+    
+    Do
+    
+        DoEvents
+        
+        Dim myLen As Long
+        myLen = VBA.Len(ipHost)
+        ipHost = VBA.Replace(ipHost, myFind, myReplace)
+        
+        
+    Loop While myLen > VBA.Len(ipHost)
+
+    RepeatReplacer = ipHost
+        
+End Function
+
+
+'@description("Takes an array of find/replace arrays and repeat replaces each pair.  Default  is array(" ",vbnullstring))"
+Public Function MultiReplacer(ByVal ipSource As String, ParamArray ipFindReplaceItems() As Variant) As String
+
+    If BailOut.When(VBA.Len(ipSource) = 0, StringIsEmpty) Then
+        Return vbNullString
+    End If
+
+    Dim myFindReplaceItems As Variant = VarOp.ResolveParamArray(ipFindReplaceItems)
+    Dim myMeta As Meta = Meta.Deb(myFindReplaceItems)
+    
+    Dim myIter As IterItems = IterItems.Deb(myFindReplaceItems)
+    Do
+        Dim myPair As Variant = myIter.GetItem
+        If Not VBA.IsArray(myPair) Then Continue Do
+        If ArrayInfo.Count(myPair) <> 2 Then Continue Do
+        ipSource = RepeatReplacer(ipSource, myPair(0), myPair(1))
+        
+    Loop While myIter.MoveNext
+    
+    Return ipSource
+    
+End Function
+
+' 'Unecessary functions as Seq.Deb is sufficiently terse
+' Public Function ToCharSeq(ByVal ipString As String) As Seq
+
+' End Function
+
+' Public Function ToCharArray(ByVal ipString As String) As Variant
+'     Return ToCharSeq(ipString).ToArray
+' End Function
+
+Public Function ToAscB(ByVal ipString As String) As Seq
+    
+    If VBA.Len(ipString) = 0 Then
+        
+        Return Seq.Deb
+            
+    Else
+        
+        Dim myAl As Seq = Seq.Deb
+        Dim myindex As Long
+        For myindex = 1 To VBA.Len(ipString)
+            myAl.AddItems VBA.AscB(VBA.Mid$(ipString, myindex, 1))
+        Next
+        
+    End If
+    
+End Function
+
+
+Public Function ToUnicodeBytes(ByVal ipString As String) As Seq
+
+    If VBA.Len(ipString) = 0 Then
+        
+        Return Seq.Deb
+            
+    Else
+        
+        Dim myvariant() As Byte
+        myvariant = ipString
+        Return Seq.Deb.AddKnownRange(myvariant)
+            
+    End If
+        
+End Function
+
+
+Public Function ToUnicodeIntegers(ByVal ipString As String) As Seq
+
+    If VBA.Len(ipString) = 0 Then
+        
+        Set ToUnicodeIntegers = Seq.Deb
+            
+    Else
+        
+        Dim myAl As Seq = Seq.Deb
+        Dim myindex As Long
+        For myindex = 1 To VBA.Len(ipString)
+            myAl.AddItems VBA.AscW(VBA.Mid$(ipString, myindex, 1))
+        Next
+        
+    End If
+    
+    Return myAl
+    
+End Function
+
+Public Function Sort(Of Seq)(ByRef ipstring As String) As String
+    Return Seq.Deb(ipstring).Sort(Of Seq).Join(vbNullString)
+End Function
+
+
+
+'     '@Description("increments characters using the sequence in the ipAllowedChar Seq")
+'     Public Function Inc(ByVal ipString As String, Optional ByVal ipAllowedChar As Seq) As String
+    
+'         If VBA.Len(ipString) = 0 Then Return vbNullString
+        
+'         Dim myAllowedChar As Seq = ipAllowedChar
+'         If ipAllowedChar Is Nothing Then
+            
+'             Set myAllowedChar = Seq.Deb.AddRange(Strs.AlphaNumericArray)
+            
+'         ElseIf ipAllowedChar.Count = 0 Then
+            
+'             myAllowedChar.AddRange Strs.AlphaNumericArray
+            
+            
+'         End If
+        
+        
+'         Dim myChars As Seq = Seq.Deb.AddRange(ipString)
+        
+'         Dim myIndex As Long
+'         myIndex = myChars.LastIndex
+'         Dim myChar As String
+'         Dim myCarryFlag As Boolean
+'         myCarryFlag = False
+'         Do
+        
+'             DoEvents
+            
+'             If myIndex = 0 And myCarryFlag Then
+        
+'             myChars.Insert myChars.FirstIndex, myAllowedChar.Item(myAllowedChar.FirstIndex + 1)
+'             Inc = myChars.Join
+'             Exit Function
+            
+            
+'             Else
+            
+'                 myChar = IncChar(myChars.Item(myIndex), myAllowedChar)
+            
+            
+'             End If
+            
+'             Select Case VBA.Len(myChar)
+            
+'             Case 1
+            
+'                 If myChar <> myChars.Item(myIndex) Then
+'                 ' the character was incremented so replace in mychars
+'                 myChars.Item(myIndex) = myChar
+'                 Inc = myChars.Join
+'                 Exit Function
+                
+                
+'                 Else
+'                 ' the character is the same so we can exit
+'                 ' but first check for carry status
+                
+'                 If myCarryFlag Then
+                    
+'                     ' we had a rollover before finding a character we couldn't increment so we need to
+'                     ' insert the character of allowedchars.firstindex +1
+                    
+'                     '@Ignore FunctionReturnValueDiscarded
+'                     myChars.Insert myIndex + 1, myAllowedChar.Item(myAllowedChar.FirstIndex + 1)
+'                     Inc = myChars.Join
+'                     Exit Function
+                    
+                    
+'                 End If
+                
+'                 End If
+            
+            
+'             Case 2
+'                 ' if two chars are returned a rollover has occurred
+'                 myChars.Item(myIndex) = VBA.Left$(myChar, 1)
+'                 myIndex = myIndex - 1
+'                 myCarryFlag = True
+            
+'             End Select
+            
+'         Loop
+        
+'         Inc = myChars.Join
+    
+'     End Function
+
+
+'     Friend Function IncChar(ByVal ipChar As String, ByVal ipAllowedChars As Seq) As String
+
+'     If ipAllowedChars.LacksItem(ipChar) Then Return ipChar
+        
+'     Dim myCharIndex As Long
+'     myCharIndex = ipAllowedChars.IndexOf(ipChar)
+'     If myCharIndex = ipAllowedChars.LastIndex Then
+        
+'         ' if the returned character string has two chars this indicated
+'         ' that a rollover has occurred and only the first character needs to be
+'         ' used for further processing
+'         IncChar = ipAllowedChars.Item(ipAllowedChars.FirstIndex) & Char.twHash
+        
+'     Else
+        
+'         IncChar = ipAllowedChars.Item(myCharIndex + 1)
+        
+'     End If
+        
+'     End Function
+
+
+'     Public Function HoldsItem(ByVal ipHostString As String, ByVal ipFindString As String) As Boolean
+'         HoldsItem = InStr(ipHostString, ipFindString) > 0
+'     End Function
+
+'     Public Function LacksItem(ByVal ipHostString As String, ByVal ipFindString As String) As Boolean
+'         LacksItem = Not HoldsItem(ipHostString, ipFindString)
+'     End Function
+End Class

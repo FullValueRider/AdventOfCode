@@ -1,0 +1,637 @@
+Class Meta
+
+	Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+   
+    Option Explicit
+
+    Private Const MY_TYPENAME                   As String = "Meta"
+    Private Const FIRST_RANK                    As Long = 1
+    
+    
+    Private Type Properties
+    
+        Cargo                                   As Variant
+        Ranks                                   As wCollection
+        ' The number of elements in ipCargo
+        Size                                    As Long
+        'HoldsCargo                              As Boolean
+        IsArray                                 As boolean
+        GroupOrd                                As TypeOrd
+        TypeOrd                                 As TypeOrd
+        IsSingleValue                           As boolean
+        
+    End Type
+
+    Private p                                   As Properties
+
+
+    '@DefaultMember
+    Public Function Deb(ByRef ipCargo As Variant) As Meta
+        With New Meta
+            Return .ConstructInstance(ipCargo)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByRef ipCargo As Variant) As Meta
+    
+        
+        SetupMetaData ipCargo
+        Return Me
+        
+    End Function
+    
+    Public Sub SetupMetaData(ByRef ipCargo As Variant)
+        
+        Set p.Ranks = wCollection.Deb
+        p.Size = -1
+        p.IsArray = False
+        p.GroupOrd = TypeOrd.idNoType
+        p.TypeOrd = enums.Types.TypeNameToOrd(TypeInfo.BaseType(ipCargo))
+        p.IsSingleValue = False
+        
+        If VBA.IsArray(ipCargo) Then
+        
+            p.IsArray = True
+            
+            Select Case True
+            
+                Case ArrayInfo.IsNotAllocated(ipCargo)
+                
+                    p.Ranks.Add Rank.Deb(0, -1)
+                 
+                 
+                Case ArrayInfo.IsTableArray(ipCargo)
+                
+                    p.Ranks.Add Rank.Deb(0, -1)
+                    
+                    
+                Case ArrayInfo.IsMDArray(ipCargo)
+                
+                    p.Ranks.Add Rank.Deb(0, -1)
+                    
+                    
+                Case Else
+                    
+                    p.Cargo = ipCargo
+                    p.Ranks.Add Rank.Deb(LBound(p.Cargo, 1), UBound(p.Cargo, 1))
+                    p.Size = p.Ranks(1).count
+                    p.GroupOrd = TypeOrd.idListArray
+
+                
+            End Select
+                
+            Exit Sub
+            
+        End If
+            
+        Select Case True
+                
+            Case TypeInfo.IsItemByKey(ipCargo)
+            
+                Set p.Cargo = ipCargo
+                p.Ranks.Add Rank.Deb(0, CLng(ipCargo.Count - 1))
+                p.GroupOrd = TypeOrd.idItemByKey
+                p.Size = ipCargo.count
+                
+                
+            Case TypeInfo.IsItemByToArray(ipCargo)
+                Set p.Cargo = ipCargo
+                p.Ranks.Add Rank.Deb(0, CLng(ipCargo.count - 1))
+                p.GroupOrd = TypeOrd.idItemByToArray
+                p.Size = ipCargo.count
+                
+                
+            Case TypeInfo.IsItemByIndex0(ipCargo)
+            
+                Set p.Cargo = ipCargo
+                p.Ranks.Add Rank.Deb(0, CLng(ipCargo.count - 1))
+                p.GroupOrd = TypeOrd.idItemByIndex0
+                p.Size = ipCargo.count
+                
+
+            Case TypeInfo.IsItemByIndex1(ipCargo)
+                
+                Set p.Cargo = ipCargo
+                p.Ranks.Add Rank.Deb(1, CLng(ipCargo.count))
+                p.GroupOrd = TypeOrd.idItemByIndex1
+                p.Size = ipCargo.count
+                
+                
+            Case TypeInfo.IsString(ipCargo)
+                
+                p.Cargo = ipCargo
+            
+                If VBA.Len(ipCargo) > 0 Then
+                    p.Ranks.Add Rank.Deb(1, CLng(VBA.Len(ipCargo)))
+                Else
+                    p.Ranks.Add Rank.Deb(0, 0)
+                End If
+                p.GroupOrd = TypeOrd.idString
+                p.Size = VBA.Len(ipCargo)
+                
+                
+            Case TypeInfo.IsNumber(ipCargo)
+            
+                p.Cargo = ipCargo
+                p.Ranks.Add Rank.Deb(0, 0)
+                p.GroupOrd = TypeOrd.idNumber
+                p.Size = 1
+                p.IsSingleValue = True
+                
+            Case TypeInfo.IsAdmin(ipCargo)
+            
+                If VBA.IsObject(ipCargo) Then
+                    Set p.Cargo = ipCargo
+                Else
+                	p.Cargo = ipCargo
+                End If
+                p.Ranks.Add Rank.Deb(0, 0)
+                p.GroupOrd = TypeOrd.idAdmin
+                p.Size = 1
+                p.IsSingleValue = True
+                
+            Case TypeInfo.IsBoolean(ipCargo)
+            
+                p.Cargo = ipCargo
+                p.Ranks.Add Rank.Deb(0, 0)
+                p.GroupOrd = TypeOrd.idBoolean
+                p.Size = 1
+                p.IsSingleValue = True
+                
+            Case TypeInfo.IsItemObject(ipCargo)
+            
+                Set p.Cargo = ipCargo
+                p.Ranks.Add Rank.Deb(0, 0)
+                p.GroupOrd = TypeOrd.idItemObject
+                p.Size = 1
+                p.IsSingleValue = True
+                
+            Case Else
+            
+                Err.Raise 17 + vbObjectError, "Lib.Meta.ConstructInstance", "Unexpected Type: " & VBA.TypeName(ipCargo)
+                
+                
+        End Select
+        
+    End Sub
+    
+    ' Public Sub Class_terminate()
+    
+    '     ' Dim myEmptyVariant As Variant = Empty
+    '     ' ' we need to release the refrence to an array in ipCargo
+    '     ' ' to do this we copy the content of a known empty variant
+    '     ' If IsArray Then
+    '     '     CopyMemoryToAny p.Cargo, VarPtr(myEmptyVariant), 16
+    '     ' End If
+        
+    ' End Sub
+
+    Public Property Get Cargo() As Variant
+    
+        If VBA.IsNull(p.Cargo) Then
+            Return Null
+        Else
+        	Return p.Cargo
+        End If
+        
+    End Property
+    
+    '@Descriptiom("ToDo: update for multi dimension arrays")
+    Public Property Get Item(ByRef ipIndex As Variant) As Variant
+    
+        If IsNotQueryable Then
+            Return Null
+            
+        End If
+        
+        Select Case True
+        
+            Case IsArray
+            
+                Select Case True
+                    
+                    Case IsListArray
+                    
+                        Return p.Cargo(ipIndex)
+                    
+                    Case IsTableArray
+                    
+                        Err.Raise 17 + vbObjectError, "Lib.Meta.GetItem", "Multidemindoned arrays are not currently supported"
+                    
+                    Case IsMDArray
+                    
+                        Err.Raise 17 + vbObjectError, "Lib.Meta.GetItem", "Multidemindoned arrays are not currently supported"
+            
+            End Select
+                
+            Case IsItemByKey
+            
+                Return p.Cargo.Item(ipIndex)
+                
+        
+            Case IsItemByToArray
+                Return p.Cargo(ipIndex)
+                
+            Case IsItemByIndex0
+            
+                Return p.Cargo.Item(ipIndex)
+
+            Case IsItemByIndex1
+                
+                Return p.Cargo.Item(ipIndex)
+                
+                
+            Case IsString
+                
+                Return VBA.Mid(p.Cargo, ipIndex, 1)
+            
+                
+
+            Case IsNumber
+                'Ignore index
+                Return p.Cargo
+                
+            Case IsAdmin
+                'Ignore index
+                Return p.Cargo
+               
+                
+            Case IsBoolean
+                'ignore index
+                Return p.Cargo
+                
+            Case ISItemObject
+                'ignore index
+                Return p.Cargo
+                
+            Case Else
+            
+                Err.Raise 17 + vbObjectError, "Lib.Meta.ConstructInstance", "Unexpected Type: " & VBA.TypeName(p.Cargo)
+                
+                
+        End Select
+    
+    End Property
+    
+    Public Property Let Item(ByRef ipIndex As Variant, ByRef ipItem As Variant)
+    
+        If VBA.IsObject(ipItem) Then
+        
+            Err.Raise 17, "Lib.Meta.LetItem", "Let can't handle objects"
+            
+        End If
+        
+         Select Case True
+        
+            Case IsArray
+            
+                Select Case True
+                    
+                    Case IsListArray
+                    
+                        p.Cargo(ipIndex) = ipItem
+                    
+                    Case IsTableArray
+                    
+                        Err.Raise 17 + vbObjectError, "Lib.Meta.GetItem", "Multidemindoned arrays are not currently supported"
+                    
+                    Case IsMDArray
+                    
+                        Err.Raise 17 + vbObjectError, "Lib.Meta.GetItem", "Multidemindoned arrays are not currently supported"
+            
+            End Select
+                
+            Case IsItemByKey
+            
+                p.Cargo.Item(ipIndex) = ipItem
+                
+        
+            Case IsItemByToArray
+            
+                p.Cargo(ipIndex) = ipItem
+                
+            Case IsItemByIndex0
+            
+               p.Cargo.Item(ipIndex) = ipItem
+
+            Case IsItemByIndex1
+                
+                p.Cargo.Item(ipIndex) = ipItem
+                
+                
+            Case IsString
+                
+                p.Cargo.Item(ipIndex) = ipItem
+            
+                
+
+            Case IsNumber
+                'Ignore index
+                p.Cargo = ipItem
+                
+            Case IsAdmin
+                'Ignore index
+                p.Cargo = ipItem
+               
+                
+            Case IsBoolean
+                'ignore index
+                p.Cargo = ipItem
+                
+            Case ISItemObject
+                'ignore index
+                p.Cargo = ipItem
+                
+            Case Else
+            
+                Err.Raise 17 + vbObjectError, "Lib.Meta.ConstructInstance", "Unexpected Type: " & VBA.TypeName(p.Cargo)
+                
+                
+        End Select
+    End Property
+    
+    Public Property Set Item(ByVal ipIndex As Variant, ByRef ipItem As Variant)
+        If VBA.IsObject(ipItem) Then
+        
+            Err.Raise 17, "Lib.Meta.LetItem", "Let can't handle objects"
+            
+        End If
+        
+         Select Case True
+        
+            Case IsArray
+            
+                Select Case True
+                    
+                    Case IsListArray
+                    
+                        p.Cargo(ipIndex) = ipItem
+                    
+                    Case IsTableArray
+                    
+                        Err.Raise 17 + vbObjectError, "Lib.Meta.GetItem", "Multidemindoned arrays are not currently supported"
+                    
+                    Case IsMDArray
+                    
+                        Err.Raise 17 + vbObjectError, "Lib.Meta.GetItem", "Multidemindoned arrays are not currently supported"
+            
+            End Select
+                
+            Case IsItemByKey
+            
+                p.Cargo.Item(ipIndex) = ipItem
+                
+        
+            Case IsItemByToArray
+            
+                p.Cargo(ipIndex) = ipItem
+                
+            Case IsItemByIndex0
+            
+               p.Cargo.Item(ipIndex) = ipItem
+
+            Case IsItemByIndex1
+                
+                p.Cargo.Item(ipIndex) = ipItem
+                
+                
+            Case IsString
+                
+                p.Cargo.Item(ipIndex) = ipItem
+            
+                
+
+            Case IsNumber
+                'Ignore index
+                p.Cargo = ipItem
+                
+            Case IsAdmin
+                'Ignore index
+                p.Cargo = ipItem
+               
+                
+            Case IsBoolean
+                'ignore index
+                p.Cargo = ipItem
+                
+            Case ISItemObject
+                'ignore index
+                p.Cargo = ipItem
+                
+            Case Else
+            
+                Err.Raise 17 + vbObjectError, "Lib.Meta.ConstructInstance", "Unexpected Type: " & VBA.TypeName(p.Cargo)
+                
+                
+        End Select
+    End Property
+    
+    ' '@Description("Needs updating for use with arrays")
+    ' Public Function Attach(ByRef ipCargo As Variant) As Meta
+    
+    '     SetupMetaData ipCargo
+        
+    '     Return Me
+        
+    ' End Function
+    
+    Public Property Get IsArray() As Boolean
+        Return p.IsArray
+    End Property
+   
+    Public Function IsSIngleValue() As Boolean
+        Return p.IsSingleValue
+    End Function
+    ' Public Function HoldsCargo() As Boolean
+    '     Return p.HoldsCargo
+    ' End Function
+    
+    ' Public Property Get LacksCargo() As Boolean
+    '     Return Not p.HoldsCargo
+    ' End Property
+    
+    Public Property Get IsNotArray() As Boolean
+        Return Not p.IsArray
+    End Property
+    
+    Public Function FirstRank() As Rank
+        Return p.Ranks.Item(1)
+    End Function
+
+
+    Public Function LastRank() As Rank
+        Return p.Ranks.Item(p.Ranks.Count)
+    End Function
+
+
+    Public Property Get FirstIndex(ByRef ipIndex As Long) As Long
+        If ipIndex < 1 Or ipIndex > p.Ranks.Count Then
+            Return -1
+        Else
+            Return p.Ranks.Item(ipIndex).firstindex
+        End If
+    End Property
+
+
+    Public Property Get LastIndex(ByRef ipIndex As Long) As Long
+        If ipIndex < 1 Or ipIndex > p.Ranks.Count Then
+            Return -1
+        Else
+            Return p.Ranks.Item(ipIndex).Lastindex
+        End If
+    End Property
+
+    '@Description("Returns the count from FirstIndex to LastIndex of the specified Rank.  A value of zero will return the product of the count of all ranks, i.e. the total number of elements in a multideminsionsal array'
+    Public Function Size(Optional ByVal ipIndex As Long = 0) As Long
+        If ipIndex < 0 Or ipIndex > p.Ranks.Count Then
+            Return -1
+        ElseIf ipIndex = 0 Then
+            Return p.Size
+        Else
+        	Return p.Ranks.Item(ipIndex).count
+        End If
+        	
+    End Function
+
+    '
+    Public Function RanksCount() As Long
+        Return p.Ranks.Count
+    End Function
+        
+
+    Public Property Get Ranks() As wCollection
+        Return p.Ranks
+    End Property
+
+
+    Public Function HasRank(ByVal ipRank As Long) As Boolean
+        Return (ipRank >= 1) And (ipRank <= p.Ranks.Count)
+    End Function
+
+    Public Function LacksRank(ByVal ipRank As Long) As Boolean
+        Return (ipRank < 1) And (ipRank < p.Ranks.Count)
+    End Function
+
+
+    ' Public Function ToArray() As Variant
+    ' Return p.Ranks.ToArray
+    ' End Function
+
+
+    Public Function IsQueryable() As Boolean
+        Return p.Size > 0
+    End Function
+
+    Public Function IsNotQueryable() As Boolean
+        Return p.Size < 1
+    End Function
+    
+    ' 'Description("Decodes ipFPA as if it were a forwarded paramarray.  Return null in cargo when ipFPA is not an array")
+    ' Private Sub ResolveCargo(ByRef ipFPA As Variant)
+    
+    '     Select Case True
+            
+    '         Case ArrayInfo.IsNotArray(ipFPA)
+            
+    '            Assign p.Cargo, ipFPA
+                
+                
+    '         Case ArrayInfo.IsNotListArray(ipFPA)
+            
+    '            p.Cargo = ipFPA
+            
+            
+    '         Case ArrayInfo.HasItems(ipFPA)
+            
+    '             p.Cargo = ipFPA
+                
+                
+    '         Case Else
+            
+    '           Assign p.Cargo, ipFPA(0)
+                
+                
+    '     End Select
+    
+        
+    ' End Sub
+    
+   
+    Public Property Get TypeName() As String
+        Return MY_TYPENAME
+    End Property
+    
+    
+    Public Function HasOneItem() As Long
+        Return p.Size = 1
+    End Function
+    
+    Public Function HasItems() As Long
+        Return p.Size > 1
+    End Function
+    
+    Public Function HasAnyItems() As Long
+        Return p.Size > 0
+    End Function
+
+    '@Enumerator
+    Public Function NewEnum() As IUnknown
+        Return p.Ranks.[_NewEnum]
+    End Function
+    
+    
+    Public Function IsType(ByVal ipTypeOrd As TypeOrd) As Boolean
+        Return ipTypeOrd = p.TypeOrd
+    End Function
+        
+    Public Function IsNumber() As Boolean
+        Return p.GroupOrd = TypeOrd.idNumber
+    End Function
+    
+    Public Function IsString() As Boolean
+       Return p.GroupOrd = TypeOrd.idString
+    End Function
+    
+    Public Function IsBoolean() As Boolean
+        Return p.GroupOrd = TypeOrd.idBoolean
+    End Function
+    
+    Public Function ISItemObject() As Boolean
+        Return p.GroupOrd = TypeOrd.idItemObject
+    End Function
+    
+    Public Function IsAdmin() As Boolean
+        Return p.GroupOrd = TypeOrd.idAdmin
+    End Function
+    
+    Public Function IsListArray() As Boolean
+        Return p.GroupOrd = TypeOrd.idListArray
+    End Function
+    
+    Public Function IsTableArray() As Boolean
+        Return p.GroupOrd = TypeOrd.idTableArray
+    End Function
+    
+    Public Function IsMathArray() As Boolean
+        Return p.GroupOrd = TypeOrd.idMathArray
+    End Function
+    
+    Public Function IsItemByIndex0() As Boolean
+        Return p.GroupOrd = TypeOrd.idItemByIndex0
+    End Function
+    
+    Public Function IsItemByIndex1() As Boolean
+        Return p.GroupOrd = TypeOrd.idItemByIndex1
+    End Function
+    
+    Public Function IsItemByKey() As Boolean
+        Return p.GroupOrd = TypeOrd.idItemByKey
+    End Function
+    
+    Public Function IsItemByToArray() As Boolean
+        Return p.GroupOrd = TypeOrd.idItemByToArray
+    End Function
+    
+    End Class

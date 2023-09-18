@@ -1,0 +1,119 @@
+Public Class TreapSeqNode
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Private Type Properties
+        Item                            As variant
+        Priority                        As Double
+        Left                            As TreapSeqNode
+        Right                           As TreapSeqNode
+        Parent                          As TreapSeqNode
+        
+    End Type
+    
+    Private p                           As Properties
+    
+    ' Public Function Deb() As TreapSeqNode
+    '     With New TreapSeqNode
+    '         Return .ConstructInstance
+    '     End With
+    ' End Function
+   
+    Public Function Deb(ByRef ipItem As Variant) As TreapSeqNode
+        With New TreapSeqNode
+            Return .ConstructInstance(ipItem)
+        End With
+    End Function
+   
+    Friend Function ConstructInstance(ByRef ipItem As Variant = Null) As TreapSeqNode
+    
+        p.Priority = VBA.Rnd
+        p.Item = ipItem
+        Set p.Left = Nothing
+        Set p.Right = Nothing
+        Set p.Parent = Nothing
+        
+        Return Me
+        
+    End Function
+    
+    Public Function LacksChildren() As Boolean
+        If p.Left IsNot Nothing Then Return False
+        If p.Right IsNot Nothing Then Return False
+        Return True
+    End Function
+    
+    Public Function HoldsTwoChildren() As Boolean
+        If p.Left Is Nothing Then Return False
+        If p.Right Is Nothing Then Return False
+        Return True
+    End Function
+    
+    Public Function HoldsSingleChildOnLeft() As Boolean
+        If p.Left Is Nothing Then Return False
+        If p.Right IsNot Nothing Then Return False
+        Return True
+    End Function
+    
+    Public Function GoLeft() As Boolean
+        Return p.Left.Priority < p.Right.Priority
+    End Function
+    
+    Public Function GoRight() As Boolean
+        Return p.Right.Priority < p.Left.Priority
+    End Function
+    
+    
+    Public Property Get Right() As TreapSeqNode
+        Return p.Right
+    End Property
+    
+    Public Property Set Right(ByRef ipTreapSeqNode As TreapSeqNode)
+        Set p.Right = ipTreapSeqNode
+    End Property
+    
+    
+    Public Property Get Left() As TreapSeqNode
+        Return p.Left
+    End Property
+    
+    Public Property Set Left(ByRef ipTreapSeqNode As TreapSeqNode)
+        Set p.Left = ipTreapSeqNode
+    End Property
+    
+    
+    Public Property Get Priority() As Double
+        Return p.Priority
+    End Property
+    
+    Public Property Let Priority(ByRef ipPriority As Long)
+        p.Priority = ipPriority
+    End Property
+    
+    
+    Public Property Get Item() As Variant
+        Return p.Item
+    End Property
+    
+    Public Property Let Item(ByRef ipItem As Variant)
+        p.Item = ipItem
+    End Property
+    
+    Public Property Set Item(ByRef ipItem As Variant)
+        Set p.Item = ipItem
+    End Property
+    
+    Public Property Get Parent() As TreapSeqNode
+        Return p.Parent
+    End Property
+    
+    Public Property Set Parent(ByRef ipParent As TreapSeqNode)
+        Set p.Parent = ipParent
+    End Property
+        
+        
+End Class

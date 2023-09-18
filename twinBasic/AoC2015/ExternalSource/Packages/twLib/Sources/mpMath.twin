@@ -1,0 +1,100 @@
+Class mpMath
+    Attribute VB_Name = "mpMath"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '@PredeclaredId
+    '@Exposed
+    '@Folder("VBALib.Mappers")
+        
+    Implements IMapper
+
+    Public Enum Fx
+    
+    ' vb prefix used in VBA when compiler doesn't allow symbol
+    Abs             'Issue in VBA
+    Atn
+    Atn2
+    Ceil
+    Cos
+    Exp
+    Factorial
+    Floor
+    InvPower
+    IsPrime
+    Ln
+    Log
+    Rnd
+    TriangularNumber
+    Power
+    Round
+    Sgn                 'issue in VBA
+    Sin
+
+    Tan
+    
+    End Enum
+   
+    
+    Private Const MY_TYPENAME               As String = "mpMath"
+    
+
+    Private Type State
+    
+        Function                      As Fx
+        OptionalParam                 As Variant
+    
+    
+    End Type
+
+    Private s                     As State
+
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+        
+        Select Case s.Function
+            
+            Case Abs:               Return VBA.Abs(ipHostItem)
+            Case Atn:               Return VBA.Atn(ipHostItem)
+            Case Cos:               Return VBA.Cos(ipHostItem)
+            Case Exp:               Return VBA.Exp(ipHostItem)
+            Case Round:             Return VBA.Round(ipHostItem, s.OptionalParam)
+            Case Power:             Return ipHostItem ^ s.OptionalParam
+            Case Sgn:               Return VBA.Sgn(ipHostItem)
+            Case Sin:               Return VBA.Sin(ipHostItem)
+            Case Tan:               Return VBA.Tan(ipHostItem)
+            
+            ' Function defined, or redefined from VBA version, in Class Maths
+            Case InvPower:          Return ipHostItem ^ (1 / s.OptionalParam)
+            Case IsPrime:           Return Maths.IsPrime(ipHostItem)
+            Case Factorial:         Return Maths.Factorial(ipHostItem)
+            Case Ln:                Return Maths.Ln(ipHostItem)
+            Case Log:               Return Maths.Log(ipHostItem)
+            Case TriangularNumber:  Return Maths.TriangularNumber(ipHostItem)
+            
+            
+        End Select
+            
+    End Function
+    
+    
+    '@Description("Applies the specified function. Check with the equivalent VBA function to determine if the optional argument should be used")
+    '@DefaultMember
+    Public Function Deb(ByVal ipFx As Fx, Optional ByVal ipOptionalParam As Variant = 0) As mpMath
+        With New mpMath
+            Return .ConstructInstance(ipFx, ipOptionalParam)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipFx As Fx, ByVal ipOptionalParam As Variant) As mpMath
+        s.OptionalParam = ipOptionalParam
+        s.Function = ipFx
+        Return Me
+    End Function
+
+    Public Property Get TypeName() As String Implements IMapper.TypeName
+        Return MY_TYPENAME
+    End Property
+    
+End Class

@@ -1,0 +1,301 @@
+[ Description ("A Win32 native CommandButton") ]
+[ WindowsControl ("/miscellaneous/CommandButtonNew.png") ]
+[ ClassId ("33AD4EF0-6699-11CF-B70C-00AA0060D393") ]
+[ InterfaceId ("671DD54E-4636-4003-B584-1692B5C8A706") ]    ' FIXME implement {33AD4EF1-6699-11CF-B70C-00AA0060D393} for backcompat
+[ COMCreatable (False) ]
+Class CommandButton
+     
+    #Region "INHERITANCE"
+
+        [ WithDispatchForwarding ] Implements Control
+        Implements WindowsControls.IWindowsControl
+        Implements WinNativeFormsBase.BaseControlFocusable Via _BaseControl = New WinNativeFormsBase.BaseControlFocusable(ControlTypeConstants.vbCommandButton)
+    
+    #End Region
+        
+    #Region "STATE"
+    
+        [ CustomDesigner ("designer_SpectrumWindows") ]
+        [ Description ("") ]
+            Public BackColor As OLE_COLOR = VBRUN.SystemColorConstants.vb3DFace
+        
+        [ Serialize (True, "Caption") ]
+            Private Caption_INIT As String
+
+            Private WithEvents RootWindowElement As WindowsControls.WindowElement
+    
+        [ Unimplemented ]
+        [ Serialize (True, "DragIcon") ]
+        [ CustomDesigner ("designer_PictureBytes") ]
+            Private ReadOnly DragIconINIT() As Byte
+        [ Unimplemented ]
+        [ Serialize (False) ]
+            Public DragIcon As StdPicture
+        [ Unimplemented ]
+        [ Serialize (True, "DisabledPicture") ]
+        [ CustomDesigner ("designer_PictureBytes") ]
+            Private ReadOnly DisabledPictureINIT() As Byte
+        [ Unimplemented ]
+        [ Serialize (False) ]
+            Public DisabledPicture As StdPicture
+        [ Unimplemented ]
+        [ Serialize (True, "DownPicture") ]
+        [ CustomDesigner ("designer_PictureBytes") ]
+            Private ReadOnly DownPictureINIT() As Byte
+        [ Unimplemented ]
+        [ Serialize (False) ]
+            Public DownPicture As StdPicture
+        [ Unimplemented ]
+        [ Serialize (True, "Picture") ]
+        [ CustomDesigner ("designer_PictureBytes") ]
+            Private ReadOnly PictureINIT() As Byte
+        [ Unimplemented ]
+        [ Serialize (False) ]
+            Public Picture As StdPicture
+        [ Unimplemented ]
+            Public Cancel As Boolean
+        [ Unimplemented ]
+            Public CausesValidation As Boolean = True
+        [ Unimplemented ]
+            Public Default As Boolean
+        [ Unimplemented ]
+            Public DragMode As VBRUN.DragModeConstants
+        [ Unimplemented ]
+            Public HelpContextID As Long
+        [ CustomDesigner ("designer_SpectrumWindows") ]
+        [ Unimplemented ]
+            Public MaskColor As OLE_COLOR = &H00C0C0C0
+        [ Unimplemented ]
+            Public OLEDropMode As VBRUN.OLEDropConstants
+        [ Unimplemented ]
+            Public RightToLeft As Boolean
+        [ Unimplemented ]
+            Public UseMaskColor As Boolean
+        [ Unimplemented ]
+            Public WhatsThisHelpID As Long
+            
+        [ Unimplemented ]
+            Public Style As VBRUN.ButtonConstants
+    
+        [ Serialize (False) ]
+        [ Unimplemented ]
+            Public _Default As Boolean
+            Attribute _Default.VB_VarUserMemId = 0
+
+        [ Unimplemented ]
+            Public Sub Drag(Optional ByVal Action As Variant)
+            End Sub
+            
+        [ Unimplemented ]
+            Public Sub OLEDrag()
+            End Sub
+                        
+        [ Unimplemented ]
+            Public Sub ShowWhatsThis()
+            End Sub
+            
+        [ Unimplemented ]
+            Public Sub ZOrder(Optional ByVal Position As Variant)
+            End Sub
+    #End Region
+
+    #Region "EVENTS"
+    
+        [ DefaultDesignerEvent ]
+        [ Description ("") ]
+            Event Click()
+        [ Description ("") ]
+            Event GotFocus()
+        [ Description ("") ]
+            Event KeyDown(KeyCode As Integer, Shift As Integer)
+        [ Description ("") ]
+            Event KeyPress(KeyAscii As Integer)
+        [ Description ("") ]
+            Event KeyUp(KeyCode As Integer, Shift As Integer)
+        [ Description ("") ]
+            Event LostFocus()
+        [ Description ("") ]
+            Event MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            Event MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            Event MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            Event Initialize()
+
+        [ Unimplemented ] Event DragDrop(Source As Control, X As Single, Y As Single)
+        [ Unimplemented ] Event DragOver(Source As Control, X As Single, Y As Single, State As Integer)
+        [ Unimplemented ] Event OLECompleteDrag(Effect As Long)
+        [ Unimplemented ] Event OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Unimplemented ] Event OLEDragOver(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single, State As Integer)
+        [ Unimplemented ] Event OLEGiveFeedback(Effect As Long, DefaultCursors As Boolean)
+        [ Unimplemented ] Event OLESetData(Data As DataObject, DataFormat As Integer)
+        [ Unimplemented ] Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
+
+    #End Region
+               
+    #Region "MEMBERS"
+    
+        Public Sub New()
+            ' This constructor is useful for allowing control inheritance
+        End Sub
+        
+        Private Sub InitializeDefaultValues()
+        	Caption_INIT = "Button"
+        End Sub
+        
+        Public Sub New(Serializer As WindowsControls.SerializationInfo)
+            If Not Serializer.Deserialize(Me) Then
+                InitializeDefaultValues
+            End If
+        End Sub
+
+        Private Sub Class_Terminate()
+    '        MsgBox CurrentComponentName & "." & CurrentProcedureName
+        End Sub
+        
+        Private Sub HandleInitialize(ByVal ControlContext As WindowsControls.WindowsControlContext) _
+                Implements IWindowsControl.Initialize
+                
+            ControlContext.SetControlArrayIndex(Me.IndexINIT)
+                
+                Dim styles As Long
+                Dim extendedStyles As Long
+                
+                    extendedStyles += WinNativeFormsBASE.GeneralConsts.WindowExtendedStyles.WS_EX_NOPARENTNOTIFY
+                    styles += ButtonStyles.BS_MULTILINE
+                   
+            Set Me.RootWindowElement = CreateRootWindowElement(ControlContext, "ThunderCommandButton", Me.Caption_INIT, styles, extendedStyles)
+        End Sub
+        
+        Private Sub HandleDestroy() _
+                Implements IWindowsControl.Destroy
+                
+            ' disconnect anything that causes a circular reference here
+            'Debug.Print "CommandButton::Destroy"
+        End Sub
+        
+        Private Sub HandleCreate() _
+                Handles RootWindowElement.Create
+            
+            RaiseEvent Initialize()
+        End Sub
+        
+        Private Sub HandleGetColors(ByVal hdc As LongPtr, ByRef BackBrushOut As LongPtr, ByVal ControlType As ControlTypeConstants) _
+                Handles RootWindowElement.GetColors
+                
+            WinNativeFormsBASE.WindowsAPI.GDI32_SetBackMode(hdc, WinNativeFormsBASE.BackgroundModes.TRANSPARENT)
+            BackBrushOut = Me.CreateBackBrush(Me.BackColor)
+        End Sub
+
+        Private Sub HandleCommand(ByVal NotificationCode As ButtonNotifications, _
+                                    ByVal Identifier As Integer) _
+                Handles RootWindowElement.Command
+                
+            Select Case NotificationCode
+                Case BN_CLICKED
+                    RaiseEvent Click
+            End Select
+        End Sub
+
+        Private Sub HandleGotFocus() _
+                Handles RootWindowElement.GotFocus
+                
+            RaiseEvent GotFocus()
+        End Sub
+
+        Private Sub HandleLostFocus() _
+                Handles RootWindowElement.LostFocus
+                
+            RaiseEvent LostFocus()
+        End Sub
+        
+        Private Sub HandleKeyDown(ByRef KeyCode As VBRUN.KeyCodeConstants, _
+                                    ByVal ShiftState As VBRUN.ShiftConstants) _
+                Handles RootWindowElement.KeyDown
+                
+            Dim KeyCodeInt As Integer = KeyCode
+            RaiseEvent KeyDown(KeyCodeInt, CInt(ShiftState))
+            KeyCode = KeyCodeInt
+        End Sub
+        
+        Private Sub HandleKeyUp(ByRef KeyCode As VBRUN.KeyCodeConstants, _
+                                ByVal ShiftState As VBRUN.ShiftConstants) _
+                Handles RootWindowElement.KeyUp
+                
+            Dim KeyCodeInt As Integer = KeyCode
+            RaiseEvent KeyUp(KeyCodeInt, CInt(ShiftState))
+            KeyCode = KeyCodeInt
+        End Sub
+        
+        Private Sub HandleKeyPress(ByRef Key As Integer) _
+                Handles RootWindowElement.KeyPress
+                
+            RaiseEvent KeyPress(Key)
+        End Sub
+        
+        Private Sub HandleMouseDown(ByVal Button As VBRUN.MouseButtonConstants, _
+                                        ByVal ShiftState As VBRUN.ShiftConstants, _
+                                        ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseDown
+                
+            RaiseEvent MouseDown(CInt(Button), CInt(ShiftState), X, Y)
+        End Sub
+        
+        Private Sub HandleMouseMove(ByVal Button As VBRUN.MouseButtonConstants, _
+                                        ByVal ShiftState As VBRUN.ShiftConstants, _
+                                        ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseMove
+                
+            RaiseEvent MouseMove(CInt(Button), CInt(ShiftState), X, Y)
+        End Sub
+        
+        Private Sub HandleMouseUp(ByVal Button As VBRUN.MouseButtonConstants, _
+                                    ByVal ShiftState As VBRUN.ShiftConstants, _
+                                    ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseUp
+                
+            RaiseEvent MouseUp(CInt(Button), CInt(ShiftState), X, Y)
+        End Sub
+        
+        [ Serialize (False) ]
+        Public Property Get hWnd() As LongPtr
+            If Me.RootWindowElement IsNot Nothing Then
+                Me.ControlContext.EnsureFormIsLoaded()
+                Return Me.RootWindowElement.Handle
+            End If
+        End Property
+                    
+        [ Serialize (False) ]
+        Public Property Get Caption() As String
+            Me.ControlContext.EnsureFormIsLoaded()
+            Return WinNativeFormsBASE.WindowsAPI.USER32_GetWindowText(Me.RootWindowElement)
+        End Property
+        
+        [ Serialize (False) ]
+        Public Property Let Caption(ByVal Value As String)
+            Me.ControlContext.EnsureFormIsLoaded()
+            WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, WinNativeFormsBASE.WM_SETTEXT, 0, StrPtrSafe(Value))
+        End Property
+        
+        Private Sub ColorsChanged() _
+                Handles BackColor.OnPropertyLet
+            
+            Me.ControlContext.EnsureFormIsLoaded()
+            Me.Refresh
+        End Sub
+
+        Private Sub OnTouchedFormProperties() _
+                Handles BackColor.OnPropertyGet
+        	            
+            Me.ControlContext.EnsureFormIsLoaded()
+        End Sub
+        
+        [ Serialize (False) ]
+        Public Property Get Parent() As Form
+            Return ControlContext.GetForm
+        End Property
+    
+    #End Region
+    
+End Class

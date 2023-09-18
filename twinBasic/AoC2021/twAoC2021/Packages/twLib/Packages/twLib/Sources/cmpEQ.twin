@@ -1,0 +1,74 @@
+Class cmpEQ
+    Attribute VB_Name = "cmpEQ"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '@PredeclaredId
+    '@Exposed
+    '@Folder("Comparers")
+
+    Implements IComparer
+
+    Private Const MY_TYPENAME           As String = "cmpEQ"
+
+    Private Type State
+
+        Item                        As Variant
+        Index                       As variant
+
+    End Type
+
+    Private s                       As State
+
+
+    Public Function ExecCmp(ByRef ipHostItem As Variant) As Boolean Implements IComparer.ExecCmp
+        
+        If VBA.IsMissing(s.Index) OrElse VBA.IsEmpty(s.Index) Then
+            Return ipHostItem = s.Item
+        End If
+    
+        If TypeInfo.IsString(ipHostItem) Then
+            
+            Return VBA.Mid(ipHostItem, s.Index, 1) = s.Item
+            
+            
+        Else
+            
+            Return ipHostItem(s.Index) = s.Item
+            
+
+        End If
+        
+    End Function
+
+    '@DefaultMember
+    Public Function Deb(ByVal ipItem As Variant, Optional ByVal ipIndex As Variant) As cmpEQ
+        ' ipindex is variant to allow empty and ismissing
+        With New cmpEQ
+            Return .ConstructInstance(ipItem, ipIndex)
+        End With
+    End Function
+
+
+    Friend Function ConstructInstance(ByVal ipItem As Variant, ByVal ipIndex As Variant) As cmpEQ
+        s.Item = ipItem
+        s.Index = ipIndex
+        Return Me
+    End Function
+    
+
+    Public Property Get TYPEName() As String Implements IComparer.TypeName
+        Return MY_TYPENAME
+    End Property
+
+    Public Property Get It() As Variant Implements IComparer.It
+        Return s.Item
+    End Property
+
+    Public Property Get Index() As Long Implements IComparer.Index
+        Return s.Index
+    End Property
+
+End Class

@@ -1,0 +1,335 @@
+Class IterMDArray
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "Enumerates objects/arrays with collections of items"
+    Option Explicit
+
+'     Implements IIterator
+    
+'     '@Description("Sets the order by which array indexes are incremented/decremented")
+'     Public Enum ArrayOrder
+
+'         FromFirstRank
+'         FromLastRank
+
+'     End Enum
+
+'     Const MY_NAME                               As String = "IterItems"
+
+'     Private Type Properties
+        
+'         Host                                    As variant
+'         Extent                                  As Extent
+'         Spans                                   As seq
+'         BeforeStart                             As Boolean
+'         AfterStop                               As Boolean
+'         Offset()                                As long
+'         ArrayOffset()                           As Integer
+'         ArrayOffsetpvData                       As LongPtr
+'         ArrayOrder                              As ArrayOrder
+
+'     End Type
+    
+
+'     Private p                                   As properties
+'     '@ModuleDescription("Generic Item Iterator")
+'     /*
+'     IterItems allows emulation of a 'for each' enumeration for any type of item
+'     • Arrays are enumerated in column major order
+'     • Enumerable objects are enumerated X to Y using a virtual one based index
+'     • Strings are enumerated as characters
+'     • non enumerable objects and other primitive Items are enumerated as a single item
+'     */
+'     '@Description ("Genereic iterator,  Min, Max are virtual indexes using one based numbering") 
+'     [ DefaultMember ]
+'     Public Function Deb(ByRef ipEnumerable As Variant) As IterItems
+'         With New IterItems
+'             Return .ConstructInstance(ipEnumerable)
+'         End With
+'     End Function
+
+'     Friend Function ConstructInstance(ByRef ipEnumerable As Variant) As IterItems
+    
+'         If VBA.IsObject(ipEnumerable) Then
+'             Set p.Host = ipEnumerable
+'         Else
+'         	p.Host = ipEnumerable
+'         End If
+
+'         Set p.Extent = Extent.Deb(p.Host)
+'         p.ArrayOrder = FromLastRank
+
+'         PopulateInitialSpans
+'         RefreshOffset
+
+'         p.AfterStop = False
+'         p.BeforeStart = True
+            
+'         Return Me
+        
+'     End Function
+
+
+'     Private Sub PopulateInitialSpans()
+
+'         If p.Spans Is Nothing Then
+'             Set p.Spans = Seq.Deb.Repeat(0, p.Extent.RanksCount)
+'         End If
+
+'         Dim myRankIndex As Long
+'         For myRankIndex = p.Extent.FirstRank To p.Extent.LastRank
+'             Set p.Spans(myRankIndex) = Span(myRankIndex, p.Extent.FirstIndex(myRankIndex), p.Extent.LastIndex(myRankIndex))
+'         Next
+
+'     End Sub
+    
+'     /*
+'         p.Offset is used with collections objects
+'         p.ArrayOffset is used with arrays that have more than one dimension
+'     */
+'     Private Sub RefreshOffset()
+
+'         If ArrayInfo.IsNotAllocated(p.ArrayOffset) Then
+'         	ReDim p.Offset(0 To p.Extent.RanksCount - 1)
+'             p.ArrayOffsetpvData = GetSafeArrayPtr(p.Offset) + SafeArrayOffset.pvdata
+'         End If
+
+'         Dim myRankIndex As Long
+'         For myRankIndex = p.Extent.FirstRank To p.Extent.LastRank
+'             p.Offset(myRankIndex) = CInt(p.Spans(myRankIndex).from)
+'         Next
+
+'     End Sub
+
+'     Public Function ArrayOrder(Optional ByVal ipArrayOrder As ArrayOrder = fromLastRank) As IterItems
+'     	p.ArrayOrder = ipArrayOrder
+'         Return Me
+'     End Function
+
+    
+'     Public Function Span(ByRef ipSpan As Span) As IterItems
+'         Set p.Spans(ipSpan.Rank) = ipSpan
+'         Return Me
+'     End Function
+
+'     Public Function Span(ByVal ipRank As Long, ByRef ipFrom As Variant, ByRef ipTo As Variant, Optional ByRef ipStep As Variant = 1) As IterItems
+
+'         If (ipRank < 1) Or (ipRank > p.Extent.RanksCount) Then
+'             Return Me
+'         End If
+
+'         Dim mystep As Variant
+'         mystep = IIf(ipStep = 0, 1, ipStep)
+'         mystep = VBA.Abs(mystep) * IIf(ipFrom <= ipTo, 1, -1)
+'         p.Spans(ipRank) = Span(ipRank, ipFrom, ipTo, ipStep)
+
+'         Return Me
+
+'     End Function
+
+    
+    
+'     Public Function MoveNext() As Boolean Implements IIterator.MoveNext
+
+'         If p.AfterStop Then
+'             Return False
+'         End If
+        
+'         If p.BeforeStart Then
+        
+'             p.Offset = 0
+'             p.BeforeStart = False
+'             p.AfterStop = False
+'             Return True
+'         End If
+        
+'         If p.Step > 0 Then
+            
+'             If p.Offset + p.Step > p.Stop - p.Start Then
+            
+'                 p.AfterStop = True
+'                 'p.offset keeps its current value
+'                 Return False
+            
+'             End If
+            
+'         Else
+            
+'            If p.Offset + p.Step < p.Stop Then
+        
+'                 p.AfterStop = True
+'                 Return False
+'             End If
+            
+'         End If
+        
+'         p.Offset += p.Step
+    
+'         Return True
+        
+'     End Function
+    
+'     Public Function MovePrev() As Boolean Implements IIterator.MovePrev
+
+'         If p.BeforeStart Then
+'             Return False
+'         End If
+        
+'         If p.AfterStop Then
+        
+'             ' offset keeps its current within range value
+'             p.AfterStop = False
+'             p.BeforeStart = False
+'             Return True
+            
+'         End If
+        
+'         If p.Step > 0 Then
+            
+'             If p.Offset - p.Step < 0 Then
+            
+'                 p.BeforeStart = True
+'                 p.Offset = 0 ' just to be sure
+'                 Return False
+            
+'             End If
+            
+'         Else
+            
+'            If p.Offset - p.Step > p.Stop Then
+        
+'                 p.AfterStop = True
+'                 Return False
+'             End If
+            
+'         End If
+        
+'         p.Offset -= p.Step
+    
+'         Return True
+        
+'     End Function
+    
+
+'     '@Description("Returns the current index the 'Collection' being iterated")
+'     Public Function Index() As Long Implements IIterator.Index
+'         If p.BeforeStart Or p.AfterStop Then
+'             Return Empty
+'         Else
+'             Return p.Offset + p.Extent.FirstIndex
+'         End If
+        
+'     End Function
+    
+    
+'     '@Description("Returns the Item at the specified offset from the first index of the Item being iterated")
+'     Public Function Item() As Variant Implements IIterator.Item
+'         If p.BeforeStart Or p.AfterStop Then
+'             Return Empty
+'         Else
+'             If p.Extent.GroupType = OfItemByKeysForeach Then
+                
+'                 Return p.Extent.Item(p.Extent.Key(p.Offset))
+'             Else
+'                 Return p.Extent.Item(p.Extent.FirstIndex + p.Offset)
+'             End If
+           
+'         End If
+'     End Function
+    
+   
+
+'     '@Description("Return the Key at the specified index or the Offset from the first index of the Item being iterated)"
+'     Public Function Key() As Variant Implements IIterator.Key
+'         If p.BeforeStart Or p.AfterStop Then
+'             Return Empty
+'         Else
+           
+'             If p.Extent.GroupType = OfItemByKeysForeach Then
+'                 Return p.Extent.Key(p.Offset)
+'             Else
+'                 Return p.Offset
+'             End If
+        
+'         End If
+        
+'     End Function
+    
+'     Public Function HasNext() As Boolean Implements IIterator.HasNext
+'         If p.AfterStop Then
+'             Return False
+'         End If
+'         If p.BeforeStart Then
+'              Return True
+'         End If
+        
+'         If p.Step > 0 Then
+'             Return p.Extent.FirstIndex + p.Step + p.Offset > p.Stop
+'         Else
+'             Return p.Extent.FirstIndex + p.Step + p.Offset < p.Stop
+'         End If
+'     End Function
+    
+'     Public Function HasPrev() As Boolean Implements IIterator.HasPrev
+        
+'         If p.BeforeStart Then
+'             Return False
+'         End If
+'         If p.AfterStop Then
+'              Return True
+'         End If
+        
+'         If p.Step > 0 Then
+'             Return p.Extent.FirstIndex + p.Step - p.Offset > p.Start
+'         Else
+'             Return p.Extent.FirstIndex + p.Step - p.Offset < p.Start
+'         End If
+        
+'     End Function
+    
+    
+'     Public Function count() As Long Implements IIterator.Count
+'         Return p.Extent.Count
+'     End Function
+    
+    
+'     Public Function MoveToStart() As IIterator Implements IIterator.MoveToStart
+'         p.Offset = 0
+'         p.BeforeStart = True
+'         p.AfterStop = False
+'         Return Me
+'     End Function
+    
+'     Public Function MoveToEnd() As IIterator Implements IIterator.MoveToEnd
+        
+'         p.BeforeStart = False
+'         p.AfterStop = True
+'         p.Offset = ((p.Stop - p.Start) \ VBA.Abs(p.Step)) * VBA.Abs(p.Step)
+'         Return Me
+'     End Function
+    
+    
+'     Public Function KeyIndex(ByRef ipKey As Variant) As Long
+        
+'         Dim myI As IterNum = IterNum(CLng(p.Extent.FirstIndex), CLng(p.Extent.LastIndex))
+'         Do While myI.MoveNext
+            
+'             If myI.Key = ipKey Then
+'                 Return myI.Index
+'             End If
+'         Loop
+        
+'         Return p.Extent.FirstIndex
+        
+'     End Function
+    
+    
+'     Public Property Get Name() As String Implements IIterator.Name
+'         Return MY_NAME
+'     End Property
+    
+' End Class
+End Class

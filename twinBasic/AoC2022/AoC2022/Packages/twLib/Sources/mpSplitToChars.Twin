@@ -1,0 +1,61 @@
+Class mpSplitToChars
+   
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Private Const MY_TYPENAME       As String = "mpSplitToChars"
+    
+    
+    Private Type State
+    
+       Conversion                   As SplitType
+    
+    End Type
+    
+    Private s                       As State
+        
+    Implements IMapper
+
+    Public Function ExecMapper(Byref ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+            
+        If TypeInfo.IsNotString(ipHostItem) Then
+                
+            Return ipHostItem
+        End If
+        
+        If s.Conversion = ToSeq Then
+            
+            Return Seq.Deb(ipHostItem)
+            
+        Else
+            
+            Return Seq.Deb(ipHostItem).ToArray
+            
+            
+        End If
+        
+        
+    End Function
+    
+    '@DefaulTMember
+    Public Function Deb(Optional ByVal ipSplitType As SplitType = splittype.ToSeq) As mpSplitToChars
+        With New mpSplitToChars
+            Return .ConstructInstance(ipSplitType)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipSplitType As SplitType) As mpSplitToChars
+        s.Conversion = ipSplitType
+        Set ConstructInstance = Me
+    End Function
+    
+    
+    Public Property Get TypeName() As String Implements Imapper.TypeName
+        Return MY_TYPENAME
+    End Property
+    
+    
+End Class

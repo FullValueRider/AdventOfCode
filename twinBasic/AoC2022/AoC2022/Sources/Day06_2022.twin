@@ -1,0 +1,114 @@
+Class Day06_2022
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+
+    Private Const Today             As String = "\2022\Day06.txt"
+    
+
+    Private Type State
+
+        Data                            As string
+       
+    End Type
+
+    Private s                           As State
+
+    
+    Public Sub Execute()
+        
+        Part01
+        Part02
+            
+    End Sub
+
+ 
+    Private Sub Part01()
+
+        Initialise
+        
+        Dim mychars As IterItems = IterItems.Deb(s.Data)
+        Dim myBuffer As Seq = Seq.Deb
+        Do
+          
+        	Dim mychar As String = mychars(0)
+            
+            If myBuffer.LacksItem(mychar) Then
+                
+                myBuffer.Add mychar
+                If myBuffer.Count = 4 Then
+                    Dim myFoundIndex As Long = mychars.Index + 1
+                    Exit Do
+                End If
+                
+                
+            Else
+            
+                myBuffer.Add mychar
+                Dim myindex As Long
+                For myindex = 1 To myBuffer.IndexOf(mychar)
+                    If myBuffer.Count > 0 Then
+                        myBuffer.Dequeue
+                    End If
+                Next
+                
+                
+           End If
+            
+        Loop While mychars.MoveNext
+        Dim myResult As Long = myFoundIndex
+        
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "1356", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+        ' The only change from part 1 was increasing the count from 4 to 14
+        Initialise
+        Dim mychars As IterItems = IterItems.Deb(s.Data)
+        Dim myBuffer As Seq = Seq.Deb
+        Do
+          
+        	Dim mychar As String = mychars(0)
+            
+            If myBuffer.LacksItem(mychar) Then
+                
+                myBuffer.Add mychar
+                If myBuffer.Count = 14 Then
+                    Dim myFoundIndex As Long = mychars.Index + 1
+                    Exit Do
+                End If
+                
+                
+            Else
+            
+            
+                myBuffer.Add mychar
+                Dim myindex As Long
+                For myindex = 1 To myBuffer.IndexOf(mychar)
+                    If myBuffer.Count > 0 Then
+                        myBuffer.Dequeue
+                    End If
+                Next
+                
+           End If
+            
+        Loop While mychars.MoveNext
+        Dim myResult As Long = myFoundIndex
+                
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "2564", myResult
+
+    End Sub
+
+    Private Sub Initialise()
+    
+         s.Data = Filer.GetFileAsString(AoC & Today)
+     End Sub
+
+End Class

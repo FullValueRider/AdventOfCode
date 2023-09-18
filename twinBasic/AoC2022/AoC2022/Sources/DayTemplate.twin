@@ -1,0 +1,62 @@
+Class DayTemplate
+
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+Option Explicit
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+
+    Private Const Today             As String = "\2022\DayXXTest1.txt"
+    
+
+    Private Type State
+
+        Data                            As seq
+       
+    End Type
+
+    Private s                           As State
+
+    
+    Public Sub Execute()
+        
+        Part01
+        'Part02
+            
+    End Sub
+
+ 
+    Private Sub Part01()
+
+        Initialise
+        
+        
+        Dim myResult As Long
+        
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "XXXXXX", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+
+        Initialise
+        
+        
+        Dim myResult As Long
+                
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "YYYYYY", myResult
+
+    End Sub
+    
+
+    Private Sub Initialise()
+    
+        Set s.Data = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC & Today, vbCrLf))
+          
+           
+     End Sub
+
+End Class

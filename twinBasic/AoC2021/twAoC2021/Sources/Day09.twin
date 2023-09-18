@@ -1,0 +1,169 @@
+Class Day09
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '@PredeclaredId
+    '@Exposed
+    '@Folder("Day07")
+
+
+    Const InputData           As String = "Day09.txt"
+
+
+    Private Type State
+        
+        Map                             As variant
+        Visited                         As Hkvp
+        
+    End Type
+
+    Private s                           As State
+
+
+
+    Public Sub Execute()
+        
+        Part01
+        Part02
+        
+    End Sub
+
+    Public Sub Part01()
+    
+    Initialise
+    
+    Dim myResult As Long = 0
+    
+    Dim myRow As Long
+    For myRow = LBound(s.Map, 1) To UBound(s.Map, 1)
+    
+        Dim myCol As Long
+        For myCol = LBound(s.Map, 2) To UBound(s.Map, 2)
+        
+            If IsLowPoint(myRow, myCol, FourWay) Then
+            
+                myResult += (s.Map(myRow, myCol) + 1)
+                
+            End If
+        Next
+    Next
+    
+  
+    Fmt.Dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "436", myResult
+        
+    End Sub
+
+    Public Sub Part02()
+    
+    Initialise
+    ' First get the location of all the lowest poitns
+    Dim myResult As Long = 0
+    Dim myLowPoints As Seq = Seq.Deb
+    Dim myRow As Long
+    For myRow = LBound(s.Map, 1) To UBound(s.Map, 1)
+    
+        Dim myCol As Long
+        For myCol = LBound(s.Map, 2) To UBound(s.Map, 2)
+        
+            If IsLowPoint(myRow, myCol, FourWay) Then
+            
+                myLowPoints.Add Array(myRow, myCol)
+                
+            End If
+        Next
+    Next
+    
+    ' now determine the size of the basin associated with each low point
+    Dim myBasinSizes As Seq = Seq.Deb
+    Set s.Visited = Hkvp.Deb
+    
+    Dim myLowPoint As IterItems = IterItems(myLowPoints)
+    Do
+    	myBasinSizes.Add GetBasinSize(myLowPoint.Item)
+              
+    Loop While myLowPoint.MoveNext
+    myBasinSizes.Sort.reverse
+    myResult = myBasinSizes.Item(1) * myBasinSizes.Item(2) * myBasinSizes.Item(3)
+    
+    Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "1317792", myResult
+        
+    End Sub
+
+
+    Private Sub Initialise()
+    
+        Dim myData As Seq = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC2021Data & InputData))
+
+        ReDim s.Map(1 To myData.Count, 1 To VBA.Len(myData.First))
+        Dim myFirst As Long
+        For myFirst = 1 To myData.Count
+        	
+            Dim mySecond As Long
+            For mySecond = 1 To VBA.Len(myData.First)
+                s.Map(myFirst, mySecond) = CLng(VBA.Mid(myData(myFirst), mySecond, 1))
+            Next
+        Next
+    End Sub
+
+    Public Function IsLowPoint(ByVal ipRow As Long, ByVal ipCol As Long, ByVal ipSearchArea As Area.SearchArea) As Boolean
+    
+        Dim myVal As Long = s.Map(ipRow, ipCol)
+    
+        Dim myCoords As IterItems = IterItems(Area.GetAdjacentCoordinatesInTable(ipRow, ipCol, s.Map, SearchArea.FourWay))
+        Do
+            ' the empty () are required becuase Item can take an optional parameter
+        	If myVal >= s.Map(myCoords.Item()(0), myCoords.Item()(1)) Then
+            	Return False
+        	End If
+            
+        Loop While myCoords.MoveNext
+        Return True
+        
+    End Function
+    
+    Public Function GetBasinSize(ipLowPoint As Variant) As Long
+
+    	'Simplify dereferencing
+        Dim myLowPointCoord As String = Area.Coord(ipLowPoint)
+        If s.Visited.HoldsKey(myLowPointCoord) Then
+            Return 0
+        Else
+        	' Record everywhere we visit in our searches
+        	s.Visited.Add myLowPointCoord, ipLowPoint
+        End If
+        
+        ' Queue contains points we need to investigate
+        Dim myQueue As Seq = Seq.Deb(Area.GetAdjacentCoordinatesInTable(ipLowPoint(0), ipLowPoint(1), s.Map, SearchArea.FourWay))
+        
+        ' myBasin counts the points in the basin (values less than 9)
+    	Dim myBasin As Long = 1
+    
+        ' now look around the current point for points less then 9 and which have not been visited
+        Do While myQueue.Count > 0
+            Dim myPoint As Variant = myQueue.Dequeue()
+            Dim myPointCoord As String = Area.Coord(myPoint)
+            
+        	If s.Visited.HoldsKey(myPointCoord) Then
+                Continue Do
+            End If
+            
+            s.Visited.Add myPointCoord, myPoint
+
+            If s.Map(myPoint(0), myPoint(1)) < 9 Then
+                myBasin += 1
+                ' add the points around the current point
+                myQueue.AddRange(Area.GetAdjacentCoordinatesInTable(myPoint(0), myPoint(1), s.Map, SearchArea.FourWay))
+        	End If
+            
+        Loop
+        
+        Return myBasin
+        
+    End Function
+    
+   
+    
+End Class

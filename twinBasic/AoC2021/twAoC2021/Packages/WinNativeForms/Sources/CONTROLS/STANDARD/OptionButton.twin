@@ -1,0 +1,388 @@
+[ Description ("A Win32 native OptionButton") ]
+[ WindowsControl ("/miscellaneous/OptionsButtonNew.png") ]
+[ ClassId ("33AD4F00-6699-11CF-B70C-00AA0060D393") ]
+[ InterfaceId ("F019D2AF-7BF0-4B86-BB85-BB75886EA40F") ]    ' FIXME implement {33AD4F01-6699-11CF-B70C-00AA0060D393} for backcompat
+[ COMCreatable (False) ]
+Class OptionButton
+     
+    #Region "INHERITANCE"
+
+        [ WithDispatchForwarding ] Implements Control
+        Implements WindowsControls.IWindowsControl
+        Implements WinNativeFormsBase.BaseControlFocusable Via _BaseControl = New WinNativeFormsBase.BaseControlFocusable(ControlTypeConstants.vbOptionButton)
+
+    #End Region
+        
+    #Region "STATE"
+    
+        [ CustomDesigner ("designer_SpectrumWindows") ]
+        [ Description ("") ]
+            Public BackColor As OLE_COLOR = VBRUN.SystemColorConstants.vb3DFace   ' FIXME this is linked to Appearance
+        [ CustomDesigner ("designer_SpectrumWindows") ]
+        [ Description ("") ]
+            Public ForeColor As OLE_COLOR = VBRUN.SystemColorConstants.vbButtonText   ' FIXME this is linked to Appearance
+        
+        [ Description ("") ]
+        [ Serialize (True, "Alignment") ]
+            Private AlignmentINIT As VBRUN.AlignmentConstantsNoCenter = VBRUN.AlignmentConstantsNoCenter.tbLeftJustify
+        [ Serialize (True, "Caption") ]
+            Private Caption_INIT As String
+        [ Serialize (True, "Value") ]
+            Private Value_INIT As Boolean = False
+        
+            Private WithEvents RootWindowElement As WindowsControls.WindowElement
+
+        [ Unimplemented ]
+        [ Serialize (True, "DragIcon") ]
+        [ CustomDesigner ("designer_PictureBytes") ]
+            Private ReadOnly DragIconINIT() As Byte
+        [ Unimplemented ]
+        [ Serialize (False) ]
+            Public DragIcon As StdPicture
+        [ Unimplemented ]
+        [ Serialize (True, "DisabledPicture") ]
+        [ CustomDesigner ("designer_PictureBytes") ]
+            Private ReadOnly DisabledPictureINIT() As Byte
+        [ Unimplemented ]
+        [ Serialize (False) ]
+            Public DisabledPicture As StdPicture
+        [ Unimplemented ]
+        [ Serialize (True, "DownPicture") ]
+        [ CustomDesigner ("designer_PictureBytes") ]
+            Private ReadOnly DownPictureINIT() As Byte
+        [ Unimplemented ]
+        [ Serialize (False) ]
+            Public DownPicture As StdPicture
+        [ Unimplemented ]
+        [ Serialize (True, "Picture") ]
+        [ CustomDesigner ("designer_PictureBytes") ]
+            Private ReadOnly PictureINIT() As Byte
+        [ Unimplemented ]
+        [ Serialize (False) ]
+            Public Picture As StdPicture
+        [ Unimplemented ]
+            Public CausesValidation As Boolean = True
+        [ Unimplemented ]
+            Public DragMode As VBRUN.DragModeConstants
+        [ Unimplemented ]
+            Public HelpContextID As Long
+        [ CustomDesigner ("designer_SpectrumWindows") ]
+        [ Unimplemented ]
+            Public MaskColor As OLE_COLOR = &H00C0C0C0
+        [ Unimplemented ]
+            Public OLEDropMode As VBRUN.OLEDropConstants
+        [ Unimplemented ]
+            Public RightToLeft As Boolean
+        [ Unimplemented ]
+            Public UseMaskColor As Boolean
+        [ Unimplemented ]
+            Public WhatsThisHelpID As Long
+
+        [ Unimplemented ]
+            Public Style As VBRUN.ButtonConstants
+
+        [ Unimplemented ]
+            Public Sub Drag(Optional ByVal Action As Variant)
+            End Sub
+            
+        [ Unimplemented ]
+            Public Sub OLEDrag()
+            End Sub
+                        
+        [ Unimplemented ]
+            Public Sub ShowWhatsThis()
+            End Sub
+            
+        [ Unimplemented ]
+            Public Sub ZOrder(Optional ByVal Position As Variant)
+            End Sub
+            
+        [ Unimplemented ] Event DragDrop(Source As Control, X As Single, Y As Single)
+        [ Unimplemented ] Event DragOver(Source As Control, X As Single, Y As Single, State As Integer)
+        [ Unimplemented ] Event OLECompleteDrag(Effect As Long)
+        [ Unimplemented ] Event OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Unimplemented ] Event OLEDragOver(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single, State As Integer)
+        [ Unimplemented ] Event OLEGiveFeedback(Effect As Long, DefaultCursors As Boolean)
+        [ Unimplemented ] Event OLESetData(Data As DataObject, DataFormat As Integer)
+        [ Unimplemented ] Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
+        [ Unimplemented ] Event Validate(Cancel As Boolean)
+    #End Region
+
+    #Region "EVENTS"
+
+        [ DefaultDesignerEvent ]
+        [ Description ("") ]
+            Event Click()
+        [ Description ("") ]
+            Event DblClick()
+        [ Description ("") ]
+            Event GotFocus()
+        [ Description ("") ]
+            Event KeyDown(KeyCode As Integer, Shift As Integer)
+        [ Description ("") ]
+            Event KeyPress(KeyAscii As Integer)
+        [ Description ("") ]
+            Event KeyUp(KeyCode As Integer, Shift As Integer)
+        [ Description ("") ]
+            Event LostFocus()
+        [ Description ("") ]
+            Event MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            Event MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            Event MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            ' Event DragDrop(Source As Control, X As Single, Y As Single)
+        [ Description ("") ]
+            ' Event DragOver(Source As Control, X As Single, Y As Single, State As Integer)
+        [ Description ("") ]
+            ' Event OLECompleteDrag(Effect As Long)
+        [ Description ("") ]
+            ' Event OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            ' Event OLEDragOver(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single, State As Integer)
+        [ Description ("") ]
+            ' Event OLEGiveFeedback(Effect As Long, DefaultCursors As Boolean)
+        [ Description ("") ]
+            ' Event OLESetData(Data As DataObject, DataFormat As Integer)
+        [ Description ("") ]
+            ' Event OLEStartDrag(Data As DataObject, AllowedEffects As Long)
+        [ Description ("") ]
+            ' Event Validate(Cancel As Boolean)
+        [ Description ("") ]
+            Event Initialize()
+
+    #End Region
+               
+    #Region "MEMBERS"
+
+        Public Sub New()
+            ' This constructor is useful for allowing control inheritance
+        End Sub
+        
+        Private Sub InitializeDefaultValues()
+        	Caption_INIT = "OptionButton"
+        End Sub
+        
+        Public Sub New(Serializer As WindowsControls.SerializationInfo)
+            If Not Serializer.Deserialize(Me) Then
+                InitializeDefaultValues
+            End If
+        End Sub
+        
+        Private Sub HandleInitialize(ByVal ControlContext As WindowsControls.WindowsControlContext) _
+                Implements IWindowsControl.Initialize
+
+            ControlContext.SetControlArrayIndex(Me.IndexINIT)
+            Dim styles As Long
+            Dim extendedStyles As Long
+                
+                styles += ButtonStyles.BS_MULTILINE
+                styles += ButtonStyles.BS_RADIOBUTTON
+                styles += If(Me.AlignmentINIT = tbRightJustify, ButtonStyles.BS_LEFTTEXT, 0)
+                styles += If(Me.Appearance = AppearanceConstants.vbAppearFlat, ButtonStyles.BS_FLAT, 0)
+
+            Set Me.RootWindowElement = CreateRootWindowElement(ControlContext, "ThunderOptionButton", Me.Caption_INIT, styles, extendedStyles)
+
+            Me.RootWindowElement.IsExclusiveValueWithinContainer()
+
+            If Me.RootWindowElement.OriginalWindowStyles And WinNativeFormsBASE.WS_TABSTOP Then
+                ' Option buttons lose their WS_TABSTOP flag during creation, so we have to explicitly add it afterwards
+                Me.RootWindowElement.EnforceTabStopAfterCreation()
+            End If
+        End Sub
+        
+        Private Sub HandleDestroy() _
+                Implements IWindowsControl.Destroy
+        
+            ' disconnect anything that causes a circular reference here
+        End Sub
+
+        Private Sub Class_Terminate()
+            ' Debug.Print "OptionButton.Class_Terminate"
+        End Sub
+        
+        Private Sub HandleCreate() _
+                Handles RootWindowElement.Create
+                
+            Me.Value = Me.Value_INIT
+            RaiseEvent Initialize()
+        End Sub
+        
+        Private Sub HandleCommand(ByVal NotificationCode As ButtonNotifications, _
+                                    ByVal Identifier As Integer) _
+                Handles RootWindowElement.Command
+                
+            Select Case NotificationCode
+                Case BN_CLICKED
+                    Me.Value = True
+                    RaiseEvent Click()
+            End Select
+        End Sub
+        
+        Private Sub HandleGetColors(ByVal hdc As LongPtr, ByRef BackBrushOut As LongPtr, ByVal ControlType As ControlTypeConstants) _
+                Handles RootWindowElement.GetColors
+                
+            WinNativeFormsBASE.WindowsAPI.GDI32_SetTextForeColor(hdc, WinNativeFormsBASE.GDI32_TranslateColorFromHDC(ForeColor, hdc))
+            WinNativeFormsBASE.WindowsAPI.GDI32_SetBackMode(hdc, WinNativeFormsBASE.BackgroundModes.TRANSPARENT)
+            BackBrushOut = Me.CreateBackBrush(BackColor)
+        End Sub
+        
+        Private Sub HandleMouseDoubleClick(ByVal Button As VBRUN.MouseButtonConstants, _
+                                            ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseDoubleClick
+                
+            RaiseEvent DblClick()
+        End Sub
+        
+        Private Sub HandleGotFocus() _
+                Handles RootWindowElement.GotFocus
+                
+            RaiseEvent GotFocus()
+        End Sub
+
+        Private Sub HandleLostFocus() _
+                Handles RootWindowElement.LostFocus
+                
+            RaiseEvent LostFocus()
+        End Sub
+        
+        Private Sub HandleKeyDown(ByRef KeyCode As VBRUN.KeyCodeConstants, _
+                                    ByVal ShiftState As VBRUN.ShiftConstants) _
+                Handles RootWindowElement.KeyDown
+                
+            Dim KeyCodeInt As Integer = KeyCode
+            RaiseEvent KeyDown(KeyCodeInt, CInt(ShiftState))
+            KeyCode = KeyCodeInt
+        End Sub
+        
+        Private Sub HandleKeyUp(ByRef KeyCode As VBRUN.KeyCodeConstants, _
+                                ByVal ShiftState As VBRUN.ShiftConstants) _
+                Handles RootWindowElement.KeyUp
+                
+            Dim KeyCodeInt As Integer = KeyCode
+            RaiseEvent KeyUp(KeyCodeInt, CInt(ShiftState))
+            KeyCode = KeyCodeInt
+        End Sub
+        
+        Private Sub HandleKeyPress(ByRef Key As Integer) _
+                Handles RootWindowElement.KeyPress
+                
+            RaiseEvent KeyPress(Key)
+        End Sub
+        
+        Private Sub HandleMouseDown(ByVal Button As VBRUN.MouseButtonConstants, _
+                                        ByVal ShiftState As VBRUN.ShiftConstants, _
+                                        ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseDown
+                
+            RaiseEvent MouseDown(CInt(Button), CInt(ShiftState), X, Y)
+        End Sub
+        
+        Private Sub HandleMouseMove(ByVal Button As VBRUN.MouseButtonConstants, _
+                                        ByVal ShiftState As VBRUN.ShiftConstants, _
+                                        ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseMove
+                
+            RaiseEvent MouseMove(CInt(Button), CInt(ShiftState), X, Y)
+        End Sub
+        
+        Private Sub HandleMouseUp(ByVal Button As VBRUN.MouseButtonConstants, _
+                                        ByVal ShiftState As VBRUN.ShiftConstants, _
+                                        ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseUp
+                
+            RaiseEvent MouseUp(CInt(Button), CInt(ShiftState), X, Y)
+        End Sub
+                
+        [ Serialize (False) ]
+        Public Property Get hWnd() As LongPtr
+            If Me.RootWindowElement IsNot Nothing Then
+                Me.ControlContext.EnsureFormIsLoaded()
+                Return Me.RootWindowElement.Handle
+            End If
+        End Property
+                
+        [ Serialize (False) ]
+        Public Property Get Caption() As String
+            Me.ControlContext.EnsureFormIsLoaded()
+            Return WinNativeFormsBASE.WindowsAPI.USER32_GetWindowText(Me.RootWindowElement)
+        End Property
+        
+        [ Serialize (False) ]
+        Public Property Let Caption(ByVal Value As String)
+            Me.ControlContext.EnsureFormIsLoaded()
+            WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, WinNativeFormsBASE.WM_SETTEXT, 0, StrPtrSafe(Value))
+        End Property
+
+        [ Serialize (False) ]
+        Public Property Get Value() As Boolean
+            Me.ControlContext.EnsureFormIsLoaded()
+            Return WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, ButtonMessages.BM_GETCHECK, 0, 0) <> BST_UNCHECKED
+        End Property
+        
+        [ Serialize (False) ]
+        Public Property Let Value(ByVal Value As Boolean)
+            Me.ControlContext.EnsureFormIsLoaded()
+            ' WS_TABSTOP style gets lost when updating via BM_SETCHECK, so we need to preserve it manually
+            Dim preserveStyles As Long = WinNativeFormsBASE.WindowsAPI.USER32_GetWindowLong(Me.RootWindowElement, WinNativeFormsBASE.GWL_STYLE)
+            WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, ButtonMessages.BM_SETCHECK, If(Value, BST_CHECKED, BST_UNCHECKED), 0)
+    		If (preserveStyles And WinNativeFormsBASE.WS_TABSTOP) Then
+                WinNativeFormsBASE.WindowsAPI.USER32_SetWindowLong(Me.RootWindowElement, WinNativeFormsBASE.GWL_STYLE, preserveStyles)
+            End If
+            If Value Then
+                Me.RootWindowElement.ResetExclusiveValuesInContainer()
+            End If
+        End Property
+        
+        [ Serialize (False) ]
+        [ DefaultMember ]
+        Public Property Get _Default() As Boolean
+            Return Me.Value
+        End Property
+        
+        [ Serialize (False) ]
+        [ DefaultMember ]
+        Public Property Let _Default(ByVal Value As Boolean)
+            Me.Value = Value
+        End Property
+        
+        [ Serialize (False) ]
+        [ Description ("") ]
+        Property Get Alignment() As VBRUN.AlignmentConstantsNoCenter
+            Me.ControlContext.EnsureFormIsLoaded()
+            Dim flag As Boolean = WinNativeFormsBASE.WindowsAPI.USER32_GetStyleFlag(RootWindowElement, ButtonStyles.BS_LEFTTEXT)
+            Return If(flag, VBRUN.AlignmentConstantsNoCenter.tbRightJustify, VBRUN.AlignmentConstantsNoCenter.tbLeftJustify)
+        End Property
+        
+        [ Serialize (False) ]
+        [ Description ("") ]
+        Property Let Alignment(Value As VBRUN.AlignmentConstantsNoCenter)
+            Me.ControlContext.EnsureFormIsLoaded()
+            WinNativeFormsBASE.WindowsAPI.USER32_SetStyleFlag(RootWindowElement, ButtonStyles.BS_LEFTTEXT, Value = VBRUN.AlignmentConstantsNoCenter.tbRightJustify)
+            Me.Refresh
+        End Property
+        
+        Private Sub ColorsChanged() _
+                Handles BackColor.OnPropertyLet, _
+                        ForeColor.OnPropertyLet
+            
+            Me.ControlContext.EnsureFormIsLoaded()
+            Me.Refresh
+        End Sub
+    
+        Private Sub OnTouchedFormProperties() _
+                Handles BackColor.OnPropertyGet, _
+        	            ForeColor.OnPropertyGet
+
+            Me.ControlContext.EnsureFormIsLoaded()
+        End Sub
+        
+        [ Serialize (False) ]
+        Public Property Get Parent() As Form
+            Return ControlContext.GetForm
+        End Property
+
+    #End Region
+
+End Class

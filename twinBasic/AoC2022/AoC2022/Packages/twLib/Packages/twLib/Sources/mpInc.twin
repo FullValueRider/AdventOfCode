@@ -1,0 +1,70 @@
+Class mpInc
+    Attribute VB_Name = "mpInc"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Implements IMapper
+    
+    
+    Private Const MY_TYPENAME           As String = "mpInc"
+    
+    
+    Private Type State
+            
+        Increment                       As Variant
+            
+            
+    End Type
+
+    Private s                           As State
+
+    '@Description("Adds the Incrment to the HostItem. )
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+
+        If TypeInfo.IsNumber(ipHostItem) Then
+                
+            Return ipHostItem
+                
+                
+        Else
+                
+            Return ipHostItem + s.Increment
+                
+                
+        End If
+            
+    End Function
+    
+    Public Function Deb(Optional ByVal ipIncrement As Variant = 1) As mpInc
+        With New mpInc
+            Set Deb = .ReadyToUseInstance(ipIncrement)
+        End With
+    End Function
+
+    Friend Function ReadyToUseInstance(ByVal ipIncrement As Variant) As mpInc
+        
+        If TypeInfo.IsNumber(ipIncrement) Then
+            
+            s.Increment = 1
+            
+            
+        Else
+            
+            s.Increment = ipIncrement
+            
+            
+        End If
+        
+        Return Me
+            
+    End Function
+
+  
+    Public Function TypeName() As String Implements IMapper.TypeName
+        Return MY_TYPENAME
+    End Function
+
+End Class

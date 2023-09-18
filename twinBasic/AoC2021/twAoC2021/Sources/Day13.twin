@@ -1,0 +1,203 @@
+Class Day13
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+
+    Const InputData                     As String = "Day13.txt"
+
+    Private Type State
+        
+        Coords                          As Hkvp
+        Folds                           As seq
+        
+    End Type
+
+    Private s                           As State
+
+
+    Public Sub Execute()
+        
+        Part01
+        Part02
+        
+    End Sub
+
+
+    Public Sub Part01()
+    
+        Initialise
+        Dim myFolded As Hkvp
+        
+        If s.Folds.First.Item(1) = "x" Then
+        
+            Set myFolded = FoldAlongFirstDim(s.Folds.First.item(2))
+            
+        Else
+        
+            Set myFolded = FoldAlongSecondDim(s.Folds.First.item(2))
+            
+        End If
+        
+        Dim myResult As Long = myFolded.Count
+        
+        Fmt.Dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "xxxx", myResult
+        
+    End Sub
+    
+     Public Sub Part02()
+
+        Initialise
+        Dim myFold As IterItems = IterItems(s.Folds)
+        Do
+        	If myFold.Item.Item(1) = "x" Then
+        
+                Set s.Coords = FoldAlongFirstDim(myFold.Item.Item(2))
+            
+            Else
+            
+                Set s.Coords = FoldAlongSecondDim(myFold.Item.Item(2))
+                
+            End If
+            
+        Loop While myFold.MoveNext
+        
+        
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is output below", VBA.Mid$(InputData, 4, 2), "xxxx"
+        MakeMap
+    End Sub
+
+
+    Private Function FoldAlongFirstDim(ByVal ipString As String) As Hkvp
+    
+        Dim myH As Hkvp = Hkvp.Deb
+        Dim myFoldIndex As Long = CLng(ipString)
+        Dim myCoord As IterItems = IterItems(s.Coords)
+        Do
+            DoEvents
+        	
+            If myCoord.Item.Item(1) > myFoldIndex Then
+            
+                Dim myFirst As Long = myFoldIndex - (myCoord.Item.Item(1) - (myFoldIndex))
+                Dim mySecond As Long = myCoord.Item.Item(2)
+                Dim myNewCoord As String = Fmt.Txt("{0},{1}", myFirst, mySecond)
+                ' Debug.Print myCoord.Item.item(1), myCoord.Item.item(2), ":", myNewCoord
+                If myH.LacksKey(myNewCoord) Then
+                    myH.Add myNewCoord, Seq.Deb.AddItems(myFirst, mySecond)
+                End If
+                
+            Else
+                If myH.LacksKey(myCoord.Key) Then
+                    myH.Add myCoord.Key, myCoord.Item
+                    'Debug.Print myCoord.Item.item(1), myCoord.Item.item(2)
+                End If
+                
+            End If
+            
+        Loop While myCoord.MoveNext
+        
+        Return myH
+        
+        
+    End Function
+    
+    Private Function FoldAlongSecondDim(ByVal ipString As String) As Hkvp
+    
+        Dim myH As Hkvp = Hkvp.Deb
+        Dim myFoldIndex As Long = CLng(ipString)
+        Dim myCoord As IterItems = IterItems(s.Coords)
+        Do
+            DoEvents
+        	
+            If myCoord.Item.Item(2) > myFoldIndex Then
+            
+                Dim myFirst As Long = myCoord.Item.Item(1)
+                Dim mySecond As Long = myFoldIndex - (myCoord.Item.Item(2) - (myFoldIndex))
+                Dim myNewCoord As String = Fmt.Txt("{0},{1}", myFirst, mySecond)
+                ' Debug.Print myCoord.Item.item(1), myCoord.Item.item(2), ":", myNewCoord
+                If myH.LacksKey(myNewCoord) Then
+                    myH.Add myNewCoord, Seq.Deb.AddItems(myFirst, mySecond)
+                End If
+                
+            Else
+                If myH.LacksKey(myCoord.Key) Then
+                    myH.Add myCoord.Key, myCoord.Item
+                    'Debug.Print myCoord.Item.item(1), myCoord.Item.item(2)
+                End If
+                
+            End If
+            
+        Loop While myCoord.MoveNext
+        
+        Return myH
+        
+    End Function
+
+    Private Sub MakeMap()
+    
+        Dim myMinfirst As Long = s.Coords.ItemsSeq.ReduceIt(rdMin(1))
+        Dim myMaxFirst As Long = s.Coords.ItemsSeq.ReduceIt(rdMax(1))
+        Dim myMinSecond As Long = s.Coords.ItemsSeq.ReduceIt(rdMin(2))
+        Dim myMaxSecond As Long = s.Coords.ItemsSeq.ReduceIt(rdMax(2))
+        
+        Dim myMap() As String
+        ReDim myMap(myMinSecond To myMaxSecond)
+        
+        Dim mySecond As Long
+        For mySecond = myMinSecond To myMaxSecond
+        
+            myMap(mySecond) = VBA.Space(myMaxFirst - myMinfirst + 1)
+           ' Debug.Print VBA.Len(myMap(mySecond))
+        Next
+        
+        Dim myCoord As IterItems = IterItems(s.Coords)
+        Do
+            Dim myfirst As Long = myCoord.Item.item(1)
+            mySecond = myCoord.Item.item(2)
+            'Debug.Print VBA.Len(myMap(mySecond))
+        	Mid(myMap(mySecond), myfirst + 1) = "x"
+            
+            
+        Loop While myCoord.MoveNext
+        
+        Dim myString As Variant
+        For Each myString In myMap
+            Debug.Print myString
+        Next
+    End Sub
+    
+    Public Sub Initialise()
+    	
+        ' process the input data into a form that we can work with easily
+        ' for day 17 we split the raw data into two strings
+        ' the first string is converted to a sequence of sequences of long pairs
+        ' the second string is converted to a sequence of sequences of dimension,number
+        ' but because I don't yet have a map function to work on a single item of a seq
+        ' the number is left as a string.
+        '
+        ' the coordinate pairs are given as X,Y thus the first dimension
+        ' is the x coordinate and the second dimension is the y coordinate
+    
+        Dim myStrings As Variant = VBA.Split(Filer.GetFileAsString(AoC2021Data & InputData), vbCrLf & vbCrLf)
+        
+        ' First do the map
+        Dim myCoords As Variant = VBA.Split(myStrings(0), vbCrLf)
+        Dim myNumCoords As Seq = Seq.Deb(myCoords) _
+            .MapIt(mpSplitToSubStr.Deb(SplitType.ToSeq, twComma)) _
+            .MapIt(mpInner(mpConvert(ConvertOp.ToLong)))
+            
+        Set s.Coords = Hkvp.Deb.AddKnownArrayPairs(myCoords, myNumCoords.ToArray)
+        
+        ' Second do the fold instructions
+        Set s.Folds = _
+            Seq.Deb(VBA.Split(myStrings(1), vbCrLf)) _
+               .MapIt(mpStrConv(vbLowerCase)) _
+               .MapIt(mpMultiReplace(Array(Char.twSpace, Char.twNoString), Array("foldalong", Char.twNoString))) _
+               .MapIt(mpSplitToSubStr(ToSeq, Char.twEqual))
+                ' need a mapit function that operates on an index of an inner
+    End Sub
+    
+End Class

@@ -1,0 +1,147 @@
+Class CshpTreapEnumerator
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Private Type State
+        Stack                                       As Stack
+        Keys                                        As Boolean
+        Ascending                                   As Boolean
+        Key                                         As Variant
+        Item                                        As Variant
+    End Type
+    
+    Private s                                       As state
+
+    Public Property Get Key() As Variant
+            Return s.Key
+    End Property
+
+    Public Property Set Key(ByRef ipKey As Variant)
+            Set s.Key = ipKey
+    End Property
+    
+    Public Property Let Key(ByRef ipKey As Variant)
+            s.Key = ipKey
+    End Property
+  
+  
+    Public Property Get Item() As Variant
+        Return s.Item
+    End Property
+
+    Public Property Set Item(ByVal ipItem As Variant)
+           Set s.Item = ipItem
+    End Property
+    
+     Public Property Let Item(ByVal ipItem As Variant)
+           Set s.Item = ipItem
+    End Property
+
+    Public Sub New()
+    End Sub
+    
+    
+    Public Function Deb(ByVal tnode As CshpTreapNode, ByVal Keys As Boolean, ByVal Ascending As Boolean) As CshpTreapEnumerator
+    	With New CshpTreapEnumerator
+        	Return .PopulatedInstance(CshpTreapNode, Keys, Ascending)
+    	End With
+    End Function
+    
+    Friend Function PopulatedInstance(ByVal tnode As CshpTreapNode, ByVal Keys As Boolean, ByVal Ascending As Boolean) As CshpTreapEnumerator
+
+        s.Stack = Stack.Deb
+        Me.s.Keys = s.Keys
+        Me.s.Ascending = s.Ascending
+
+        ' find the lowest node
+        If s.Ascending Then
+            While tnode IsNot Nothing
+                s.Stack.Push(tnode)
+                tnode = tnode.Left
+            End While
+        Else
+            ' find the highest or greatest node
+            While tnode IsNot Nothing
+                s.Stack.Push(tnode)
+                tnode = tnode.Right
+            End While
+        End If
+        Return Me
+        
+    End Function
+  
+  
+    Public Function HasMoreElements() As Boolean
+        Return s.Stack.Count > 0
+    End Function
+  
+  
+    Public Function NextElement() As Variant
+        If s.Stack.Count Is 0 Then
+            Err.Raise 17 + vbObjectError, "NextElement", "Element not found"
+        End If
+
+        ' the top of s.Stack will always have the next s.Item
+        ' get top of s.Stack but don't remove it as the next nodes in sequence
+        ' may be pushed onto the top
+        ' the s.Stack will be popped after all the nodes have been returned
+        Dim node As CshpTreapNode = s.Stack.Peek()
+        Dim tn As CshpTreapNode
+        If s.Ascending Then
+            ' if right node is nothing, the s.Stack top is the lowest node
+            ' if left node is nothing, the s.Stack top is the highest node
+            If node.Right Is Nothing Then
+                ' walk the tree
+                Set tn As CshpTreapNode = s.Stack.Pop
+                While HasMoreElements() AndAlso s.Stack.Peek().Right Is tn
+                    Set tn = s.Stack.Pop
+                End While
+            Else
+                ' find the next s.Items in the sequence
+                ' traverse to left; find lowest and push onto s.Stack
+                Set tn = node.Right
+                While tn IsNot Nothing
+                    s.Stack.Push(tn)
+                    tn = tn.Left
+                End While
+            End If    ' descending
+        Else
+            If node.Left Is Nothing Then
+                ' walk the tree
+                Set tn = s.Stack.Pop
+                While HasMoreElements() AndAlso s.Stack.Peek.Left Is tn
+                    tn = s.Stack.Pop
+                End While
+            Else
+                ' find the next s.Items in the sequence
+                ' traverse to right; find highest and push onto s.Stack
+                Set tn = node.Left
+                While tn IsNot Nothing
+                    s.Stack.Push(tn)
+                    tn = tn.Right
+                End While
+            End If
+        End If
+
+        ' the following is for .NET compatibility (see MoveNext())
+        Key = node.Key
+        Item = node.Item
+
+        Return IIf(s.Keys, node.Key, node.Item)
+
+    End Function
+
+
+    Public Function MoveNext() As Boolean
+        If HasMoreElements() Then
+            NextElement()
+            Return True
+        End If
+        Return False
+    End Function
+
+End Class

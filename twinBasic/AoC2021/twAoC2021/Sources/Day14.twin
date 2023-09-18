@@ -1,0 +1,175 @@
+Class Day14
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+
+    Const InputData                     As String = "Day14.txt"
+
+    Private Type State
+        
+        Polymer                         As string
+        Pairs                           As HKvp
+        Hist                            As Hkvp
+    End Type
+
+    Private s                           As State
+
+    /*I got a bute force solution tthat worked for part 1 but
+      ran out of memory for Part 2
+      
+      The alternative approach of bucketing works and works fast BUT
+      I have to add 1 to the answers and I don't know why
+      
+      OK found the soluttion as to why we need to add 1
+      
+      To take this onto the small scale, if we look at NNCB,
+      there are three pairs (NN, NC, CB) and if we look at 
+      the first letter of each pair AND add the very last letter
+      (of the polymer that generated the pairs),
+       then we get back to NNCB. So similarly, when we count
+       up all the pairs and occurrences, we can use this logic
+       (first letter of each pair, plus 1 occurrence of the last
+       letter) to create the count of bases. i.e.sum of s.hist +1
+    */
+    Public Sub Execute()
+        
+        Part01
+        Part02
+        
+    End Sub
+
+
+    Public Sub Part01()
+    
+        Initialise
+        
+        Dim myGen As Long
+        For myGen = 1 To 10
+            React
+        Next
+       
+        Dim myBaseHist As Hkvp = GetBaseHistogram
+        
+        Dim myResult As Long = myBaseHist.ReduceIt(rdMax.Deb) - myBaseHist.ReduceIt(rdMin.Deb)
+        Fmt.Dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "2768", myResult
+        
+    End Sub
+    
+    
+     Public Sub Part02()
+        
+        Initialise
+        
+        Dim myGen As Long
+        For myGen = 1 To 40
+            React
+        Next
+       
+        Dim myBaseHist As Hkvp = GetBaseHistogram
+        
+        Dim myResult As LongLong = myBaseHist.ReduceIt(rdMax.Deb) - myBaseHist.ReduceIt(rdMin.Deb)
+     
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "xxxx", myResult
+        
+    End Sub
+    
+    
+    Public Sub Initialise()
+    	
+        Dim myStrings As Variant = VBA.Split(Filer.GetFileAsString(AoC2021Data & InputData), vbCrLf & vbCrLf)
+        
+        s.Polymer = myStrings(0)
+        
+        Dim myPairs As Seq = _
+            Seq.Deb(VBA.Split(myStrings(1), vbCrLf)) _
+                .MapIt(mpMultiReplace.Deb(Array(Char.twSpace, vbNullString))) _
+                .MapIt(mpSplitToSubStr.Deb(ToSeq, Char.twHyphen & Char.twRArrow))
+                
+        Set s.Pairs = Hkvp.Deb
+        Dim myPair As IterItems = IterItems(myPairs)
+        Do
+        	    
+            Dim myFirstNewPair As String = VBA.Left(myPair.Item.Item(1), 1) & myPair.Item.Item(2)
+            Dim mySecondNewPair As String = myPair.Item.Item(2) & VBA.Right(myPair.Item.Item(1), 1)
+            s.Pairs.Add myPair.Item.Item(1), Array(myFirstNewPair, mySecondNewPair)
+        Loop While myPair.MoveNext
+        
+        
+        InitPolymerHistogram
+        
+    End Sub
+    
+    ' react: each base pair becomes two new pairs xy generates z which gives ride to two
+    ' pairs zx znd zy
+    Private Sub React()
+    
+        Dim myNextGen As Hkvp = Hkvp.Deb
+        Dim myPair As IterItems = IterItems(s.Hist)
+        Do
+        
+            Dim myVar As Variant = myPair.Key
+            Dim myFirstPair As String = s.Pairs.Item(myVar)(0)
+            If myNextGen.LacksKey(myFirstPair) Then
+                myNextGen.Add myFirstPair, 0
+            End If
+            myNextGen.Item(myFirstPair) += s.Hist.Item(myVar)
+            
+            Dim mySecondPair As String = s.Pairs.Item(myVar)(1)
+            If myNextGen.LacksKey(mySecondPair) Then
+                myNextGen.Add mySecondPair, 0
+            End If
+            myNextGen.Item(mySecondPair) += s.Hist.Item(myVar)
+        
+        Loop While myPair.MoveNext
+        
+        Set s.Hist = myNextGen
+        
+    End Sub
+
+
+    Private Function GetBaseHistogram() As Hkvp
+    
+        Dim myBaseHist As Hkvp = Hkvp.Deb
+        
+        Dim myPair As IterItems = IterItems(s.Hist)
+        Do
+        
+        	Dim myPairKey As String = myPair.Key
+            Dim myPairItem As LongLong = myPair.Item
+            Dim myFirstBase As String = VBA.Left(myPairKey, 1)
+            If myBaseHist.LacksKey(myFirstBase) Then
+                myBaseHist.Add myFirstBase, 0
+            End If
+            myBaseHist.Item(myFirstBase) += myPairItem
+            
+        Loop While myPair.MoveNext
+       
+        Return myBaseHist
+        
+    End Function
+        
+        
+    Public Sub InitPolymerHistogram()
+    
+        Set s.Hist = Hkvp.Deb
+        Dim myBase As IterItems = IterItems(Seq.Deb(s.Polymer))
+        Do While myBase.MoveNext
+            
+            Dim mySecond As String = myBase.Item
+            Dim myFirst As String = myBase.Item(-1)
+            
+            Dim myPair As String = myFirst & mySecond
+           
+            If s.Hist.LacksKey(myPair) Then
+                s.Hist.Add myPair, 0
+            End If
+            s.Hist.Item(myPair) += 1
+        Loop
+        
+    End Sub
+
+End Class

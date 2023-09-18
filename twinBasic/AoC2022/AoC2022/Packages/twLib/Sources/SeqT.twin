@@ -1,0 +1,266 @@
+Class SeqT
+
+    ' Adapted from the java version here https://www.techiedelight.com/implementation-treap-data-structure-cpp-java-insert-search-delete/
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Private Type Properties
+        Root                                As TreapSeqNode
+        Count                               As Long           ' size of the treap
+    End Type
+    
+    Private p                               As properties
+    
+    Public Function Deb() As SeqT
+        With New SeqT
+            Return SeqT
+        End With
+    End Function
+    
+    ' Public Function Deb(ByRef ipNode As TreapSeqNode) As SeqT
+    '     With New SeqT
+    '         Return ConstructInstance
+    '     End With
+    ' End Function
+    
+    Public Function ConstructInstance() As SeqT
+        
+        Set p.Root = Nothing
+        p.Count = 0
+        Return Me
+    End Function
+    
+    
+    /* Function to left-rotate a given treap
+ 
+          r                         R
+         / \      Left Rotate      / \
+        L   R        ———>         r   Y
+           / \                   / \
+          X   Y                 L   X
+    */
+    Public Function rotateLeft(ByRef ipNode As TreapSeqNode) As TreapSeqNode
+    
+        Dim R As TreapSeqNode = ipNode.Right
+        Dim X As TreapSeqNode = ipNode.Right.Left
+ 
+        ' rotate
+        Set R.Parent = ipNode.Parent
+        Set R.Left = ipNode
+        Set ipNode.Right = X
+ 
+        ' Set a new root
+        Return R
+    End Function
+ 
+    /* Function to right-rotate a given treap
+ 
+            r                        L
+           / \     Right Rotate     / \
+          L   R        ———>        X   r
+         / \                          / \
+        X   Y                        Y   R
+    */
+    Private Function rotateRight(ByRef ipNode As TreapSeqNode) As TreapSeqNode
+    
+        Dim L As TreapSeqNode = ipNode.Left
+        Dim Y As TreapSeqNode = ipNode.Left.Right
+ 
+        ' rotate
+        Set L.Parent = ipNode.Parent
+        Set L.Right = ipNode
+        Set ipNode.Left = Y
+ 
+        ' Set a new root
+        Return L
+    End Function
+ 
+    ' Recursive Function to insert a given Item With a priority into treap
+    Public Function insert(ByRef ipItem As Variant) As SeqT
+    
+        Dim myNewNode As TreapSeqNode = TreapSeqNode.Deb(ipItem)
+        insertNode p.Root, myNewNode
+        Return Me
+        
+    End Function
+    
+    Private Function insertNode(ByRef ipParentNode As TreapSeqNode, ByRef ipChildNode As TreapSeqNode) As TreapSeqNode
+        ' base Case
+        If ipParentNode Is Nothing Then
+            Set ipParentNode = ipChildNode
+            p.Count += 1
+            Return ipParentNode
+        End If
+  
+        ' If Item Is less than the root.item, insert in the left subtree
+        ' otherwise, insert in the right subtree
+        If ipChildNode.Item < ipParentNode.Item Then
+        
+            Set ipParentNode.Left = insertNode(ipParentNode.Left, ipChildNode)
+ 
+            ' rotate right If heap Property Is violated
+            If (ipParentNode.Left IsNot Nothing) And (ipParentNode.Left.Priority > ipParentNode.Priority) Then
+                Set ipParentNode = rotateRight(ipParentNode)
+            End If
+        
+        Else
+        
+            Set ipParentNode.Right = insertNode(ipParentNode.Right, ipChildNode)
+ 
+            ' rotate left If heap Property Is violated
+            If ipParentNode.Right IsNot Nothing And (ipParentNode.Right.Priority > ipParentNode.Priority) Then
+                Set ipParentNode = rotateLeft(ipParentNode)
+            End If
+        End If
+        
+        Return ipParentNode
+    
+    End Function
+    
+ 
+    ' Recursive Function to search For a ipItem in a given treap
+    Public Function HoldsItem(ByRef ipItem As Variant) As Boolean
+        Return searchNode(p.Root, ipItem) IsNot Nothing
+    End Function
+    
+    Public Function LacksItem(ByRef ipItem As Variant) As Boolean
+        Return Not searchNode(p.Root, ipItem)
+    End Function
+    
+    Public Property Get Count() As Long
+        Return p.Count
+    End Property
+    
+    Private Function searchNode(ByRef ipNode As TreapSeqNode, ByRef ipItem As Variant) As TreapSeqNode
+    
+        ' If the ipItem Is Not present in the tree
+        If ipNode Is Nothing Then
+            Return Nothing
+        End If
+        
+ 
+        ' If the ipItem Is found
+        If ipNode.Item = ipItem Then
+            Return ipNode
+        End If
+ 
+        ' If the ipItem Is less than the root node, search in the left subtree
+        If ipItem < ipNode.Item Then
+            Return searchNode(ipNode.Left, ipItem)
+        End If
+        
+ 
+        ' otherwise, search in the right subtree
+        Return searchNode(ipNode.Right, ipItem)
+    
+    End Function
+ 
+    ' Recursive Function to delete a ipItem from a given treap
+    
+    Public Function delete(ByRef ipItem As Variant) As SeqT
+        deleteNode p.Root, ipItem
+        Return Me
+    End Function
+    
+    Public Function deleteNode(ByRef ipNode As TreapSeqNode, ByRef ipItem As Variant) As TreapSeqNode
+    
+        ' base Case: the ipItem Is Not found in the tree
+        If ipNode Is Nothing Then
+            Return Me
+        End If
+ 
+        ' If the ipItem Is less than the root node, recur For the left subtree
+        If ipItem < ipNode.Item Then
+            Set ipNode.Left = deleteNode(ipNode.Left, ipItem)
+        
+ 
+        ' If the ipItem Is more than the root node, recur For the right subtree
+        ElseIf ipItem > ipNode.Item Then
+            Set ipNode.Right = deleteNode(ipNode.Right, ipItem)
+       
+ 
+        ' If the ipItem Is found
+        Else
+            ' Case 1: node to be deleted has no children (it Is a leaf node)
+            If ipNode.LacksChildren Then
+            
+                ' deallocate the memory And update root to Null
+                Set ipNode = Nothing
+                p.Count -= 1
+ 
+            ' Case 2: node to be deleted has two children
+            ElseIf ipNode.HoldsTwoChildren Then
+            
+                ' If the left child has less priority than the right child
+                If ipNode.GoLeft Then
+                
+                    ' Call `rotateLeft()` on the root
+                    Set ipNode = rotateLeft(ipNode)
+ 
+                    ' recursively delete the left child
+                    Set ipNode.Left = deleteNode(ipNode.Left, ipItem)
+                
+                Else
+                    ' Call `rotateRight()` on the root
+                    Set ipNode = rotateRight(ipNode)
+ 
+                    ' recursively delete the right child
+                    Set ipNode.Right = deleteNode(ipNode.Right, ipItem)
+                
+                End If
+ 
+            ' Case 3: node to be deleted has only one child
+            Else
+                ' choose a child node
+                Dim child As TreapSeqNode = IIf(ipNode.HoldsSingleChildOnLeft, ipNode.Left, ipNode.Right)
+                Set ipNode = child
+                p.Count -= 1
+            End If
+            
+        End If
+ 
+        Return ipNode
+    
+    End Function
+    
+    
+ 
+    ' Utility Function to Print two-dimensional view of a treap using
+    ' reverse inorder traversal
+    Public Sub ToString(Optional ByRef ipNode As TreapSeqNode = Nothing, Optional ByVal ipSpace As Long = 0)
+    
+        Const height As Long = 10
+        If ipNode Is Nothing Then
+            Set ipNode = p.Root
+        End If
+ 
+        ' ' Base Case
+        ' If ipNode Is Nothing Then
+        '     Exit Sub
+        ' End If
+ 
+        ' increase distance between levels
+        ipSpace += height
+ 
+        ' Print the right child first
+        If ipNode.Right IsNot Nothing Then
+            ToString ipNode.Right, ipSpace
+            Debug.Print vbCrLf
+        End If
+ 
+       ' Print the current node after padding With spaces
+        Debug.Print VBA.Space$(ipSpace - height) ;
+       
+ 
+        Debug.Print ipNode.Item & "(" & ipNode.Priority & ")"
+ 
+        If ipNode.Left IsNot Nothing Then
+            Debug.Print
+            ToString ipNode.Left, ipSpace
+        End If
+    End Sub
+    
+End Class

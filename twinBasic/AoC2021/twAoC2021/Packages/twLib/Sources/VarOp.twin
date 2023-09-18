@@ -1,0 +1,48 @@
+Class VarOp
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "Operation on Variants"
+    Option Explicit
+
+    Private Const IsNotFPA As Boolean = False
+    Private Const IsFPA As Boolean = True
+    
+
+    
+    ' '@Description("Returns the Item found after parsing iopFPA as if it were a forwarded paramarray")
+
+    '@Description("Check if the input is an array holding a single item.  If true replaces iopFPA with iopFPA(0) and returns false")
+    Public Function ResolveParamArray(ByRef ipFPA As Variant) As Variant
+    
+        ' we cannot use by reference in the input, ipFPA, is a forwarded paramarray
+        ' therefore this method needs to be a function
+        Select Case True
+        	
+            ' Case ArrayInfo.IsNotArray(ipFPA)
+            
+            '    Return ipFPA
+                
+                
+            ' Case ArrayInfo.IsNotAllocated(ipFPA)
+            
+            '     Return ipFPA
+                
+                
+            Case ArrayInfo.HasOneItem(ipFPA)
+            
+                Return ipFPA(0)
+                
+                
+            Case Else
+            
+                Return ipFPA
+         
+         
+        End Select
+       
+    End Function
+    
+End Class

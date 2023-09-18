@@ -1,0 +1,214 @@
+Class IterItems
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "Enumerates objects with collections of items and linear arrays"
+    Option Explicit
+
+    Implements IIterator
+  
+
+    Const MY_NAME                               As String = "IterItems"
+
+    Private Type Properties
+        
+        Host                                    As variant
+        Extent                                  As Extent
+        Span                                    As Span
+        Offset                                  As long
+        Keys                                    As variant
+        
+    End Type
+    
+
+    Private p                                   As properties
+
+    [ DefaultMember ]
+    Public Function Deb(ByRef ipEnumerable As Variant) As IterItems
+        With New IterItems
+            Return .ConstructInstance(ipEnumerable)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByRef ipEnumerable As Variant) As IterItems
+    
+        If VBA.IsObject(ipEnumerable) Then
+            Set p.Host = ipEnumerable
+        Else
+        	p.Host = ipEnumerable
+        End If
+
+        Set p.Extent = Extent.Deb(p.Host)
+        
+        If p.Extent.GroupType = OfItemByKeysForeach Then
+            p.Keys = ipEnumerable.keys
+        ElseIf p.Extent.GroupType = OfItemByToArrayForEach And TypeInfo.Group(OfZeroBasedEnumerables).HoldsKey(TypeInfo.BaseType(ipEnumerable)) Then
+            p.Host = ipEnumerable.toarray
+        End If
+       
+        Set p.Span = Span(p.Extent.FirstIndex(1), p.Extent.LastIndex(1))
+        
+        p.Offset = 0
+        
+        Return Me
+        
+    End Function
+
+    'SetSpan(Optional ByRef ipFromOrSpan As Variant = Empty, Optional ByRef ipTo As Variant = Empty, Optional ByRef ipstep As Variant = 1, Optional ByVal ipRank As Long = 1) As IIterator
+
+    Public Function SetSpan _
+    ( _
+        Optional ByRef ipFromOrSpan As Variant = Empty, _
+        Optional ByRef ipTo As Variant = Empty, _
+        Optional ByRef ipStep As Variant = 1, _
+        Optional ByVal ipRank As Long = 1 _
+    ) As IIterator Implements IIterator.SetSpan
+
+        If (ipRank < 1) Or (ipRank > p.Extent.RanksCount) Then
+            Return Me
+        End If
+    
+        If VBA.TypeName(ipFromOrSpan) = Span.TypeName Then
+            Set p.Span = ipFromOrSpan
+        Else
+            
+            
+            Dim myFrom As Variant = IIf(VBA.IsEmpty(ipFromOrSpan), p.Extent.FirstIndex(1), ipFromOrSpan)
+            Dim myTo As Variant = IIf(VBA.IsEmpty(ipTo), p.Extent.LastIndex(1), ipTo)
+            Dim mystep As Variant = IIf(ipStep = 0, 1, ipStep)
+            mystep = VBA.Abs(mystep) * IIf(myFrom <= ipTo, 1, -1)
+            Set p.Span = Span(myFrom, myTo, mystep, ipRank)
+
+        End If
+        
+        p.Offset = 0
+        
+        Return Me
+
+    End Function
+    
+    
+    Private Function CanIncOffset() As Boolean
+    
+        Dim myTryIndex As Long = p.Span.From + p.Offset + p.Span.Step
+        
+        If p.Span.Step > 0 Then
+            Return IIf(myTryIndex <= p.Span.To, True, False)
+        Else
+            Return IIf(myTryIndex >= p.Span.To, True, False)
+        End If
+        
+     
+        
+    End Function
+    
+    
+    Private Function CanDecOffset() As Boolean
+    
+        Dim myTryIndex As Long = p.Span.From + p.Offset - p.Span.Step
+        
+        If p.Span.Step > 0 Then
+            Return IIf(myTryIndex >= p.Span.From, True, False)
+        Else
+            Return IIf(myTryIndex <= p.Span.From, True, False)
+        End If
+        
+    End Function
+    
+    
+    Public Function MoveNext() As Boolean Implements IIterator.MoveNext
+
+       If CanIncOffset Then
+            p.Offset += p.Span.Step
+            Return True
+        	
+        Else
+            Return False
+        End If
+
+    End Function
+    
+    Public Function MovePrev() As Boolean Implements IIterator.MovePrev
+    
+        If CanDecOffset Then
+            p.Offset -= p.Span.Step
+            Return True
+        Else
+            Return False
+        End If
+        
+    End Function
+    
+
+    '@Description("Returns the current index the 'Collection' being iterated")
+    Public Function Index(Optional ByRef ipOffset As Long = 0) As Long Implements IIterator.Index
+        Return p.Offset + p.Span.From + ipOffset
+    End Function
+    
+    
+    '@Description("Returns the Item at the specified offset from the first index of the Item being iterated")
+    Public Function Item(Optional ByRef ipOffset As Long = 0) As Variant Implements IIterator.Item
+       
+            Dim myIndex As Long = p.Span.From + p.Offset + ipOffset
+            If p.Extent.GroupType = OfItemByKeysForeach Then
+                Return p.Host(p.Keys(myIndex))
+            Else
+                Return p.Host(myIndex)
+            End If
+           
+    End Function
+    
+   
+
+    '@Description("Return the Key at the specified index or the Offset from the first index of the Item being iterated)"
+    Public Function Key(Optional ByRef ipOffset As Long = 0) As Variant Implements IIterator.Key
+
+        If p.Extent.GroupType = OfItemByKeysForeach Then
+            Return p.Keys(p.Span.From + p.Offset + ipOffset)
+        Else
+            Return p.Offset + ipOffset
+        End If
+
+    End Function
+    
+    
+    Public Function HasNext() As Boolean Implements IIterator.HasNext
+       Return CanIncOffset
+    End Function
+    
+    Public Function HasNoNext() As Boolean Implements IIterator.HasNoNext
+       Return Not CanIncOffset
+    End Function
+    
+    
+    Public Function HasPrev() As Boolean Implements IIterator.HasPrev
+       Return CanDecOffset
+    End Function
+    
+    Public Function HasNoPrev() As Boolean Implements IIterator.HasNoPrev
+       Return Not CanDecOffset
+    End Function
+    
+    
+    Public Function count() As Long Implements IIterator.Count
+        Return p.Extent.Ranks.Count
+    End Function
+    
+    
+    Public Function MoveToStart() As IIterator Implements IIterator.MoveToStart
+        p.Offset = 0
+        Return Me
+    End Function
+    
+    Public Function MoveToEnd() As IIterator Implements IIterator.MoveToEnd
+        p.Offset = ((p.Span.To - p.Span.From) \ VBA.Abs(p.Span.Step)) * VBA.Abs(p.Span.Step)
+        Return Me
+    End Function
+    
+    
+    Public Property Get TypeName() As String Implements IIterator.TypeName
+        Return MY_NAME
+    End Property
+    
+End Class

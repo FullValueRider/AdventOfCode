@@ -1,0 +1,1225 @@
+Class TypeInfo
+    Attribute VB_Name = "TypeInfo"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "Provides metadata on Types"
+    Option Explicit
+    
+    Private Const OF_NO_GROUP                       As Long = -1
+    Private Const OF_ANY_IN_GROUP                   As Long = 0
+
+    Public Enum AdminType
+        
+        AsAnyAdminType = OF_ANY_IN_GROUP
+        AsEmpty = idEmpty
+        AsNull = idNull
+        AsNothing = idNothing
+        AsUnknown = idIUnKnownPtr
+        AsError = idError
+        
+    End Enum
+
+    
+    Public Enum NumberType
+        
+        AsAnyNumberType = OF_ANY_IN_GROUP
+        AsByte = idbyte
+        AsCurrency = idCurrency
+        AsDate = idDate
+        AsDecimal = idDecimal
+        AsDouble = idDouble
+        AsInteger = idInteger
+        AsLong = idLong
+        AsLongLong = idLongLOng
+        AsLongPtr = idLongLong
+        AsSingle = idSingle
+        
+    End Enum
+
+
+    Public Enum ShortType
+        
+        AsAnyShortType = OF_ANY_IN_GROUP
+        AsByte = idbyte
+        AsCurrency = idCurrency
+        AsDate = idDate
+        AsDecimal = idDecimal
+        AsDouble = idDouble
+        AsInteger = idInteger
+        AsLong = idLong
+        AsLongLong = idLongLOng
+        AsLongPtr = idLongLong
+        AsSingle = idSingle
+        AsBoolean = idBoolean
+        
+    End Enum
+
+
+    Public Enum PrimitiveType
+        
+        AsAnyShortType = OF_ANY_IN_GROUP
+        AsByte = idbyte
+        AsCurrency = idCurrency
+        AsDate = idDate
+        AsDecimal = idDecimal
+        AsDouble = idDouble
+        AsInteger = idInteger
+        AsLong = idLong
+        AsLongLong = idLongLOng
+        AsLongPtr = idLongLong
+        AsSingle = idSingle
+        AsBoolean = idBoolean
+        AsString = idString
+        
+    End Enum
+
+
+    Public Enum Iterators
+        
+        AsAnyIterator = OF_ANY_IN_GROUP
+        AsIteratorOfNumbers
+        AsIteratorOfStrings
+        AsIteratorOfItems
+        
+    End Enum
+
+
+    Public Enum EnumerableObjectType
+
+        AsAnyEnumerableObject = OF_ANY_IN_GROUP
+        AsItemByForEach
+        'AsKeyByForEach
+        AsItemByToArrayForEach
+        AsItemByKeysForEach
+        AsWrappedEnum
+        AsOneBasedEnumerable
+        AsZeroBasedEnumerable
+        
+    End Enum
+
+
+    Public Enum EnumerableType
+
+        AsAnyEnumerable = OF_ANY_IN_GROUP
+        AsArray
+        AsItemByForEach                      ' Any object that allows Items by for each or anarray
+        AsItemByForEachObject                ' Excludes arrays
+        AsKeyByForEach
+        AsItemByToArrayForEach
+        AsItemByKeysForEach
+        AsItemByIndex
+        AsWrappedEnum
+        AsOneBasedEnumerable
+        AsZeroBasedEnumerable
+        
+
+    End Enum
+
+
+    Public Enum GroupType
+
+        ofNoGroup = OF_NO_GROUP
+        OfAnyType = OF_ANY_IN_GROUP
+        OfAdmins
+        OfNumbers
+        OfShorts
+        
+        OfPrimitives
+
+        OfArray
+        ofParamArray    ' cop out for differntiating between array due to paramarray and array as single item in paramarray
+        OfItemByForEach
+        'OfKeyByForEach
+        OfItemByToArrayForEach
+        OfItemByKeysForeach
+        OfWrappedEnums
+        
+        OfZeroBasedEnumerables
+        OfOneBasedEnumerables
+        
+        OfEnumerableObjects
+        OfEnumerables
+        OfIterators
+        
+        OfStrings                 ' A cop out to allow strings to be considered a groupt
+        OfBooleans                ' A cop out to allow booleans to be considered a group
+        OfItemObjects             ' a cop out to allow non enumerable objects to be considered a group
+        
+    End Enum
+
+
+    Private Type State
+
+        Admin                   As Hkvp
+        Number                  As Hkvp
+        Short                   As Hkvp
+        Primitive               As Hkvp
+
+        ItemByForEach           As Hkvp
+        'KeyByForEach            As Hkvp
+        ItemByToArrayForEach    As Hkvp
+        ItemByKeysForEach       As Hkvp
+        WrappedEnums            As Hkvp
+        
+        ZeroBasedEnumerable     As Hkvp
+        OneBasedEnumerable      As Hkvp
+        
+        EnumerableObjects       As Hkvp
+        Enumerables             As Hkvp
+        
+        AllIds                  As Hkvp
+        
+        Strings                 As Hkvp
+        Booleans                As Hkvp
+        Objects                 As Hkvp
+        Iterators               As Hkvp
+        TypeGroups              As Hkvp
+        
+    End Type
+
+    Private s                   As State
+
+    Private Sub Class_Initialize()
+        
+        ' If Not Me Is TypeInfo Then
+        
+        '     Err.Raise _
+        '         vbObjectError + 17, _
+        '         "TypeInfo", _
+        '         "New on class TypeInfo is disallowed"
+                
+        ' End If
+        
+        If s.Admin Is Nothing Then SetupDictionaries
+
+    End Sub
+
+    Private Sub SetupDictionaries()
+
+        SetupAdmin
+        SetupNumber
+        SetupShort
+        SetupPrimitive
+        
+        SetupItemByForEach
+        'SetupKeyByForEach
+        SetupItemByToArrayForEach
+        SetupItemByKeysForEach
+        SetupWrappedEnums
+        
+        SetupZeroBasedEnumerable
+        SetupOneBasedEnumerable
+        
+        SetupEnumerableObjects
+        SetupEnumerables
+        
+        SetupStrings
+        SetupBooleans
+        SetupObjects
+
+        SetupIterators
+        SetupTypeGroups
+        
+    End Sub
+
+
+    Private Sub SetupAdmin()
+
+        Set s.Admin = Hkvp.Deb
+        
+        ' TypeInfo/values that have been designated as administrative
+        With s.Admin
+        
+            .Add "empty", idEmpty
+            .Add "error", idError
+            .Add "null", idNull
+            .Add "unknown", idIUnKnownPtr
+            .Add "nothing", idNothing
+        
+        End With
+    '  Debug.Print "admin", s.Admin.TestKeys
+    End Sub
+        
+    
+    Private Sub SetupNumber()
+
+        Set s.Number = Hkvp.Deb
+        
+        ' Type which are not strings/objects and which support + 1
+        With s.Number
+        
+            .Add "byte", idUChar
+            .Add "currency", idCurrency
+            .Add "date", idDate
+            .Add "decimal", idDecimal
+            .Add "double", idDouble
+            .Add "integer", idInteger
+            .Add "long", idLong
+            .Add "longlong", idLongLong
+            .Add "longptr", idLongPtr
+            .Add "single", idSingle
+            
+        End With
+
+    ' Debug.Print "number", s.Number.TestKeys
+    End Sub
+        
+        
+    Private Sub SetupShort()
+
+        ' Shorts are VBA TypeInfo whose value can be stored within the Variant structure
+        
+        Set s.Short = Hkvp.Deb
+        s.Short.AddKnownArrayPairs s.Number.Keys, s.Number.Items
+    ' Debug.Print "short/number", s.Short.TestKeys
+        s.Short.Add "boolean", idBoolean
+    ' Debug.Print "short/boolean", s.Short.TestKeys
+        
+    End Sub
+
+    
+    Private Sub SetupPrimitive()
+
+        Set s.Primitive = Hkvp.Deb
+
+        s.Primitive.AddKnownArrayPairs s.Short.Keys, s.Short.Items
+        'Debug.Print "primitive/short", s.Primitive.TestKeys
+        s.Primitive.AddKnownArrayPairs s.Admin.Keys, s.Admin.Items
+    'Debug.Print "primitive/admin", s.Primitive.TestKeys
+        s.Primitive.Add("string", idString)
+    ' Debug.Print "primitive/string", s.Primitive.TestKeys
+        
+    End Sub
+
+        
+    Public Sub SetupItemByForEach()
+
+        Set s.ItemByForEach = Hkvp.Deb
+        
+        With s.ItemByForEach
+        
+            .Add "collection", idCollection
+            .Add "arrayList", idArrayList
+        End With
+        
+    End Sub
+
+    
+    ' Public Sub SetupKeyByForEach()
+
+    '     Set s.KeyByForEach = Hkvp.Deb
+        
+    '     With s.KeyByForEach
+        
+    '         .Add "scripting.dictionary", idDictionary
+    '         .Add "dictionary", idDictionary
+    '         .Add "kvpair", idKVPair
+            
+            
+    '     End With
+        
+    ' End Sub
+
+
+    Public Sub SetupItemByToArrayForEach()
+        
+        Set s.ItemByToArrayForEach = Hkvp.Deb
+        
+        With s.ItemByToArrayForEach
+
+            .Add "seq", idSeq
+            .Add "stack", idStack
+            .Add "queue", idQueue
+            
+        End With
+        
+    End Sub
+    
+    Public Sub SetupItemByKeysForEach()
+        
+        Set s.ItemByKeysForEach = Hkvp.Deb
+        
+        With s.ItemByKeysForEach
+
+            .Add "chashd", idcHashD
+            .Add "hkvp", idHkvp
+            .Add "scripting.dictionary", idDictionary
+            .Add "dictionary", idDictionary
+            .Add "kvpair", idKVPair
+            
+        End With
+        
+    End Sub
+
+
+    Public Sub SetupWrappedEnums()
+
+        Set s.WrappedEnums = Hkvp.Deb
+        
+        With s.WrappedEnums
+        
+            .Add "enummessage", idEnumMessage
+            .Add "enumtypes", idEnumTypes
+            .Add "enumpreset", idEnumPreset
+        
+        End With
+        
+    End Sub
+
+    
+    Public Sub SetupIterators()
+        
+        Set s.Iterators = Hkvp.Deb
+        
+        With s.Iterators
+        
+            .Add "iterarray", idIterArray
+            .Add "iterconst", idIterConst
+            .Add "iteritems", idIterItems
+            .Add "iternum", idIterNum
+            .Add "iterstrings", idIterStrings
+        
+        End With
+        
+    End Sub
+
+    Public Sub SetupEnumerableObjects()
+        
+        'if we add previous group we run the risk of duplicate keys
+        ' so we add individual items
+        Set s.EnumerableObjects = Hkvp.Deb
+        
+        With s.EnumerableObjects
+    
+            .Add "seq", idSeq                   ' &H100
+            .Add "collection", idCollection
+            .Add "chashd", idcHashD
+            .Add "hkvp", idHkvp
+            .Add "queue", idQueue
+            .Add "stack", idStack
+           .Add "dictionary", idDictionary                 ' Scripting.Dictionary
+           .Add "scripting.dictionary", idScriptingDictionary
+            .Add "kvpair", idKVPair
+        
+        End With
+
+    End Sub
+
+
+    Public Sub SetupZeroBasedEnumerable()
+
+        Set s.ZeroBasedEnumerable = Hkvp.Deb
+        
+        With s.ZeroBasedEnumerable
+        
+            .Add "stack", idStack
+            .Add "queue", idQueue
+            .Add "hkvp", idHkvp
+        
+        End With
+        
+    End Sub
+
+     
+    Public Sub SetupOneBasedEnumerable()
+
+        Set s.OneBasedEnumerable = Hkvp.Deb
+        
+        With s.OneBasedEnumerable
+        
+            .Add "collection", idCollection
+            .Add "seq", idSeq
+            
+        End With
+        
+    End Sub
+
+    
+    Public Sub SetupEnumerables()
+
+        Set s.Enumerables = Hkvp.Deb
+        
+        Dim myKey As Variant
+        For Each myKey In s.Primitive.Keys
+            Dim myKeyArray As String = myKey & "()"
+            Dim myItem As PrimitiveType = s.Primitive.Item(myKey)
+            s.Enumerables.Add myKeyArray, myItem
+
+        Next
+        
+        For Each myKey In s.EnumerableObjects.Keys
+        
+            s.Enumerables.Add myKey, s.EnumerableObjects.Item(myKey)
+            s.Enumerables.Add myKey & "()", s.EnumerableObjects.Item(myKey)
+        
+        Next
+        
+        s.Enumerables.Add "variant()", idVariant
+        
+        ' probably many other user defined objects to add
+    End Sub
+
+
+    Private Sub SetupStrings()
+        Set s.Strings = Hkvp.Deb
+        s.Strings.Add("string", idString)
+    End Sub
+
+
+    Private Sub SetupBooleans()
+        Set s.Booleans = Hkvp.Deb
+        s.Booleans.Add("boolean", idBoolean)
+    End Sub
+
+    
+    Private Sub SetupObjects()
+        Set s.Objects = Hkvp.Deb
+        s.Objects.Add "object", idObject
+    End Sub
+
+    
+    Public Function SetupTypeGroups() As Hkvp
+        
+        Set s.TypeGroups = Hkvp.Deb
+        
+        With s.TypeGroups
+        
+            .Add OfAnyType, s.EnumerableObjects 'enumTypes.OrdToTypeName
+            .Add OfAdmins, s.Admin
+            .Add OfNumbers, s.Number
+            .Add OfShorts, s.Short
+            .Add OfPrimitives, s.Primitive
+        
+            .Add OfItemByForEach, s.ItemByForEach
+            '.Add OfKeyByForEach, s.KeyByForEach
+            .Add OfItemByToArrayForEach, s.ItemByToArrayForEach
+            .Add OfItemByKeysForeach, s.ItemByKeysForEach
+            .Add OfWrappedEnums, s.WrappedEnums
+            
+            .Add OfZeroBasedEnumerables, s.ZeroBasedEnumerable
+            .Add OfOneBasedEnumerables, s.OneBasedEnumerable
+            
+            .Add OfEnumerableObjects, s.EnumerableObjects
+            .Add OfEnumerables, s.Enumerables
+            
+           
+            
+            .Add OfStrings, s.Strings
+            .Add OfBooleans, s.Booleans
+            .Add OfIterators, s.Iterators
+        End With
+
+    End Function
+
+    
+    Public Function Group(Optional ByVal ipGroupType As GroupType = ofanytype) As Hkvp
+        
+        If s.TypeGroups Is Nothing Then
+            SetupDictionaries
+        End If
+        
+        If ipGroupType = OfAnyType Then
+           Return s.TypeGroups
+        Else
+            Dim myhkvp As Hkvp = s.TypeGroups.Item(ipGroupType)
+            Return s.TypeGroups.Item(ipGroupType)
+        End If
+        
+    End Function
+
+    '@Description("True if the Item is an object but is not an enumerable object, _
+    if the paramarray contains arrays or enumerables, _
+    these are examined to see if they contain non enumerable objectss.")
+    Public Function IsItemObject(ParamArray ipParamArray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser.Deb(CVar(ipParamArray)).ToItems
+        
+        If myPR.IsNotAllocated Then
+            Return False
+        
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case OfItemObjects
+            
+                Return True
+                
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+                
+                    If Not VBA.IsObject(myItem) Then
+                        Return False
+                    End If
+                    
+                    If TypeInfo.Group(OfEnumerableObjects).HoldsKey(TypeInfo.BaseType(myItem)) Then
+                        Return False
+                    End If
+                    
+                    
+                Next
+                
+                Return True
+            
+            Case Else
+            
+                Return False
+                
+        End Select
+        
+    End Function
+
+    
+    Public Function IsNotItemObject(ParamArray ipParamArray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser.Deb(CVar(ipParamArray)).ToItems
+        
+        If myPR.IsNotAllocated Then
+            Return True
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case OfItemObjects:                     Return False
+                
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+                
+                    If VBA.IsObject(myItem) Then
+                        
+                        If TypeInfo.Group(OfEnumerableObjects).LacksKey(TypeInfo.BaseType(myItem)) Then
+                            Return False
+                        End If
+                    
+                    End If
+                    
+                Next
+                
+                Return True
+            
+                
+            Case Else:                              Return True
+                
+        End Select
+        
+    End Function
+
+    '@Description("True if a variant contains a string.  Disallows objects with a default member of string")
+    Public Function IsAString(ByRef ipString As Variant) As Boolean
+        
+        If VBA.IsObject(ipString) Then
+            Return False
+        End If
+        
+        If VBA.VarType(ipString) <> vbString Then
+            Return False
+        End If
+        
+        Return True
+        
+    End Function
+    
+    '@Description("True if a variant does not contain a string.  Disallows objects with a default member of string")
+    Public Function IsNotAString(ByRef ipString As Variant) As Boolean
+            
+        If Not VBA.IsObject(ipString) Then
+            If VBA.VarType(ipString) = vbString Then
+                Return False
+            End If
+        End If
+        
+         Return True
+    
+    End Function
+    
+    
+    '@Description("Returns True is all members of the paramarray are strings.  Disallows objects with a default member of string)
+    Public Function IsString(ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser.Deb(CVar(ipParamarray)).ToForEach(StringAsString)
+        
+        If myPR.IsNotAllocated Then
+            Return False
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+                    
+                    If IsNotAString(myItem) Then
+                        Return False
+                    End If
+                    
+                Next
+                
+                Return True
+            
+            Case OfStrings:                             Return True
+            Case Else:                                  Return False
+            
+        End Select
+    
+    End Function
+
+    Public Function IsNotString(ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser.Deb(CVar(ipParamarray)).ToForEach(StringAsString)
+        
+        If myPR.IsNotAllocated Then
+            Return True
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+                    
+                    If IsAString(myItem) Then
+                        Return False
+                    End If
+                    
+                Next
+                
+                Return True
+                
+            Case OfStrings:                                     Return False
+            Case Else:                                          Return True
+            
+        End Select
+              
+    End Function
+
+
+    Public Function IsEnumerable(ParamArray ipParamArray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser(CVar(ipParamArray)).ToForEach(StringAsString)
+    
+        If myPR.IsNotAllocated Then
+            Return False
+        End If
+        
+        Select Case myPR.InputGroup
+
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+        
+                    If TypeInfo.Group(OfEnumerables).LacksKey(TypeInfo.BaseType(myItem)) Then
+                        Return False
+                    End If
+                Next
+                
+                Return True
+                
+                
+            Case OfArray, OfItemByForEach, OfItemByKeysForeach, OfItemByToArrayForEach:     Return True
+            Case Else:                      Return False
+        
+                
+        End Select
+    
+    End Function
+
+
+    Public Function IsNotEnumerable(ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser(CVar(ipParamarray)).ToForEach(StringAsString)
+    
+        If myPR.IsNotAllocated Then
+            Return True
+        End If
+        
+        Select Case myPR.InputGroup
+
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+        
+                    If TypeInfo.Group(OfEnumerables).HoldsKey(TypeInfo.BaseType(myItem)) Then
+                        Return False
+                    End If
+                Next
+                
+                Return True
+                
+                
+            Case OfArray, OfItemByForEach, OfItemByKeysForeach, OfItemByToArrayForEach: Return False
+            Case Else:                      Return True
+        
+                
+        End Select
+        
+    End Function
+    
+    
+    Public Function IsAdmin(ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser(CVar(ipParamarray)).ToForEach(StringAsString)
+    
+        If myPR.IsNotAllocated Then
+            Return False
+        End If
+        
+        Select Case myPR.InputGroup
+
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+        
+                    If TypeInfo.Group(OfAdmins).LacksKey(TypeInfo.BaseType(myItem)) Then
+                        Return False
+                    End If
+                Next
+                
+                Return True
+                
+                
+            Case OfAdmins:                      Return True
+            Case Else:                          Return False
+        
+                
+        End Select
+        
+    End Function
+    
+    Public Function IsNotAdmin(ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser(CVar(ipParamarray)).ToForEach(StringAsString)
+    
+        If myPR.IsNotAllocated Then
+            Return True
+        End If
+        
+        Select Case myPR.InputGroup
+
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+        
+                    If TypeInfo.Group(OfAdmins).HoldsKey(TypeInfo.BaseType(myItem)) Then
+                        Return False
+                    End If
+                    
+                    
+                Next
+                
+                Return True
+                
+                
+            Case OfAdmins:                      Return False
+            Case Else:                          Return True
+        
+                
+        End Select
+        
+    End Function
+    
+  
+    Public Function IsAnArray(ByRef ipArray As Variant, Optional ipArrayType As ArrayType = AsAnyArrayType) As Boolean
+        Return ArrayInfo.IsAnArray(ipArray, ipArrayType)
+    End Function
+
+
+    Public Function IsNotAnArray(ByRef ipArray As Variant, Optional ipArrayTYpe As ArrayType = AsAnyArrayType) As Boolean
+        Return ArrayInfo.IsNotAnArray(ipArray, ipArrayTYpe)
+    End Function
+
+
+    Public Function IsANumber(ByRef ipNumber As Variant, ByVal ipNumberType As NumberType = NumberType.AsAnyNumberType) As Boolean
+        
+        Dim myBaseType As String = TypeInfo.BaseType(ipNumber)
+        If TypeInfo.Group(OfNumbers).LacksKey(myBaseType) Then
+            Return False
+        End If
+        
+        If ipNumberType = AsAnyNumberType Then
+            Return True
+        End If
+        
+        Dim myNumberType As NumberType = enums.Types.TypeNameToOrd.Item(myBaseType)
+        Return myNumberType = ipNumberType
+        
+    End Function
+    
+    Public Function IsNotANumber(ByRef ipNumber As Variant, ByVal ipNumberType As NumberType = NumberType.AsAnyNumberType) As Boolean
+        
+        Dim myBaseType As String = TypeInfo.BaseType(ipNumber)
+        If TypeInfo.Group(OfNumbers).LacksKey(myBaseType) Then
+            Return True
+        End If
+        
+        If ipNumberType = AsAnyNumberType Then
+            Return False
+        End If
+        
+        Dim myNumberType As NumberType = enums.Types.TypeNameToOrd.Item(myBaseType)
+        Return myNumberType <> ipNumberType
+        
+    End Function
+    
+    
+    Public Function IsNumber(ParamArray ipParamArray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser.Deb(CVar(ipParamArray)).ToForEach
+        If myPR.IsNotAllocated Then
+            Return False
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                
+                For Each myItem In myPR.Cargo
+                    
+                    If VBA.IsObject(myItem) Then Return False
+                    If VBA.IsArray(myItem) Then Return False
+                        
+                    If Me.Group(OfNumbers).LacksKey(TypeInfo.BaseType(myItem)) Then
+                         Return False
+                    End If
+                    
+                Next
+                
+            Case OfNumbers::                    Return True
+            Case Else:                          Return False
+            
+            End Select
+        
+    End Function
+    
+    
+
+    Public Function IsNotNumber(ParamArray ipParamArray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser.Deb(CVar(ipParamArray)).ToForEach
+        If myPR.IsNotAllocated Then
+            Return False
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+                    
+                    If VBA.IsObject(myItem) Then Return False
+                    If VBA.IsArray(myItem) Then Return False
+                        
+                    If Me.Group(OfNumbers).HoldsKey(TypeInfo.BaseType(myItem)) Then
+                         Return False
+                    End If
+                    
+                Next
+                
+            Case OfNumbers::                    Return False
+            Case Else:                          Return True
+            
+        End Select
+        
+    End Function
+    
+    
+    
+    Public Function IsEmpty(ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser.Deb(CVar(ipParamarray)).ToForEach
+        If myPR.IsNotAllocated Then
+            Return False
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+                    
+                    If Not VBA.IsEmpty(myItem) Then
+                         Return False
+                    End If
+                    
+                Next
+                
+                Return True
+                
+            Case OfAdmins:                      Return VBA.IsEmpty(myPR.Cargo(0))
+            Case Else:                          Return False
+            
+        End Select
+        
+        Return True
+        
+    End Function
+    
+    Public Function IsNotEmpty(ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser.Deb(CVar(ipParamarray)).ToForEach
+        If myPR.IsNotAllocated Then
+            Return False
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case ofParamArray
+            
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+                    
+                    If VBA.IsEmpty(myItem) Then
+                         Return False
+                    End If
+                    
+                Next
+                
+                Return True
+                
+            Case OfAdmins:                      Return Not VBA.IsEmpty(myPR.Cargo(0))
+            Case Else:                          Return True
+            
+        End Select
+        
+    End Function
+    
+    
+    
+    ' Public Function IsRefTypeByItem(ByRef ipRefType As Variant, ParamArray ipParamarray() As Variant) As Boolean
+        
+    '    IsRefTypeByItem = IsTypeByName(TypeName(ipRefType), CVar(ipParamarray))
+        
+    ' End Function
+    
+    ' Public Function IsRefTypeByTypeOrdinal(ByRef ipRefOrdinal As TypeOrdinal, ParamArray ipParamarray() As Variant) As Boolean
+        
+    '     If ArrayInfo.IsNotAllocated(ipParamarray) Then
+    '         Return False
+    '     End If
+            
+    '     If enums.Types.LacksOrd(ipRefOrdinal) Then
+    '         Return False
+    '     End If
+        
+    '     Dim myPR As ParserResult = VariantParser(ipParamarray).ToForEach
+        
+    '     Dim myItem As Variant
+    '     For Each myItem In myPR.Cargo
+    '         If enums.Types.TypenameToOrdinal(VBA.LCase$(VBA.TypeName(myItem))) <> ipRefOrdinal Then
+    '             Return False '  , TypeName(myItem)) = 0 Then Return False
+    '         End If
+    '     Next
+        
+    '     Return True
+         
+    '  End Function
+     
+    '  Public Function INottRefTypeByTypeOrdinal(ByRef ipRefOrdinal As TypeOrdinal, ParamArray ipParamarray() As Variant) As Boolean
+        
+    '     If ArrayInfo.IsNotAllocated(ipParamarray) Then
+    '         Return False
+    '     End If
+            
+    '     If enums.Types.LacksOrd(ipRefOrdinal) Then
+    '         Return False
+    '     End If
+        
+    '     Dim myPR As ParserResult = VariantParser(ipParamarray).ToForEach
+        
+    '     Dim myItem As Variant
+    '     For Each myItem In myPR.Cargo
+    '         If enums.Types.TypenameToOrdinal(VBA.LCase$(VBA.TypeName(myItem))) = ipRefOrdinal Then
+    '              Return False '  , TypeName(myItem)) = 0 Then Return False
+    '         End If
+    '     Next
+        
+    '     Return True
+         
+    '  End Function
+    
+    [ Description ("True if all types match the reference type.  ipType may be any Item, a Typename string or a TypeOrd") ]
+    Public Function IsType(ByVal ipType As TypeOrd, ParamArray ipParamarray() As Variant) As Boolean
+        
+        If enums.Types.OrdToTypeName.LacksKey(ipType) Then
+            Return False
+        End If
+        
+        Dim myPR As ParserResult = VariantParser.Deb(ipParamarray).ToForEach
+        If myPR.IsNotAllocated Then
+            Return False
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case ofParamArray
+        
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+                    If ipType <> enums.Types.TypeNameToOrd(BaseType(myItem)) Then
+                        Return False
+                    End If
+                Next
+                
+                Return True
+            
+            Case Else:                      Return ipType = enums.Types.TypeNameToOrd(myPR.InputBaseType)
+                
+        End Select
+        
+    End Function
+    
+    Public Function IsTypeByName(ByVal ipType As String, ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myBasetype As String = BaseType(ipType)
+        If enums.Types.TypeNameToOrd.LacksKey(myBasetype) Then
+            Return False
+        End If
+        
+        Dim myTypeOrd As TypeOrd = enums.Types.TypeNameToOrd(myBasetype)
+        Return IsType(myTypeOrd, CVar(ipParamarray))
+        
+    End Function
+    
+    Public Function IsTypeByItem(ByVal ipType As Variant, ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myBaseType As String = BaseType(ipType)
+        Return IsTypeByName(myBaseType, CVar(ipParamarray))
+        
+    End Function
+    
+    
+    
+    
+    [ Description ("True if all types do not match the reference type.  ipType may be any Item, a Typename string or a TypeOrd") ]
+    '   [ Description ("True if all types match the reference type.  ipType may be any Item, a Typename string or a TypeOrd") ]
+    Public Function IsNotType(ByVal ipType As TypeOrd, ParamArray ipParamarray() As Variant) As Boolean
+        
+        If enums.Types.OrdToTypeName.LacksKey(ipType) Then
+            Return True  ' probably should be an error
+        End If
+        
+        Dim myPR As ParserResult = VariantParser.Deb(ipParamarray).ToForEach
+        If myPR.IsNotAllocated Then
+            Return True
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case ofParamArray
+        
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+                    If ipType = enums.Types.TypeNameToOrd(BaseType(myItem)) Then
+                        Return False
+                    End If
+                Next
+                
+                Return True
+            
+            Case Else:                      Return ipType <> enums.Types.TypeNameToOrd(myPR.InputBaseType)
+                
+        End Select
+        
+    End Function
+        
+    Public Function IsNotTypeByName(ByVal ipType As String, ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myBasetype As String = BaseType(ipType)
+        If enums.Types.TypeNameToOrd.LacksKey(myBasetype) Then
+            Return False
+        End If
+        
+        Dim myTypeOrd As TypeOrd = enums.Types.TypeNameToOrd(myBasetype)
+        Return IsNotType(myTypeOrd, CVar(ipParamarray))
+        
+    End Function
+    
+    Public Function IsNotTypeByItem(ByVal ipType As Variant, ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myBaseType As String = BaseType(ipType)
+        Return IsNotTypeByName(myBaseType, CVar(ipParamarray))
+        
+    End Function
+
+    Public Function AreSameType(ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser.Deb(ipParamarray).ToForEach(StringToArray)
+        If myPR.IsNotAllocated Or myPR.Count < 2 Then
+            Return False
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case ofParamArray, OfArray, OfItemByForEach, OfItemByToArrayForEach, OfItemByKeysForeach
+        
+                Dim myFirstTypeOrd As TypeOrd = enums.Types.TypeNameToOrd.Item(BaseType(myPR.Cargo(0)))
+                
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+                    If myFirstTypeOrd <> enums.Types.TypeNameToOrd.Item(BaseType(myItem)) Then
+                        Return False
+                    End If
+                Next
+                
+                Return True
+            
+                
+            Case Else:                          Return False
+            
+        End Select
+        
+    End Function
+    
+    Public Function AreNotSameType(ParamArray ipParamarray() As Variant) As Boolean
+        
+        Dim myPR As ParserResult = VariantParser.Deb(ipParamarray).ToForEach(StringToArray)
+        If myPR.IsNotAllocated Or myPR.Count < 2 Then
+            Return True
+        End If
+        
+        Select Case myPR.InputGroup
+            
+            Case ofParamArray, OfArray, OfItemByForEach, OfItemByToArrayForEach, OfItemByKeysForeach
+        
+                Dim myFirstTypeOrd As TypeOrd = enums.Types.TypeNameToOrd.Item(BaseType(myPR.Cargo(0)))
+                
+                Dim myItem As Variant
+                For Each myItem In myPR.Cargo
+                    If myFirstTypeOrd = enums.Types.TypeNameToOrd.Item(BaseType(myItem)) Then
+                        Return False
+                    End If
+                Next
+                
+                Return True
+            
+                
+            Case Else:                          Return True
+            
+        End Select
+        
+    End Function
+    
+    Public Function BaseType(ByRef ipItem As Variant) As String
+       
+        Dim myTypename As String = VBA.LCase$(VBA.TypeName(ipItem))
+        Return VBA.Replace(myTypename, "()", vbNullString)
+  
+    End Function
+    
+    
+End Class

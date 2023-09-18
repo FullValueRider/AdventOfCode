@@ -1,0 +1,71 @@
+Class rdInner
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+	Implements IReducer
+
+    
+    Private Const MY_NAME               As String = "rdInner"
+    
+    
+    Private Type State
+
+        Reducer                 As IReducer
+        FTS                     As FTS
+        
+    End Type
+
+    Private s                   As State
+
+
+     '@Description("Calls Mapit on the lowest level item supporting mapit on The hostItem")
+    Public Function ExecReduction(ByRef ipHostItems As Variant) As Variant Implements IReducer.ExecReduction
+
+        ' we need to look to see if the individual items are a 'collection'
+        
+        If TypeInfo.IsContainer(ipHostItems.first) Then
+          
+            Dim myitems As IterItems = IterItems.Deb(ipHostItems)
+            Do
+                Dim myvar As Variant = myitems(0).reduceit(rdInner(s.Reducer))
+                If VBA.IsObject(myvar) Then
+                    Set myitems(0) = myvar
+                Else
+                
+                    myitems(0) = myvar
+                    
+                End If
+            Loop While myitems.MoveNext
+            Return ipHostItems
+        Else
+        
+            Return s.Reducer.ExecReduction(ipHostItems)
+                
+        End If
+            
+       
+            
+    End Function
+
+    '@DefaultMember
+    Public Function Deb(ByVal ipReducer As IReducer, Optional ByRef ipFTS As FTS = Nothing) As rdInner
+        With New rdInner
+            Return .ConstructInstance(ipReducer, ipFTS)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipReducer As IReducer, ByRef ipFTS As FTS) As rdInner
+        Set s.Reducer = ipReducer
+        Set s.FTS = ipFTS
+        Return Me
+    End Function
+    
+    
+    Public Property Get TypeName() As String Implements IReducer.TypeName
+        Return MY_NAME
+    End Property
+
+End Class

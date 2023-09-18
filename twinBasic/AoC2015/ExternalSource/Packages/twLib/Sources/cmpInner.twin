@@ -1,0 +1,67 @@
+Class cmpInner
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+   
+    
+    Implements IComparer
+
+    
+    Private Const MY_TYPENAME               As String = "cmpInner"
+    
+    
+    Private Type State
+
+        Comparer                  As ICOmparer
+            
+    End Type
+
+    Private s                   As State
+
+
+    '@Description("Calls Mapit on the lowest level item supporting mapit on The hostItem")
+
+    Public Function ExecCmp(ByRef ipHostItem As Variant) As Boolean Implements IComparer.ExecCmp
+
+        Select Case VBA.TypeName(ipHostItem)
+            
+            Case "Hkvp", "Seq", "ListArray"
+                    
+                Return ipHostItem.CountIt(cmpInner(s.Comparer))
+                        
+            Case Else
+                
+                Return s.Comparer.ExecCmp(ipHostItem)
+            
+        End Select
+        
+    End Function
+
+    '@DefaultMember
+    Public Function Deb(ByVal ipComparer As IComparer) As cmpInner
+        With New cmpInner
+            Return .ConstructInstance(ipComparer)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipComparer As IComparer) As cmpInner
+        Set s.Comparer = ipComparer
+        Return Me
+    End Function
+    
+    
+    Public Function TypeName() As String Implements IComparer.TypeName
+        Return MY_TYPENAME
+    End Function
+
+    Public Property Get It() As Variant Implements IComparer.It
+        Return s.Comparer.It
+    End Property
+    
+    Property Get Index() As Long Implements IComparer.Index
+    	Return s.Comparer.Index
+    End Property
+End Class

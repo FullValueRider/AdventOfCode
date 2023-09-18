@@ -1,0 +1,137 @@
+Class Stack
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+
+    Option Explicit
+    Private Const MY_NAME           As String = "Stack"
+    
+
+    Private Type state
+
+        Coll                        As collection
+        
+    End Type
+
+    Private s                       As state
+
+
+    Public Function Deb() As Stack
+        With New Stack
+            Return .ConstructInstance
+        End With
+    End Function
+
+    Friend Function ConstructInstance() As Stack
+        Set s.Coll = New Collection
+        Return Me
+    End Function
+
+
+    Public Property Get IsEmpty() As Boolean
+        IsEmpty = s.Coll.Count = 0
+    End Property
+
+    Public Property Get IsNotEmpty() As Boolean
+        IsNotEmpty = s.Coll.Count > 0
+    End Property
+
+
+    Public Function Peek() As Variant
+    
+        If Me.IsEmpty Then
+            
+            Return Null
+            
+
+        Else
+            
+            Return s.Coll.Item(s.Coll.Count)
+            
+            
+        End If
+    
+    End Function
+
+    
+    Public Function Push(ByRef ipItem As Variant) As Stack
+        
+        s.Coll.Add ipItem
+        Return Me
+    End Function
+
+
+    Public Function Pop() As Variant
+    
+        If Me.IsEmpty Then
+           Return Null
+        End If
+            
+        Dim myitem As Variant
+        Dim myCount As Long = s.Coll.Count
+        If VBA.IsObject(s.Coll.Item(myCount)) Then
+            Set myitem = s.Coll.Item(myCount)
+        Else
+            myitem = s.Coll.Item(myCount)
+        End If
+            
+        s.Coll.Remove myCount
+            
+        Return myitem
+
+    End Function
+
+
+    
+    
+
+    Public Function Count() As Long
+       Return s.Coll.Count
+    End Function
+
+
+    ' Public Function PushElements(ParamArray ipParamArray() As Variant) As Stack
+        
+    '     If ArrayInfo.IsNotAllocated(ipParamArray) Then
+    '         Return Me
+    '     End If
+        
+    '     Dim myMeta As Meta = Meta.Deb(ipParamArray)
+        
+    '     Dim myItem As IterItems = IterItems.Deb(myMeta.Cargo)
+    '     Do
+    '         Me.Push myItem.GetItem
+    '     Loop While myItem.MoveNext
+        
+    ' Return Me
+        
+    ' End Function
+
+
+    Public Function ToArray() As Variant
+       
+        Dim myArray As Variant
+        ReDim myArray(0 To s.Coll.Count - 1)
+        
+        Dim myIndex As Long
+        For myIndex = 1 To s.Coll.Count
+            If VBA.IsObject(s.Coll.Item(myIndex)) Then
+                Set myArray(myIndex - 1) = s.Coll.Item(myIndex)
+            Else
+                myArray(myIndex - 1) = s.Coll.Item(myIndex)
+            End If
+        Next
+        Return myArray
+
+    End Function
+
+    Public Function ToSeq() As Seq
+        Return Seq.Deb(Me.ToArray)
+    End Function
+
+    Public Function Name() As String
+        Return MY_NAME
+    End Function
+    
+End Class

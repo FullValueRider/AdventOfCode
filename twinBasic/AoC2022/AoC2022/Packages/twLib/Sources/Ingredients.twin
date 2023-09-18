@@ -1,0 +1,82 @@
+Class Ingredients
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Private Type Properties
+        Name                                        As string
+        Capacity                                    As long
+        Durability                                  As long
+        Flavour                                     As long
+        Texture                                     As long
+        Calories                                    As long
+        
+    End Type
+    
+    Private p                                       As properties
+    
+    
+    Public Function Deb(ByRef ipIngredientInfo As Seq) As Ingredients
+        With New Ingredients
+            Return .ConstructInstance(ipIngredientInfo)
+        End With
+    End Function
+    
+    Friend Function ConstructInstance(ByRef ipIngredientInfo As Seq) As Ingredients
+        
+        Dim myIngredients As IterItems = IterItems.Deb(ipIngredientInfo)
+        Do
+        	Dim myItem As Seq = myIngredients(0)
+            
+            Select Case myItem.Item(1)
+            
+                Case "capacity":        p.Capacity = myItem.Item(2)
+                Case "durability":      p.Durability = myItem.Item(2)
+                Case "flavor":          p.Flavour = myItem.Item(2)
+                Case "texture":         p.Texture = myItem.Item(2)
+                Case "calories":        p.Calories = myItem.Item(2)
+                Case Else:              p.Name = myItem.Item(1)
+                
+            End Select
+            
+        Loop While myIngredients.MoveNext
+        
+    	Return Me
+        
+    End Function
+    
+    
+    Public Property Get Name() As String
+        Return p.Name
+    End Property
+    
+    
+    Public Property Get Capacity() As Long
+        Return p.Capacity
+    End Property
+    
+    
+    Public Property Get Durability() As Long
+        Return p.Durability
+    End Property
+    
+    
+    Public Property Get Flavour() As Long
+        Return p.Flavour
+    End Property
+    
+    
+    Public Property Get Texture() As Long
+        Return p.Texture
+    End Property
+    
+    
+    Public Property Get Calories() As Long
+        Return p.Calories
+    End Property
+
+
+End Class

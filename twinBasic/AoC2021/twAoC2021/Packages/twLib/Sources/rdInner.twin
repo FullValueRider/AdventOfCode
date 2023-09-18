@@ -1,0 +1,64 @@
+Class rdInner
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+	Implements IReducer
+
+    
+    Private Const MY_NAME               As String = "rdInner"
+    
+    
+    Private Type State
+
+        Reducer                 As IReducer
+            
+    End Type
+
+    Private s                   As State
+
+
+     '@Description("Calls Mapit on the lowest level item supporting mapit on The hostItem")
+    Public Function ExecReduction(ByRef ipHostItems As Variant) As Variant Implements IReducer.ExecReduction
+
+        Select Case VBA.TypeName(ipHostItems.Item)
+            
+            Case "Hkvp", "Seq"
+            
+                Dim myS As Seq = Seq.Deb
+            
+                Do
+                	DoEvents
+                    myS.Add ipHostItems.Item.reduceit(rdInner(s.Reducer))
+                Loop While ipHostItems.MoveNext
+                
+                Return myS
+                
+            Case Else
+            
+                Return s.Reducer.ExecReduction(ipHostItems)
+            
+        End Select
+        
+    End Function
+
+    '@DefaultMember
+    Public Function Deb(ByVal ipReducer As IReducer) As rdInner
+        With New rdInner
+            Return .ConstructInstance(ipReducer)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipReducer As IReducer) As rdInner
+        Set s.Reducer = ipReducer
+        Return Me
+    End Function
+    
+    
+    Public Function TypeName() As String Implements IReducer.TypeName
+        Return MY_NAME
+    End Function
+
+End Class

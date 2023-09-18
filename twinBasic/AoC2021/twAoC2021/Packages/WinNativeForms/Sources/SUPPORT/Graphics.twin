@@ -1,0 +1,1023 @@
+
+[ InterfaceId ("000204F0-0000-0000-C000-000000000046") ]
+Private Interface IVBPrint Extends stdole.IUnknown
+    Sub WriteText(ByVal Value As String)
+    Property Let Column(ByVal Value As Long)
+    Property Get Column() As Long
+End Interface
+
+Private Module GraphicsGlobals
+    Private DeclareWide PtrSafe Function GetObjectW Lib "gdi32" (ByVal hObject As LongPtr, ByVal nCount As Long, ByRef lpObject As Any) As Long
+    Private DeclareWide PtrSafe Function GetIconInfo Lib "user32" (ByVal hicon As LongPtr, ByRef iconInfo As ICONINFO) As Long
+    Private DeclareWide PtrSafe Function CopyImage Lib "user32" (ByVal handle As LongPtr, ByVal type As Long, ByVal cx As Long, ByVal cy As Long, ByVal flags As Long) As Long
+    Private DeclareWide PtrSafe Function OleCreatePictureIndirect Lib "oleaut32" (ByRef lpPictDesc As Any, ByVal riid As LongPtr, ByVal fOwn As Long, ByRef outObject As Any) As Long
+    Private DeclareWide PtrSafe Function Rectangle Lib "gdi32" (ByVal hdc As LongPtr, ByVal left As Long, ByVal top As Long, ByVal right As Long, ByVal bottom As Long) As Long
+    
+    Private Type PICTDESC_BITMAP
+    	cbSizeofstruct As Long
+        picType As Long
+        hbitmap As LongPtr
+        hpal As LongPtr
+    End Type
+    
+    Private Type ICONINFO
+    	fIcon As Long       ' BOOL
+        xHotspot As Long
+        yHotspot As Long
+        hbmMask As LongPtr
+        hbmColor As LongPtr
+    End Type
+
+    Private Type BITMAP
+    	bmType As Long
+        bmWidth As Long
+        bmHeight As Long
+        bmWidthBytes As Long
+        bmPlanes As Integer
+        bmBitsPixel As Integer
+        bmBits As LongPtr
+    End Type
+
+    Private OLEPictureScaleX As Double
+    Private OLEPictureScaleY As Double
+
+    Public Sub DetermineOLEPictureScaling()
+            
+        ' the Picture.Width and Picture.Height values already reflect DPI, but ole32 library caches a static DPI value, which is no good
+        ' We use this routine to determine the cached DPI used by the loaded ole32 library
+
+        ' Load a 1x1-pixel bitmap into a StdPicture, and read the Width / Height values to determine the scale to HIMETRIC units that the OLE32 library is using
+        
+        'Const ImageData_1x1Bitmap As Variant = LoadResData("1x1.bmp", "OTHER")
+    	'Dim tempPicture As OlePicture = Global.LoadPicture(ImageData_1x1Bitmap)
+        
+        Const ImageData_1000x1000 As Variant = LoadResData("1000x1000.gif", "OTHER")
+    	Dim tempPicture As OlePicture = Global.LoadPicture(ImageData_1000x1000)
+        
+        OLEPictureScaleX = tempPicture.Width / 1000
+        OLEPictureScaleY = tempPicture.Height / 1000
+
+    End Sub
+
+	Public Sub ScaleOLEPictureDimensionsToPixels(ByVal PicType As PictureTypeConstants, ByVal WidthHIMETRIC As Long, ByRef Width As Long, ByVal HeightHIMETRIC As Long, ByRef Height As Long)
+    	If OLEPictureScaleX = 0 Then DetermineOLEPictureScaling
+        Width = Round(WidthHIMETRIC / OLEPictureScaleX)
+        Height = Round(HeightHIMETRIC / OLEPictureScaleY)
+	End Sub    
+    
+    Private DeclareWide PtrSafe Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
+    Private DeclareWide PtrSafe Function ReleaseDC Lib "user32" (ByVal hWnd As LongPtr, ByVal hDC As LongPtr) As Long
+    Private DeclareWide PtrSafe Function CreateCompatibleDC Lib "gdi32" (ByVal hdc As LongPtr) As LongPtr
+    Private DeclareWide PtrSafe Function CreateCompatibleBitmap Lib "gdi32" (ByVal hdc As LongPtr, ByVal nWidth As Long, ByVal nHeight As Long) As LongPtr
+    Private DeclareWide PtrSafe Function SelectObject Lib "gdi32" (ByVal hdc As LongPtr, ByVal hObject As LongPtr) As LongPtr
+    Private DeclareWide PtrSafe Function GetSystemMetrics Lib "user32" (ByVal index As Long) As Long
+    Private DeclareWide PtrSafe Function DeleteDC Lib "gdi32" (ByVal hDC As LongPtr) As Long
+    Private DeclareWide PtrSafe Function DrawIcon Lib "user32" (ByVal hDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal hicon As LongPtr) As Long
+    Private DeclareWide PtrSafe Function DrawIconEx Lib "user32" (ByVal hDC As LongPtr, ByVal xLeft As Long, ByVal yTop As Long, ByVal hicon As LongPtr, ByVal cxWidth As Long, ByVal cyWidth As Long, ByVal istepIfAniCur As Long, ByVal hbrFlickerFreeDraw As LongPtr, ByVal diFlags As Long) As Long
+    Private DeclareWide PtrSafe Function CreateDIBSection Lib "gdi32" (ByVal hdc As LongPtr, ByRef pbmi As Any, ByVal usage As Long, ByRef ppvBits As LongPtr, ByVal hSection As LongPtr, ByVal offset As Long) As LongPtr
+    Private DeclareWide PtrSafe Sub RtlMoveMemory Lib "kernel32" (ByVal lpDest As LongPtr, ByVal lpSource As LongPtr, ByVal Size As LongPtr)
+    Private DeclareWide PtrSafe Function GetDIBits Lib "gdi32" (ByVal hdc As LongPtr, ByVal hbm As LongPtr, ByVal start As Long, ByVal cLines As Long, ByRef lpvBits As LongPtr, ByRef lpbmi As BITMAPINFO_RGBA, ByVal usage As Long) As Long
+    Private DeclareWide PtrSafe Function SetDIBits Lib "gdi32" (ByVal hdc As LongPtr, ByVal hbm As LongPtr, ByVal start As Long, ByVal cLines As Long, ByVal lpvBits As LongPtr, ByRef lpbmi As BITMAPINFO_RGBA, ByVal usage As Long) As Long
+    
+    
+    Type BITMAPINFOHEADER
+    	biSize As Long
+        biWidth As Long
+        biHeight As Long
+        biPlanes As Integer
+        biBitCount As Integer
+        biCompression As Long
+        biSizeImage As Long
+        biXPelsPerMeter As Long
+        biYPelsPerMeter As Long
+        biClrUsed As Long
+        biClrImportant As Long
+    End Type
+        
+    Type BITMAPINFO_RGBA
+    	bmiHeader As BITMAPINFOHEADER
+        bmiColors(4) As Long
+    End Type
+    Type BITMAPINFO_RGBA_LARGE
+    	bmiHeader As BITMAPINFOHEADER
+        bmiColors(256) As Long
+    End Type
+
+    Type CIEXYZ
+    	ciexyzX As Long ' FXPT2DOT30
+    	ciexyzY As Long ' FXPT2DOT30
+    	ciexyzZ As Long ' FXPT2DOT30
+    End Type
+
+    Type CIEXYZTRIPLE
+    	ciexyzRed As CIEXYZ
+    	ciexyzGreen As CIEXYZ
+    	ciexyzBlue As CIEXYZ
+    End Type
+    
+    Type BITMAPV5HEADER
+    	bV5Size As Long
+        bV5Width As Long
+        bV5Height As Long
+        bV5Planes As Integer
+        bV5BitCount As Integer
+        bV5Compression As Long
+        bV5SizeImage As Long
+        bV5XPelsPerMeter As Long
+        bV5YPelsPerMeter As Long
+        bV5ClrUsed As Long
+        bV5ClrImportant As Long
+        bV5RedMask As Long
+        bV5GreenMask As Long
+        bV5BlueMask As Long
+        bV5AlphaMask As Long
+        bV5CSType As Long
+        bV5Endpoints As CIEXYZTRIPLE
+        bV5GammaRed As Long
+        bV5GammaGreen As Long
+        bV5GammaBlue As Long
+        bV5Intent As Long
+        bV5ProfileData As Long
+        bV5ProfileSize As Long
+        bV5Reserved As Long
+    End Type
+    
+    Type V5BMPINFO
+    	bmiHeader As BITMAPV5HEADER
+        bmiColors(2) As Long
+    End Type
+
+    
+End Module
+
+Private Class GraphicsBase
+
+    Implements IVBPrint
+
+    Private Type TEXTMETRIC
+        tmHeight As Long
+        tmAscent As Long
+        tmDescent As Long
+        tmInternalLeading As Long
+        tmExternalLeading As Long
+        tmAveCharWidth As Long
+        tmMaxCharWidth As Long
+        tmWeight As Long
+        tmOverhang As Long
+        tmDigitizedAspectX As Long
+        tmDigitizedAspectY As Long
+        tmFirstChar As Byte
+        tmLastChar As Byte
+        tmDefaultChar As Byte
+        tmBreakChar As Byte
+        tmItalic As Byte
+        tmUnderlined As Byte
+        tmStruckOut As Byte
+        tmPitchAndFamily As Byte
+        tmCharSet As Byte
+    End Type
+    
+    Private Type size
+        cx As Long
+        cy As Long
+    End Type
+
+    Private DeclareWide PtrSafe Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
+    Private DeclareWide PtrSafe Function GetTextMetricsW Lib "gdi32" (ByVal hDc As LongPtr, lptm As TEXTMETRIC) As Long
+    Private DeclareWide PtrSafe Function GetTextExtentPointW Lib "gdi32" (ByVal hDc As LongPtr, ByVal lpString As String, ByVal c As Long, ByRef lpsz As size) As Long
+    Private DeclareWide PtrSafe Function TabbedTextOutW Lib "user32" (ByVal HDC As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal lpString As String, ByVal StringLen As Long, ByVal nTabPositions As Long, ByRef arrayOfPositions As Long, ByVal nTabOrigin As Long) As Long  ' we only pass 1 value to arrayOfPositions, so this definition is OK for our needs
+    Private DeclareWide PtrSafe Function GetTabbedTextExtentA Lib "user32" (ByVal HDC As LongPtr, ByVal lpString As String, ByVal StringLen As Long, ByVal nTabPositions As Long, ByRef arrayOfPositions As Long) As Long  ' we only pass 1 value to arrayOfPositions, so this definition is OK for our needs    
+    Private DeclareWide PtrSafe Function CreateCompatibleDC Lib "gdi32" (ByVal hdc As LongPtr) As LongPtr
+    Private DeclareWide PtrSafe Function CreateCompatibleBitmap Lib "gdi32" (ByVal hdc As LongPtr, ByVal nWidth As Long, ByVal nHeight As Long) As LongPtr
+    Private DeclareWide PtrSafe Function SelectObject Lib "gdi32" (ByVal hdc As LongPtr, ByVal hObject As LongPtr) As LongPtr
+    Private DeclareWide PtrSafe Function GetCurrentPositionEx Lib "gdi32" (ByVal hdc As LongPtr, ByRef lppt As POINTL) As Long
+    Private DeclareWide PtrSafe Function Arc Lib "gdi32" (ByVal hdc As LongPtr, ByVal x1 As Long, ByVal y1 As Long, ByVal x2 As Long, ByVal y2 As Long, ByVal x3 As Long, ByVal y3 As Long, ByVal x4 As Long, ByVal y4 As Long) As Long
+    Private DeclareWide PtrSafe Function Pie Lib "gdi32" (ByVal hdc As LongPtr, ByVal x1 As Long, ByVal y1 As Long, ByVal x2 As Long, ByVal y2 As Long, ByVal x3 As Long, ByVal y3 As Long, ByVal x4 As Long, ByVal y4 As Long) As Long
+    Private DeclareWide PtrSafe Function DeleteObject Lib "gdi32" (ByVal handle As LongPtr) As Long
+    Private DeclareWide PtrSafe Function CreateSolidBrush Lib "gdi32" (ByVal Color As Long) As LongPtr
+    Private DeclareWide PtrSafe Function Rectangle Lib "gdi32" (ByVal hdc As LongPtr, ByVal left As Long, ByVal top As Long, ByVal right As Long, ByVal bottom As Long) As Long
+    Private DeclareWide PtrSafe Function GetClientRect Lib "user32" (ByVal hWnd As LongPtr, ByRef outRect As WinNativeFormsBASE.RECT) As Long
+    Private DeclareWide PtrSafe Function BitBlt Lib "gdi32" (ByVal hDC As LongPtr, ByVal x As Long, ByVal y As Long, ByVal cx As Long, ByVal cy As Long, ByVal hdcSrc As LongPtr, ByVal x1 As Long, ByVal y1 As Long, ByVal ROP As Long) As Long
+    Private DeclareWide PtrSafe Function InvalidateRect Lib "user32" (ByVal hWnd As LongPtr, ByVal lpRect As LongPtr, ByVal bErase As Long) As Long
+    Private DeclareWide PtrSafe Function UpdateWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
+    Private DeclareWide PtrSafe Function CreateFontIndirectW Lib "gdi32" (ByRef lpLogFont As WinNativeFormsBASE.LOGFONT) As LongPtr
+    Private DeclareWide PtrSafe Function GetObjectW Lib "gdi32" (ByVal hObject As LongPtr, ByVal nCount As Long, ByRef lpObject As Any) As Long
+    Private DeclareWide PtrSafe Function GetObjectType Lib "gdi32" (ByVal hObject As LongPtr) As Long
+    Private DeclareWide PtrSafe Function GetSystemMetrics Lib "user32" (ByVal index As Long) As Long
+    Private DeclareWide PtrSafe Function FillRect Lib "user32" (ByVal hdc As LongPtr, ByRef rect As WinNativeFormsBASE.RECT, ByVal brush As LongPtr) As Long
+                Const SRCCOPY As Long = &H00CC0020
+    
+    Private Enum VBPaintFlags
+    	StepOnFirstCoords = 1
+        ColorSpecified = 2
+        FirstCoordsSpecified = 4
+        StepOnSecondCoords = 8
+        Box = 16
+        BoxFilled = 32
+        StartSpecified = 64
+        EndSpecified = 128
+        AspectSpecified = 256
+    End Enum
+    
+    Private Log As String
+    Private WindowHDC As LongPtr
+    Private WindowHandle As LongPtr
+    Private CachedFontCharHeight As Long
+    Private CachedFontAvgCharWidth As Long
+    Private BufferDC As LongPtr
+    Private BufferBitmap As LongPtr
+    Private OrigBitmap As LongPtr
+    Private CurrentClientRect As WinNativeFormsBase.RECT
+    Private BufferBitmapWidth As Long
+    Private BufferBitmapHeight As Long
+    Private Owner As Object
+    Private IsForm As Boolean
+
+    Public PictureDpiScaling As Boolean = True
+
+    [ Serialize (False) ]
+    Public hDC As LongPtr
+    
+    Public HasDC As Boolean = True
+    Public ClipControls As Boolean = True
+    
+    [ Serialize (False) ]
+    Private InternalCurrentX As Double               ' These reflect DPI, not unscaled values
+    [ Serialize (False) ]
+    Private InternalCurrentY As Double               ' These reflect DPI, not unscaled values
+
+    [ CustomDesigner ("designer_SpectrumWindows") ]
+    Public FillColor As OLE_COLOR = 0
+    Public FillStyle As FillStyleConstants = FillStyleConstants.vbFSTransparent
+    [ CustomDesigner ("designer_SpectrumWindows") ]
+    Public BackColor As OLE_COLOR = VBRUN.SystemColorConstants.vb3DFace
+    [ CustomDesigner ("designer_SpectrumWindows") ]
+    Public ForeColor As OLE_COLOR = SystemColorConstants.vbButtonText
+    Public DrawWidth As Long = 1
+    Public DrawMode As DrawModeConstants = DrawModeConstants.vbCopyPen
+    Public DrawStyle As DrawStyleConstants = DrawStyleConstants.vbSolid
+    Public AutoRedraw As Boolean = False
+    
+
+    Private InternalDrawStyle As Long = PS_SOLID
+    Private InternalCurrentBrush As LongPtr
+    Private WithEvents RootWindowElement As WindowsControls.WindowElement
+    
+    Public Sub New(Optional RootWindowElement As WindowsControls.WindowElement)
+    	Set Me.RootWindowElement = RootWindowElement
+    End Sub
+    
+    Private Sub HandleResize() _
+            Handles RootWindowElement.Resize
+            
+        GetClientRect(Me.WindowHandle, CurrentClientRect)
+        
+        If Me.AutoRedraw Then
+        	AutoRedrawChanged
+        End If
+        
+        If Me.Owner IsNot Nothing Then
+            Me.Owner.InternalRaiseResize()
+        End If
+    End Sub
+
+    Private Sub DrawStyleChanged() _
+            Handles DrawStyle.OnPropertyLet
+    	
+        Select Case Me.DrawStyle
+            Case DrawStyleConstants.vbInvisible: InternalDrawStyle = PS_NULL
+            Case DrawStyleConstants.vbSolid: InternalDrawStyle = PS_SOLID
+            Case DrawStyleConstants.vbDot: InternalDrawStyle = PS_DOT
+            Case DrawStyleConstants.vbDash: InternalDrawStyle = PS_DASH
+            Case DrawStyleConstants.vbDashDot: InternalDrawStyle = PS_DASHDOT
+            Case DrawStyleConstants.vbDashDotDot: InternalDrawStyle = PS_DASHDOTDOT
+            Case DrawStyleConstants.vbInsideSolid: InternalDrawStyle = PS_INSIDEFRAME
+        End Select
+    End Sub
+    
+    Private Sub FillStyleChanged() _
+            Handles FillStyle.OnPropertyLet, _
+                    FillColor.OnPropertyLet
+
+        Dim fillBrush As LongPtr
+    	Select Case Me.FillStyle
+            Case vbFSTransparent: fillBrush = GDI32_GetStockObject(NULL_BRUSH)
+            Case vbFSSolid: fillBrush = CreateSolidBrush(FillColor)
+            Case vbCross: fillBrush = GDI32_CreateHatchBrush(HS_CROSS, FillColor)
+            Case vbDiagonalCross: fillBrush = GDI32_CreateHatchBrush(HS_DIAGCROSS, FillColor)
+            Case vbDownwardDiagonal: fillBrush = GDI32_CreateHatchBrush(HS_FDIAGONAL, FillColor)
+            Case vbHorizontalLine: fillBrush = GDI32_CreateHatchBrush(HS_HORIZONTAL, FillColor)
+            Case vbUpwardDiagonal: fillBrush = GDI32_CreateHatchBrush(HS_BDIAGONAL, FillColor)
+            Case vbVerticalLine: fillBrush = GDI32_CreateHatchBrush(HS_VERTICAL, FillColor)
+        End Select
+                
+        If InternalCurrentBrush <> 0 Then DeleteObject(InternalCurrentBrush)
+        InternalCurrentBrush = fillBrush
+    End Sub
+    
+    Private Sub SignificantChange() _
+            Handles BackColor.OnPropertyLet
+
+        If Me.AutoRedraw = True Then
+            Cls
+        Else
+            InvalidateRect(Me.WindowHandle, 0, 1)
+         End If
+    End Sub
+    
+    [ Serialize (False) ]
+    Private InternalPicture As StdPicture
+    
+    [ Serialize (False) ]
+    Public Property Get Picture() As StdPicture
+        Return InternalPicture
+    End Property
+
+    [ Serialize (False) ]
+    Public Property Set Picture(Value As StdPicture)
+        Set InternalPicture = Value
+        PictureChanged()
+    End Property
+
+    [ Serialize (False) ]
+    Public Property Let Picture(Value As StdPicture)    ' Weirdly, VBx also implements the Let for this
+        Set InternalPicture = Value
+        PictureChanged()
+    End Property
+    
+    Private Sub PictureChanged()
+        SignificantChange()
+        
+        If (Me.Owner IsNot Nothing) And (Me.IsForm = False) Then
+            Me.Owner.InternalRaiseChange()
+        End If
+    End Sub
+    
+    Private Sub AutoRedrawChanged() _
+            Handles AutoRedraw.OnPropertyLet
+
+        If AutoRedraw = True Then
+            Dim BitmapWidth As Long
+            Dim BitmapHeight As Long
+
+            BitmapWidth = CurrentClientRect.Right - CurrentClientRect.Left
+            BitmapHeight = CurrentClientRect.Bottom - CurrentClientRect.Top
+
+            If IsForm Then
+                ' VB6 uses the current (main) screen resolution to create a persistent buffered bitmap
+                '  which allows resizes of forms to retain their content, even when expanded
+                Const SM_CXSCREEN As Long = 0
+                Const SM_CYSCREEN As Long = 1
+                Dim screenWidth As Long = GetSystemMetrics(SM_CXSCREEN)
+                Dim screenHeight As Long = GetSystemMetrics(SM_CYSCREEN)
+                If screenWidth > BitmapWidth Then BitmapWidth = screenWidth
+                If screenHeight > BitmapHeight Then BitmapHeight = screenHeight
+            End If
+            
+            ' Only create a new HDC if the new area is bigger than the cached bitmap area (in either direction)
+            
+            If (BitmapWidth > Me.BufferBitmapWidth) OrElse (BitmapHeight > Me.BufferBitmapHeight) Then
+                
+                Dim newWidth As Long = If(BitmapWidth > Me.BufferBitmapWidth, BitmapWidth, Me.BufferBitmapWidth)
+                Dim newHeight As Long = If(BitmapHeight > Me.BufferBitmapHeight, BitmapHeight, Me.BufferBitmapHeight)
+                
+                'Debug.Print "Expanding cached bitmap!...."
+                Dim oldHDC As LongPtr = Me.BufferDC
+                Me.BufferDC = CreateCompatibleDC(Me.WindowHDC)
+                Me.BufferBitmap = CreateCompatibleBitmap(Me.WindowHDC, newWidth, BitmapHeight)
+                Me.OrigBitmap = SelectObject(Me.BufferDC, Me.BufferBitmap)
+                Me.hDC = Me.BufferDC
+                
+                If oldHDC <> 0 Then
+                    ' Copy the old buffer into the new one.
+                    Me.PaintBackground()
+                    
+                    ' this will then copy over any of the old buffer into the new one
+                    BitBlt(Me.BufferDC, 0, 0, Me.BufferBitmapWidth, Me.BufferBitmapHeight, oldHDC, 0, 0, SRCCOPY)
+                    DeleteObject(oldHDC)
+                Else
+                    ' otherwise try to copy over from the real HDC into our bitmap
+                    BitBlt(Me.BufferDC, 0, 0, newWidth, newHeight, Me.WindowHDC, 0, 0, SRCCOPY)
+                End If
+
+                Me.BufferBitmapWidth = newWidth
+                Me.BufferBitmapHeight = newHeight
+            End If
+        Else
+            RemoveBuffer()
+        End If
+        
+        SyncFontProperties()
+    End Sub
+    
+    Private Sub RemoveBuffer()
+    	If Me.OrigBitmap <> 0 Then
+            SelectObject(Me.BufferDC, Me.OrigBitmap)
+            Me.OrigBitmap = 0
+        End If
+        If Me.BufferBitmap <> 0 Then
+            DeleteObject(Me.BufferBitmap)
+            Me.BufferBitmap = 0
+        End If
+        If Me.BufferDC <> 0 Then
+            DeleteObject(Me.BufferDC)
+            Me.BufferDC = 0
+        End If
+        Me.hDC = Me.WindowHDC
+        Me.BufferBitmapWidth = 0
+        Me.BufferBitmapHeight = 0
+    End Sub
+    
+    Friend Sub OnPaint(hdc As LongPtr)
+        If Me.AutoRedraw Then
+            Me.CopyBufferToDC(hdc)
+        Else
+            Dim backBrush As LongPtr = WinNativeFormsBASE.WindowsAPI.GDI32_CreateSolidBrushColor(TranslateColor(BackColor))
+            WinNativeFormsBASE.USER32_FillWithBrush(Me.RootWindowElement, hdc, backBrush)
+            WinNativeFormsBASE.WindowsAPI.GDI32_DeleteObject(backBrush)
+
+            Me.PaintPicture(hdc)
+            
+            RootWindowElement.PaintContainedWindowlessElements(hdc)
+        End If
+    End Sub
+
+    Friend Sub PaintPicture(hdc As LongPtr)
+    	If Me.InternalPicture IsNot Nothing Then
+            
+            Dim Picture As OlePicture = Me.InternalPicture
+            
+            Const STRETCH_HALFTONE = 4
+            Dim OldStretchMode As Long = WinNativeFormsBASE.WindowsAPI.GDI32_SetBitmapStretchMode(hdc, STRETCH_HALFTONE)
+            WinNativeFormsBASE.WindowsAPI.GDI32_SetBrushOrigin(hdc, 0, 0, 0)
+            
+            Dim DrawWidth As Long
+            Dim DrawHeight As Long
+
+            Const PICTYPE_METAFILE As Long = 2
+            Const PICTYPE_ENHMETAFILE As Long = 4
+            If (Picture.Type = PICTYPE_METAFILE) Or (Picture.Type = PICTYPE_ENHMETAFILE) Then
+                ' Size the metafile to fill the area                
+                If AutoRedraw Then
+                	DrawWidth = BufferBitmapWidth
+                	DrawHeight = BufferBitmapHeight
+                Else
+                    DrawWidth = CurrentClientRect.Right - CurrentClientRect.Left
+                    DrawHeight = CurrentClientRect.Bottom - CurrentClientRect.Top
+                End If
+            Else
+                ScaleOLEPictureDimensionsToPixels(Picture.Type, Picture.Width, DrawWidth, Picture.Height, DrawHeight)
+                If PictureDpiScaling = True Then
+                    DrawWidth *= Me.RootWindowElement.UnitPixelScale
+                    DrawHeight *= Me.RootWindowElement.UnitPixelScale
+                End If
+            End If
+            If (DrawWidth > 0) And (DrawHeight > 0) Then
+                Picture.Render CLngPtr(hdc), 0, 0, DrawWidth, DrawHeight, 0&, Picture.Height, Picture.Width, -Picture.Height, ByVal CLngPtr(0&)
+            End If
+            WinNativeFormsBASE.WindowsAPI.GDI32_SetBitmapStretchMode(hdc, OldStretchMode)
+
+        End If
+    End Sub
+        
+    Private Sub PaintBackground()
+        Dim backBrush As LongPtr = WinNativeFormsBASE.WindowsAPI.GDI32_CreateSolidBrushColor(TranslateColor(BackColor))
+        
+        If AutoRedraw Then
+            Dim rect As WinNativeFormsBASE.RECT
+            rect.Right = BufferBitmapWidth
+            rect.Bottom = BufferBitmapHeight
+            FillRect(hDC, rect, backBrush)
+        Else
+            WinNativeFormsBASE.USER32_FillWithBrush(Me.RootWindowElement, Me.hDC, backBrush)
+        End If
+        
+        WinNativeFormsBASE.WindowsAPI.GDI32_DeleteObject(backBrush)
+    End Sub
+    
+    Public Sub Cls()
+    	If Me.AutoRedraw = True Then
+            Me.PaintBackground()
+            Me.PaintPicture(Me.hDC)
+            RootWindowElement.PaintContainedWindowlessElements(Me.hDC)
+            Me.CopyBufferToDC(Me.WindowHDC)
+            'UpdateWindow(Me.WindowHandle)
+        Else
+            InvalidateRect(Me.WindowHandle, 0, 1)
+            UpdateWindow(Me.WindowHandle)
+    	End If
+        InternalCurrentX = 0
+        InternalCurrentY = 0
+    End Sub
+    
+    Friend Sub CopyBufferToDC(hdc As LongPtr)
+    	BitBlt(hdc, 0, 0, CurrentClientRect.Right - CurrentClientRect.Left, CurrentClientRect.Bottom - CurrentClientRect.Top, Me.BufferDC, 0, 0, SRCCOPY)
+    End Sub
+
+    Public Function GetLastLog() As String
+    	Return Log
+    End Function
+    
+    Public Sub ClearLog()
+    	Log = vbNullString
+    End Sub
+        
+    Public Sub Circle(ByVal Flags As VBPaintFlags, _
+                        ByVal X As Single, ByVal Y As Single, _
+                        ByVal Radius As Single, _	
+                        ByVal Color As Long, _
+                        ByVal Start As Single, _
+                        ByVal _End As Single, _
+                        ByVal Aspect As Single)
+        Log = CurrentProcedureName & "(" & Flags & "," & X & "," & Y & "," & Radius & "," & Color & "," & Start & "," & _End & "," & Aspect & ")"
+                       
+        X *= RootWindowElement.UnitPixelScale
+        Y *= RootWindowElement.UnitPixelScale
+        Radius *= RootWindowElement.UnitPixelScale
+                        
+        If Flags And VBPaintFlags.StepOnFirstCoords Then
+            X += Me.InternalCurrentX
+            Y += Me.InternalCurrentY
+        End If
+        
+        Me.InternalCurrentX = X
+        Me.InternalCurrentY = Y
+                  
+        Dim IncludeLineToStart As Boolean
+        Dim IncludeLineToEnd As Boolean
+        
+        If Start < 0 Then
+            Start = Abs(Start)
+            If Start > 6.28318619728 Then Err.Raise 5       ' invalid procedure call or argument
+            IncludeLineToStart = True
+        End If
+        
+        If _End < 0 Then
+            _End = Abs(_End)
+            If _End > 6.28318619728 Then Err.Raise 5       ' invalid procedure call or argument
+            IncludeLineToEnd = True
+        End If
+                  
+        Dim topLeftRectX As Double = -Radius
+        Dim topLeftRectY As Double = -Radius
+        Dim bottomRightRectX As Double = Radius
+        Dim bottomRightRectY As Double = Radius
+        Dim startX As Double = CDbl(Radius) * Cos(Start)
+        Dim startY As Double = -(CDbl(Radius) * Sin(Start))
+        Dim endX As Double = CDbl(Radius) * Cos(_End)
+        Dim endY As Double = -(CDbl(Radius) * Sin(_End))
+        
+        Dim SwitchAspect As Boolean
+        If Aspect < -1 Then
+            SwitchAspect = True
+        End If
+        Aspect = Abs(Aspect)
+        
+        If (Flags And VBPaintFlags.AspectSpecified) = False Then
+        
+        ElseIf SwitchAspect OrElse Aspect < 1 Then
+            ' Stretch the Y axis
+            topLeftRectY *= Aspect
+            bottomRightRectY *= Aspect
+            startY *= Aspect
+            endY *= Aspect
+        ElseIf Aspect > 1 Then
+            ' Stretch the X axis
+            topLeftRectX /= Aspect
+            bottomRightRectX /= Aspect
+            startX /= Aspect
+            endX /= Aspect
+        End If
+        
+        ' Now add in the center position offset...
+        topLeftRectX += X
+        topLeftRectY += Y
+        bottomRightRectX += X
+        bottomRightRectY += Y
+        startX += X
+        startY += Y
+        endX += X
+        endY += Y
+        
+        bottomRightRectX += 1
+        bottomRightRectY += 1
+        
+        If (Flags And VBPaintFlags.ColorSpecified) = False Then
+            Color = Me.ForeColor
+        End If
+
+        Dim pen As LongPtr = GDI32_CreatePen(InternalDrawStyle, DrawWidth, Color)
+        Dim origPen As LongPtr = SelectObject(Me.hDC, pen)
+                      
+        GDI32_SetROP2(Me.hDC, Me.DrawMode)
+         
+        Dim oldBrush As LongPtr
+        
+        If ((Flags And VBPaintFlags.StartSpecified) = False) And _
+            ((Flags And VBPaintFlags.EndSpecified) = False) Then
+        
+            ' this is simple and can be drawn with just Ellipse, which includes fill
+            oldBrush = SelectObject(Me.hDC, Me.InternalCurrentBrush)
+            WinNativeFormsBASE.GDI32_SetBackMode(Me.hDC, WinNativeFormsBASE.BackgroundModes.OPAQUE)
+            GDI32_Ellipse(Me.hDC, topLeftRectX, topLeftRectY, bottomRightRectX, bottomRightRectY)
+            SelectObject(Me.hDC, oldBrush)
+        
+        ElseIf IncludeLineToStart And IncludeLineToEnd Then
+        
+            ' this can be drawn with Pie, which includes fill
+            oldBrush = SelectObject(Me.hDC, Me.InternalCurrentBrush)
+            WinNativeFormsBASE.GDI32_SetBackMode(Me.hDC, WinNativeFormsBASE.BackgroundModes.OPAQUE)
+            Pie(Me.hDC, topLeftRectX, topLeftRectY, bottomRightRectX, bottomRightRectY, startX, startY, endX, endY)
+            SelectObject(Me.hDC, oldBrush)
+        
+        Else
+        
+            If IncludeLineToStart Then
+            	GDI32_MoveToEx(Me.hDC, X, Y, 0)
+                GDI32_LineTo(Me.hDC, startX, startY)
+            End If
+                        
+            Arc(Me.hDC, topLeftRectX, topLeftRectY, bottomRightRectX, bottomRightRectY, startX, startY, endX, endY)
+        
+            If IncludeLineToEnd Then
+            	GDI32_MoveToEx(Me.hDC, endX, endY, 0)
+                GDI32_LineTo(Me.hDC, X, Y)
+            End If
+
+        End If
+        
+        SelectObject(Me.hDC, origPen)
+        DeleteObject(pen)
+        
+        If AutoRedraw = True Then
+            InvalidateRect(Me.WindowHandle, 0, 1)
+        End If
+    End Sub
+        
+    Public Sub Line(ByVal Flags As VBPaintFlags, _
+                        ByVal X1 As Single, _
+                        ByVal Y1 As Single, _
+                        ByVal X2 As Single, _
+                        ByVal Y2 As Single, _
+                        ByVal Color As Long)
+        Log = CurrentProcedureName & "(" & Flags & "," & X1 & "," & Y1 & "," & X2 & "," & Y2 & "," & Color & ")"
+
+        X1 *= RootWindowElement.UnitPixelScale
+        Y1 *= RootWindowElement.UnitPixelScale
+        X2 *= RootWindowElement.UnitPixelScale
+        Y2 *= RootWindowElement.UnitPixelScale
+        
+        Dim point1X As Long
+        Dim point1Y As Long
+        Dim point2X As Long
+        Dim point2Y As Long
+        
+        If Flags And VBPaintFlags.FirstCoordsSpecified Then
+        	If Flags And VBPaintFlags.StepOnFirstCoords Then
+                point1X = Me.InternalCurrentX + X1
+                point1Y = Me.InternalCurrentY + Y1
+            Else
+                point1X = X1
+                point1Y = Y1
+            End If
+        End If
+        
+        If Flags And VBPaintFlags.StepOnSecondCoords Then
+            If Flags And VBPaintFlags.FirstCoordsSpecified Then
+                point2X = point1X + X2
+                point2Y = point1Y + Y2
+            Else
+                Dim curPos As POINTL
+                GetCurrentPositionEx(Me.hDC, curPos)
+                point2X = curPos.x + X2
+                point2Y = curPos.y + Y2
+            End If
+        Else
+            point2X = X2
+            point2Y = Y2
+        End If
+        
+        If Flags And VBPaintFlags.FirstCoordsSpecified Then
+            GDI32_MoveToEx(Me.hDC, point1X, point1Y, 0)
+        End If
+        
+        If (Flags And VBPaintFlags.ColorSpecified) = False Then
+            Color = Me.ForeColor
+        End If
+        
+        Dim pen As LongPtr = GDI32_CreatePen(InternalDrawStyle, DrawWidth, Color)
+        Dim origPen As LongPtr = SelectObject(Me.hDC, pen)
+    
+        GDI32_SetROP2(Me.hDC, Me.DrawMode)
+    
+        Dim oldBrush As LongPtr
+    
+        If (Flags And VBPaintFlags.BoxFilled) Then
+            Dim fillBrush As LongPtr = CreateSolidBrush(Color)
+            oldBrush = SelectObject(Me.hDC, fillBrush)
+            Rectangle(Me.hDC, point1X, point1Y, point2X, point2Y)
+            SelectObject(Me.hDC, oldBrush)
+            DeleteObject(fillBrush)
+        ElseIf (Flags And VBPaintFlags.Box) Then
+            ' This uses the fill as described by our class
+            oldBrush = SelectObject(Me.hDC, Me.InternalCurrentBrush)
+            WinNativeFormsBASE.GDI32_SetBackMode(Me.hDC, WinNativeFormsBASE.BackgroundModes.OPAQUE)
+            Rectangle(Me.hDC, point1X, point1Y, point2X, point2Y)
+            SelectObject(Me.hDC, oldBrush)
+        Else
+            GDI32_LineTo(Me.hDC, point2X, point2Y)
+        End If
+
+        SelectObject(Me.hDC, origPen)
+        DeleteObject(pen)
+
+        Me.InternalCurrentX = point2X
+        Me.InternalCurrentY = point2Y
+            
+        If AutoRedraw = True Then
+        	InvalidateRect(Me.WindowHandle, 0, 1)
+        End If
+        
+    End Sub
+    
+    Public Sub PSet(ByVal Flags As VBPaintFlags, _
+                        ByVal X As Single, _
+                        ByVal Y As Single, _
+                        ByVal Color As Long)
+                        
+        Log = CurrentProcedureName & "(" & Flags & "," & X & "," & Y & "," & Color & ")"
+
+        X *= RootWindowElement.UnitPixelScale
+        Y *= RootWindowElement.UnitPixelScale
+                                
+        If Flags And VBPaintFlags.StepOnFirstCoords Then
+            X += Me.InternalCurrentX
+            Y += Me.InternalCurrentY
+        End If
+        
+        GDI32_MoveToEx(Me.hDC, X, Y, 0)
+        
+        If (Flags And VBPaintFlags.ColorSpecified) = False Then
+            Color = Me.ForeColor
+        End If
+        
+        Dim pen As LongPtr = GDI32_CreatePen(InternalDrawStyle, DrawWidth, Color)
+        Dim origPen As LongPtr = SelectObject(Me.hDC, pen)
+
+        GDI32_SetROP2(Me.hDC, Me.DrawMode)
+        GDI32_LineTo(Me.hDC, X, Y + 1)
+
+        SelectObject(Me.hDC, origPen)
+        DeleteObject(pen)
+
+        Me.InternalCurrentX = X
+        Me.InternalCurrentY = Y
+        
+        If AutoRedraw = True Then
+            InvalidateRect(Me.WindowHandle, 0, 1)
+        End If
+
+    End Sub
+    
+    Public Sub Scale(ByVal Flags As VBPaintFlags, _
+                        ByVal X1 As Single, _
+                        ByVal Y1 As Single, _
+                        ByVal X2 As Single, _
+                        ByVal Y2 As Single)
+        ' This sets ScaleHeight ScaleWidth ScaleLeft ScaleTop and ScaleMode all in one shot
+        Err.Raise 5, , "Not yet supported"
+        Log = CurrentProcedureName & "(" & Flags & "," & X1 & "," & Y1 & "," & X2 & "," & Y2 & ")"
+    End Sub
+    
+    Public Sub ChangeHDC(hdc As LongPtr, hwnd As LongPtr, RootWindowElement As WindowsControls.WindowElement, Picture As StdPicture, Owner As Object, ByVal IsForm As Boolean)
+    	If hdc = 0 Then hdc = GetDC(hwnd)
+        Me.WindowHDC = hdc
+        Me.hDC = hdc
+        Set Me.RootWindowElement = RootWindowElement
+        Me.WindowHandle = hwnd
+        Set Me.Owner = Owner
+        Set Me.InternalPicture = Picture
+        Me.IsForm = IsForm
+        
+        Me.DrawStyleChanged
+        Me.HandleResize
+       	Me.FillStyleChanged
+        If Me.AutoRedraw = True Then
+            Cls()
+        Else
+        	SyncFontProperties()
+        End If
+    End Sub
+    
+    Private Sub IVBPrint_WriteText(ByVal Value As String) Implements IVBPrint.WriteText
+        Dim tabSize As Long = 8 * CachedFontAvgCharWidth    ' tabs are expanded to eight times the average character width
+                
+        If Me.FontTransparent = True Then
+        	WinNativeFormsBASE.GDI32_SetBackMode(Me.hDC, WinNativeFormsBASE.BackgroundModes.TRANSPARENT)
+        Else
+            WinNativeFormsBASE.GDI32_SetBackColor(Me.hDC, Me.BackColor)
+        	WinNativeFormsBASE.GDI32_SetBackMode(Me.hDC, WinNativeFormsBASE.BackgroundModes.OPAQUE)
+        End If
+                
+        WinNativeFormsBASE.GDI32_SetTextForeColor(Me.hDC, Me.ForeColor)
+                
+        ' Split into lines, and pass to TabbedTextOut        
+        Dim startPos As Long = 1
+        Dim currentLine As String
+        Do
+            Dim nextLineFeed As Long = InStr$(startPos, Value, vbCrLf, VbCompareMethod.vbBinaryCompare)  ' FIXME need to support vbCr and vbLf here too
+            If nextLineFeed <> 0 Then
+                currentLine = Mid$(Value, startPos, nextLineFeed - startPos)
+                startPos = nextLineFeed + 2
+            Else
+                currentLine = Mid$(Value, startPos)
+            End If
+            ' FIXME could change this like TabbedTextExtent now...
+            Dim outSize As Long = TabbedTextOutW(Me.hDC, Me.InternalCurrentX, Me.InternalCurrentY, currentLine, Len(currentLine), 1, tabSize, 0)
+            Me.InternalCurrentX += outSize And &HFFFF&
+            If nextLineFeed <> 0 Then
+                Me.InternalCurrentY += CachedFontCharHeight
+                Me.InternalCurrentX = 0
+            End If
+        Loop Until nextLineFeed = 0
+    
+        Value = Replace(Value, vbCrLf, "\r\n")
+        Value = Replace(Value, vbCr, "\r")
+        Value = Replace(Value, vbLf, "\r")
+        Log += CurrentProcedureName & "(""" & Value & """) "
+        
+        If AutoRedraw = True Then
+            InvalidateRect(Me.WindowHandle, 0, 1)
+        End If
+    End Sub
+    
+    Private Property Let IVBPrint_Column(ByVal Value As Long) Implements IVBPrint.Column
+        ' Column takes into account of the AVERAGE font character width
+        Log += CurrentProcedureName & "(""" & Value & """) "
+        Me.InternalCurrentX = Value * CachedFontAvgCharWidth
+    End Property
+    
+    Private Property Get IVBPrint_Column() As Long Implements IVBPrint.Column
+        Log += CurrentProcedureName & "() "
+        Dim retVal As Long = Me.InternalCurrentX \ Me.CachedFontAvgCharWidth
+        If (retVal * Me.CachedFontAvgCharWidth) <> Me.InternalCurrentX Then retVal += 1  ' round up
+        Return retVal
+    End Property
+    
+    ' ------------------------------------------------------------------------------------------------------
+    
+    ' FIXME need a font picker, then hide these from the property sheet
+    Public FontBold As Boolean = False
+    Public FontItalic As Boolean = False
+    Public FontName As String = "Segoe UI"
+    Public FontSize As Single = 8
+    Public FontStrikethru As Boolean = False
+    Public FontUnderline As Boolean = False
+
+    Public FontTransparent As Boolean = True
+
+    [ Serialize (False) ]
+    Public Font As StdFont
+    Private CurrentFontHandle As LongPtr
+    
+    Private Sub HandleDPIChange() _
+            Handles RootWindowElement.DPIChange
+        
+        SyncFontProperties()
+    End Sub
+    
+    Public Property Get RealHDC() As LongPtr
+    	Return Me.WindowHDC
+    End Property
+    
+    Public Property Get CurrentX() As Double
+    	Return InternalCurrentX / RootWindowElement.UnitPixelScale
+    End Property
+    
+    Public Property Let CurrentX(Value As Double)
+    	InternalCurrentX = Value * RootWindowElement.UnitPixelScale
+    End Property
+
+    Public Property Get CurrentY() As Double
+    	Return InternalCurrentY / RootWindowElement.UnitPixelScale
+    End Property
+    
+    Public Property Let CurrentY(Value As Double)
+    	InternalCurrentY = Value * RootWindowElement.UnitPixelScale
+    End Property
+     
+    Private Sub SyncFont() _
+           Handles Font.OnPropertySet
+
+        Dim oldFontHandle As LongPtr = Me.CurrentFontHandle
+        
+        Dim font As IFont = Me.Font
+        
+        ' First make sure the font scaling matches the window DPI
+        font.SetRatio If(RootWindowElement IsNot Nothing, RootWindowElement.DPI, 96), 2540
+        
+        Dim LF As WinNativeFormsBASE.LOGFONT
+        GetObjectW(font.hFont, LenB(LF), LF)
+        LF.LFQuality = WinNativeFormsBASE.CLEARTYPE_QUALITY
+        Dim newFont As LongPtr = CreateFontIndirectW(LF)            ' FIXME leak
+        
+        Dim oldFont As LongPtr = SelectObject(Me.hDC, newFont)          ' FIXME
+        
+        'Me.CurrentFontHandle = WindowsAPI.USER32_SetFont(Me.RootWindowElement, Me.Font)
+        If oldFontHandle <> 0 Then WinNativeFormsBASE.WindowsAPI.GDI32_DeleteObject oldFontHandle
+    End Sub
+
+    Private Sub InitializeOLEFont()
+        Dim NewFont As StdFont = New StdFont
+        With NewFont
+            .Bold = Me.FontBold
+            .Italic = Me.FontItalic
+            .Name = Me.FontName
+            .Size = Me.FontSize
+            .Strikethrough = Me.FontStrikethru
+            .Underline = Me.FontUnderline
+        End With
+        Set Me.Font = NewFont
+    End Sub
+    
+    Friend Function GetFontMetrics() As TEXTMETRIC
+        If Me.Font Is Nothing Then
+            InitializeOLEFont
+        End If
+        
+        Dim font As IFont = Me.Font
+        Dim hdc As LongPtr = WinNativeFormsBASE.WindowsAPI.GDI32_CreateCompatibleDC()
+        font.SetRatio(RootWindowElement.DPI, 2540)
+        Dim oldFont As LongPtr = WinNativeFormsBASE.WindowsAPI.GDI32_SelectObject(hdc, font.hFont)
+        WinNativeFormsBASE.WindowsAPI.GDI32_GetTextMetrics(hdc, GetFontMetrics)
+        WinNativeFormsBASE.WindowsAPI.GDI32_SelectObject(hdc, oldFont)
+		WinNativeFormsBASE.WindowsAPI.GDI32_DeleteDC(hdc)
+    End Function
+    
+    Private Sub SyncFontProperties() _
+            Handles FontBold.OnPropertyLet, _
+                    FontItalic.OnPropertyLet, _
+                    FontName.OnPropertyLet, _
+                    FontSize.OnPropertyLet, _
+                    FontStrikethru.OnPropertyLet, _
+                    FontUnderline.OnPropertyLet
+            
+        InitializeOLEFont()
+        SyncFont()
+        
+        Dim metrics As TEXTMETRIC
+        GetTextMetricsW(Me.hDC, metrics)
+        Me.CachedFontAvgCharWidth = metrics.tmAveCharWidth
+        Me.CachedFontCharHeight = metrics.tmHeight
+
+        'Refresh()
+    End Sub
+    
+    Public Function TextWidth(str As String) As Double
+        Dim tabSize As Long = 8 * CachedFontAvgCharWidth    ' tabs are expanded to eight times the average character width
+        Dim maxWidth As Long = 0
+        
+        Dim startPos As Long = 1
+        Dim currentLine As String
+        Do
+            Dim nextLineFeed As Long = InStr$(startPos, str, vbCrLf, VbCompareMethod.vbBinaryCompare)  ' FIXME need to support vbCr and vbLf here too
+            
+            Dim numCharsOnThisLine As Long
+            If nextLineFeed = 0 Then
+                numCharsOnThisLine = Len(str) - (startPos - 1)
+            Else
+                numCharsOnThisLine = nextLineFeed - startPos
+                startPos = nextLineFeed + 2
+            End If
+            Dim outSize As Long = GetTabbedTextExtentA(hDC, StrPtr(str) + (startPos - 1), numCharsOnThisLine, 1, tabSize)
+            
+            Dim lineWidth As Long = outSize And &HFFFF&
+            If lineWidth > maxWidth Then maxWidth = lineWidth
+        Loop Until nextLineFeed = 0
+         
+        Return maxWidth / RootWindowElement.UnitPixelScale
+    End Function
+    
+    Public Function TextHeight(str As String) As Double
+        Dim startPos As Long = 1
+        Dim numLineFeeds As Long
+        Do
+            Dim nextLineFeed As Long = InStr$(startPos, str, vbCrLf, VbCompareMethod.vbBinaryCompare)  ' FIXME need to support vbCr and vbLf here too
+            
+            If nextLineFeed = 0 Then
+            Else
+                startPos = nextLineFeed + 2
+            End If
+            numLineFeeds += 1
+        Loop Until nextLineFeed = 0
+         
+        Return (numLineFeeds * CachedFontCharHeight) / RootWindowElement.UnitPixelScale
+    End Function
+    
+    Private Sub Class_Terminate()
+        If InternalCurrentBrush <> 0 Then DeleteObject(InternalCurrentBrush)
+        RemoveBuffer()
+        'Debug.Print "Graphics.Class_Terminate"
+    End Sub
+        
+End Class

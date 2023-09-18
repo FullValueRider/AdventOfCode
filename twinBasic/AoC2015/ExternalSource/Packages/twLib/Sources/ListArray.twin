@@ -1,0 +1,162 @@
+Class ListArray
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '@Description("Wrapper for an Array with one dimension")
+    
+    Implements IIndexed
+    Private Const MY_TYPENAME                       As String = "ListArray"
+    
+
+    Private Type state
+    
+        Host()                      As variant
+        OrigHostSafeArrayData       As SAFEARRAY1D
+        
+    End Type
+    
+    Private s                       As state
+    
+    ' Allow memory transplant surgery
+    Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, Source As Any, ByVal Length As Long)
+
+    Public Function deb(ByRef ipListArray As Variant) As ListArray
+    	With New ListArray
+            Return .ConstructInstance(ipListArray)
+        End With
+    End Function
+    
+    Friend Function ConstructInstance(ByRef ipListArray As Variant) As ListArray
+    
+        ReDim s.Host(0 To 1)
+        ' Save a copy of the SafeArray structure for s.Host 
+        ' for 32 bits windows this means copying 24 bytes, for 64 bits this may be more
+        ' due to structre alignment
+         CopyMemory ByVal VarPtr(s.OrigHostSafeArrayData), ByVal GetSafeArrayPtr(s.Host), 24
+       
+        ' Do a memory transplant so that S.Host now accesses data from ipListArrao
+        CopyMemory ByVal GetSafeArrayPtr(s.Host), ByVal GetSafeArrayPtr(ipListArray), 24
+        
+        Return Me
+        
+    End Function
+    
+    Private Sub class_terminate()
+        ' Restore the safearray structure of s.Host so that VBA can  correctly
+        ' gargage collect
+        CopyMemory ByVal GetSafeArrayPtr(s.Host), ByVal VarPtr(s.OrigHostSafeArrayData), 24
+    End Sub
+    
+    '@DefaultMember
+    Public Property Get Item(ByVal ipIndex As Long) As Variant Implements IIndexed.Item
+        Return s.Host(ipIndex)
+    End Property
+    
+    Public Property Let Item(ByVal ipIndex As Long, ByRef ipItem As Variant) Implements IIndexed.Item
+        s.Host(ipIndex) = ipItem
+    End Property
+    
+    Public Property Set Item(ByVal ipIndex As Long, ByRef ipItem As Variant) Implements IIndexed.Item
+        s.Host(ipIndex) = ipItem
+    End Property
+    
+    Public Function FirstIndex() As Long
+        Return LBound(s.Host)
+    End Function
+    
+    Public Function LastIndex() As Long
+        Return UBound(s.Host)
+    End Function
+    
+    Public Function Count() As Long
+        Return UBound(s.Host) - LBound(s.Host) + 1
+    End Function
+    
+    Public Function IsAllocated() As Boolean
+        Return ArrayInfo.IsAllocated(s.Host)
+    End Function
+    
+    Public Function Sort() As ListArray
+    
+        Cops.SortInPlace s.Host
+        Return Me
+        
+    End Function
+    
+    Public Function Reverse() As ListArray
+    
+        Cops.ReverseInPlace Me
+        Return Me
+        
+    End Function
+    
+    Public Function HoldsItem(ByRef ipItem As Variant) As Boolean Implements IIndexed.HoldsItem
+    
+        Dim myItem As Variant
+        For Each myItem In s.Host
+            If ipItem = myItem Then
+                Return True
+            End If
+        Next
+        Return False
+        
+    End Function
+    
+    Public Function LacksItem(ByRef ipItem As Variant) As Boolean Implements IIndexed.LacksItem
+        Return Not HoldsItem(ipItem)
+    End Function
+    
+    Public Function Host() As Variant Implements IIndexed.Host
+        Return s.Host
+    End Function
+    
+    Public Function MapIt(ByVal ipMapper As IMapper) As ListArray
+
+        Dim myHost As Variant
+        ReDim myHost(Me.FirstIndex, Me.LastIndex)
+        Dim myI As IterItems = IterItems(Me)
+        Do
+            DoEvents
+            myHost(myI.Index) = ipMapper.ExecMapper(myI.Item)    '(s.Host(myI.Item))
+        Loop While myI.MoveNext
+
+        Return ListArray(myHost)
+
+    End Function
+
+
+    Public Function FilterIt(ByVal ipComparer As IComparer) As Seq
+
+        Dim myHost As Variant
+        ReDim myHost(Me.FirstIndex, Me.LastIndex)
+        Dim myI As IterItems = IterItems(Me)
+        Do
+            DoEvents
+            If ipComparer.ExecCmp(myI.Item) Then myHost(myI.Index).Add myI.Item
+        Loop While myI.MoveNext
+        
+        Return ListArray(myHost)
+        
+    End Function
+    
+    
+    ' Public Function CountIt(ByVal ipComparer As IComparer) As Long
+        
+    '     Dim myCount As Long = 0
+    '     Dim MYi As IterItems = IterItems(Me)
+    '     Do
+    '         If ipComparer.ExecCmp(s.Host(myIndex)) Then myCount += 1
+    '     Next
+
+    '     Return myCount
+
+    ' End Function
+    
+    Public Function ReduceIt(ByRef ipReducer As IReducer) As Variant
+        Return ipReducer.ExecReduction(Me)
+    End Function
+    
+End Class

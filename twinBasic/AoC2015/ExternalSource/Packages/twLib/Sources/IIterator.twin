@@ -1,0 +1,29 @@
+'Changelog
+'Initial class July 20222
+'2022-07-26
+' Updated Item,Index,Key methods to allow relative addressing
+
+Interface IIterator
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = False
+    Attribute VB_Exposed = False
+    
+    Function HasNext() As Boolean
+    Function HasNoNext() As Boolean
+    Function HasPrev() As Boolean
+    Function HasNoPrev() As Boolean
+    Function MoveNext() As Boolean
+    Function MovePrev() As Boolean
+    Function Item(Optional ipOffset As Long = 0) As Variant
+    Function Index(Optional ipoffset As Long = 0) As Long
+    Function Key(Optional ipOffset As Long = 0) As Variant
+    Function SetSpan(Optional ByRef ipFromOrSpan As Variant = Empty, Optional ByRef ipTo As Variant = Empty, Optional ByRef ipstep As Variant = 1, Optional ByVal ipRank As Long = 1) As IIterator
+    Function MoveToStart() As IIterator
+    Function MoveToEnd() As IIterator
+    Function Count() As Long
+    Function TypeName() As String
+
+
+End Interface

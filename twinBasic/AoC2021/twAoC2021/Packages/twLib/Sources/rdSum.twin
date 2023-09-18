@@ -1,0 +1,98 @@
+Class rdSum
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+    Option Explicit
+    
+    Implements IReducer
+    
+    Const MY_TYPENAME                  As String = "rdSum"
+    
+    Private Type State
+    	Comparer                        As IComparer
+        Index                           As Variant
+        Sum                             As Variant
+    End Type
+    
+    Private s                           As state
+    
+    '@DefaultMember
+    Public Function Deb(Optional ByRef ipComparer As IComparer, Optional ByVal ipIndex As Variant = Empty) As rdSum
+        With New rdSum
+            Return .ConstructInstance(ipComparer, ipIndex)
+        End With
+    End Function
+    
+    Public Function ConstructInstance(ByRef ipComparer As IComparer, ByVal ipIndex As Variant) As rdSum
+        Set s.Comparer = ipComparer
+        s.Index = ipIndex
+        Return Me
+    End Function
+
+    Public Function ExecReduction(ByRef ipHostItems As Variant) As Variant Implements IReducer.ExecReduction
+    
+        s.Sum = 0
+        
+        Dim myI As IterItems = IterItems.Deb(ipHostItems)
+        Do
+        	DoEvents
+            If (s.Comparer Is Nothing) Then
+                If VBA.IsEmpty(s.Index) Then
+                    rdNoCompareNoIndex myI.GetItem
+                Else
+                    rdNoCompareWithIndex myI.GetItem
+                End If
+            Else
+                If VBA.IsEmpty(s.Index) Then
+                   rdWithCompareNoIndex myI.GetItem
+                Else
+                    rdWithCompareWithIndex myI.GetItem
+                End If
+            End If
+            
+        Loop While myI.MoveNext
+    
+        Return s.Sum
+        
+    End Function
+    
+    
+   Private Sub rdNoCompareNoIndex(ByRef ipItem As Variant)
+        s.Sum += ipItem
+    End Sub
+    
+    Private Sub rdNoCompareWithIndex(ByRef ipItem As Variant)
+    
+        If TypeInfo.IsString(ipItem) Then
+            s.Sum += CLng(VBA.Mid$(ipItem, s.Index, 1))
+        Else
+            s.Sum += ipItem(s.Index)
+        End If
+            
+    End Sub
+    
+    
+    Private Sub rdWithCompareNoIndex(ByRef ipItem As Variant)
+        If s.Comparer.ExecCmp(ipItem) Then
+            s.Sum += ipItem '(s.Index)
+        End If
+    End Sub
+    
+    Private Sub rdWithCompareWithIndex(ByRef ipItem As Variant)
+        If s.Comparer.ExecCmp(ipItem) Then
+            If TypeInfo.IsString(ipItem) Then
+                s.Sum += CStr(VBA.Mid(ipItem, s.Index, 1))
+            Else
+                s.Sum += ipItem(s.Index)
+            End If
+        End If
+    End Sub
+    
+    Public Function TypeName() As String Implements IReducer.TypeName
+    	Return MY_TYPENAME
+    End Function
+    
+End Class

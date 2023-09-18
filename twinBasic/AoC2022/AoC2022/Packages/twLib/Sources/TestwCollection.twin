@@ -1,0 +1,1036 @@
+Module TestwCollection
+
+	Option Explicit
+    Option Private Module
+    '@IgnoreModule
+    '@TestModule
+
+
+    #If twinbasic Then
+        'Do nothing
+    #Else
+
+    '@ModuleInitialize
+    Public Sub ModuleInitialize()
+        'this method runs once per module.
+        
+    End Sub
+
+    '@ModuleCleanup
+    Public Sub ModuleCleanup()
+        'this method runs once per module.
+        Set Assert = Nothing
+        Set Fakes = Nothing
+    End Sub
+
+    '@TestInitialize
+    Public Sub TestInitialize()
+        'This method runs before every test in the module..
+    End Sub
+
+    '@TestCleanup
+    Public Sub TestCleanup()
+        'this method runs after every test in the module.
+    End Sub
+    #End If
+
+
+    Option Explicit
+
+
+
+    Public Sub wCollectionTests()
+
+    #If twinbasic Then
+        Debug.Print CurrentProcedureName ; vbTab, vbTab, vbTab,
+    #Else
+        Debug.Print ErrEx.LiveCallstack.ProcedureName; vbTab, vbTab,
+    #End If
+    
+        Test01a_IswCollectionObject
+        
+        Test02a_ExistsLongTrue
+        Test02b_ExistsLongFalse
+        Test02c_ExistsStringTrue
+        Test02d_ExistsStringFalse
+        Test02e_ExistsObjectTrue
+        Test02f_ExistsObjectFalse
+        
+        Test03a_HoldsItemTrue
+        Test03b_HoldsItemFalse
+        Test03d_LacksItemTrue
+        
+        Test04a_First
+        Test04b_Last
+        
+        Test5a_ChangeItemString
+        Test5b_ChangeItemObject
+        
+        Test6a_HoldsKeyAsIndexTrue
+        Test6b_HoldsKeyAsIndexFalse
+        Test6c_LacksKeyAsIndexFalse
+        Test6d_LacksKeyAsIndexTrue
+        Test6e_HoldsKeyAsStringTrue
+        Test6f_HoldsKeyAsStringFalse
+        Test6g_LacksKeyAsStringFalse
+        Test6h_LacksKeyAsStringTrue
+        
+        Test7a_ReverseLongs
+        
+        Test8a_SortLongs
+        Test8b_SortStrings
+        
+        Debug.Print "Testing completed "
+        
+    End Sub
+
+    '@TestMethod("ListArray")
+    Private Sub Test01a_IswCollectionObject()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Variant = Array(True, True, True)
+        
+        Dim myResult As Variant
+        ReDim myResult(0 To 2)
+        Dim myArray As Variant = Array(10, 20, 30, 40, 50)
+        Dim mywC As wCollection = wCollection.Deb(myArray)
+        
+        'Act:
+        myResult(0) = VBA.IsObject(mywC)
+        myResult(1) = "wCollection" = TypeName(mywC)
+        myResult(2) = "wCollection" = mywC.TypeName
+
+        'Assert:
+        AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+
+    '@TestMethod("ListArray")
+    Private Sub Test02a_ExistsLongTrue()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Boolean = True
+        
+        Dim myResult As Boolean
+    
+        Dim myWC As wCollection = wCollection.Deb(Array(10, 20, 30, 40, 50, 60))
+       
+        
+        'Act:
+        myResult = myWC.Exists(20)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+     '@TestMethod("ListArray")
+    Private Sub Test02b_ExistsLongFalse()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Boolean = False
+        
+        Dim myResult As Boolean
+    
+        Dim myWC As wCollection = wCollection.Deb(Array(10, 20, 30, 40, 50, 60))
+       
+        
+        'Act:
+        myResult = myWC.Exists(2)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+      '@TestMethod("ListArray")
+    Private Sub Test02c_ExistsStringTrue()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Boolean = True
+        
+        Dim myResult As Boolean
+    
+        Dim myWC As wCollection = wCollection.Deb(Array("Hello", "World", "Its", "a", "nice", "day"))
+       
+        
+        'Act:
+        myResult = myWC.Exists("World")
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("ListArray")
+    Private Sub Test02d_ExistsStringFalse()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Boolean = False
+        
+        Dim myResult As Boolean
+    
+        Dim myWC As wCollection = wCollection.Deb(Array("Hello", "World", "Its", "a", "nice", "day"))
+       
+        
+        'Act:
+        myResult = myWC.Exists("world")
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+     '@TestMethod("ListArray")
+    Private Sub Test02e_ExistsObjectTrue()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Boolean = True
+        
+        Dim myResult As Boolean
+    
+        Dim myC1 As Collection = New Collection
+        Dim myC2 As Collection = New Collection
+        Dim myC3 As Collection = New Collection
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(myC1, myC2, myC3))
+       
+        
+        'Act:
+        myResult = myWC.Exists(myC2)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("ListArray")
+    Private Sub Test02f_ExistsObjectFalse()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Boolean = False
+        
+        Dim myResult As Boolean
+    
+        Dim myC1 As Collection = New Collection
+        Dim myC2 As Collection = New Collection
+        Dim myC3 As Collection = New Collection
+        Dim myC4 As Collection = New Collection
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(myC1, myC2, myC3))
+       
+        
+        'Act:
+        myResult = myWC.Exists(myC4)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("wCollection")
+    Private Sub Test03a_HoldsItemTrue()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Boolean = True
+        
+        Dim myResult As Boolean
+    
+        Dim myC1 As Collection = New Collection
+        Dim myC2 As Collection = New Collection
+        Dim myC3 As Collection = New Collection
+        Dim myC4 As Collection = New Collection
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(myC1, myC2, myC3))
+       
+        
+        'Act:
+        myResult = myWC.HoldsItem(myC2)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("wCollection")
+    Private Sub Test03b_HoldsItemFalse()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Boolean = False
+        
+        Dim myResult As Boolean
+    
+        Dim myC1 As Collection = New Collection
+        Dim myC2 As Collection = New Collection
+        Dim myC3 As Collection = New Collection
+        Dim myC4 As Collection = New Collection
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(myC1, myC2, myC3))
+       
+        
+        'Act:
+        myResult = myWC.HoldsItem(myC4)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("wCollection")
+    Private Sub Test03d_LacksItemTrue()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Boolean = True
+        
+        Dim myResult As Boolean
+    
+        Dim myC1 As Collection = New Collection
+        Dim myC2 As Collection = New Collection
+        Dim myC3 As Collection = New Collection
+        Dim myC4 As Collection = New Collection
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(myC1, myC2, myC3))
+       
+        
+        'Act:
+        myResult = myWC.LacksItem(myC4)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+     '@TestMethod("wCollection")
+    Private Sub Test04a_First()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Long = 10
+        
+        Dim myResult As Long = 10
+    
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(10, 20, 30, 40, 50, 60))
+       
+        
+        'Act:
+        myResult = myWC.First
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("wCollection")
+    Private Sub Test04b_Last()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As Long = 60
+        
+        Dim myResult As Long = 60
+    
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(10, 20, 30, 40, 50, 60))
+       
+        
+        'Act:
+        myResult = myWC.Last
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("wCollection")
+    Private Sub Test5a_ChangeItemString()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:
+        Dim myExpected  As String = "Planet"
+        
+        Dim myResult As String
+    
+        
+        Dim myWC As wCollection = wCollection.Deb(Array("Hello", "World", "Its", "a", "nice", "day"))
+       
+        
+        'Act:
+        myWC.Item(2) = "Planet"
+        myResult = myWC.Item(2)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("wCollection")
+    Private Sub Test5b_ChangeItemObject()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+        
+        Dim myC1 As Collection = New Collection
+        Dim myC2 As Collection = New Collection
+        Dim myC3 As Collection = New Collection
+        Dim myC4 As Collection = New Collection
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(myC1, myC2, myC3))
+       
+        Dim myExpected  As Collection = myC4
+        Dim myResult As Collection
+        
+        'Act:
+        myWC.Item(2) = myC4
+        Set myResult = myWC.Item(2)
+       
+
+        'Assert:
+        AssertStrictAreSame myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+      '@TestMethod("wCollection")
+    Private Sub Test6a_HoldsKeyAsIndexTrue()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+    
+        Dim myWC As wCollection = wCollection.Deb(Array(10, 20, 30, 40, 50, 60))
+       
+        Dim myExpected  As Boolean = True
+        Dim myResult As Boolean
+        
+        'Act:
+        
+        myResult = myWC.HoldsKey(3)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+        '@TestMethod("wCollection")
+    Private Sub Test6b_HoldsKeyAsIndexFalse()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+        
+        
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(10, 20, 30, 40, 50, 60))
+       
+        Dim myExpected  As Boolean = False
+        Dim myResult As Boolean
+        
+        'Act:
+        
+        myResult = myWC.HoldsKey(10)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+       '@TestMethod("wCollection")
+    Private Sub Test6c_LacksKeyAsIndexFalse()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(10, 20, 30, 40, 50, 60))
+       
+        Dim myExpected  As Boolean = False
+        Dim myResult As Boolean
+        
+        'Act:
+        
+        myResult = myWC.LacksKey(3)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("wCollection")
+    Private Sub Test6d_LacksKeyAsIndexTrue()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(10, 20, 30, 40, 50, 60))
+       
+        Dim myExpected  As Boolean = True
+        Dim myResult As Boolean
+        
+        'Act:
+        
+        myResult = myWC.LacksKey(42&)
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("wCollection")
+    Private Sub Test6e_HoldsKeyAsStringTrue()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+        
+        Dim myWC As wCollection = wCollection.Deb
+        myWC.Add 10, "Ten"
+        myWC.Add 20, "Twenty"
+        myWC.Add 30, "Thirty"
+        myWC.Add 40, "Forty"
+        myWC.Add 50, "Fifty"
+        myWC.Add 60, "Sixty"
+        
+        Dim myExpected  As Boolean = True
+        Dim myResult As Boolean
+        
+        'Act:
+        
+        myResult = myWC.HoldsKey("Ten")
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+      '@TestMethod("wCollection")
+    Private Sub Test6f_HoldsKeyAsStringFalse()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+        
+        Dim myWC As wCollection = wCollection.Deb
+        myWC.Add 10, "Ten"
+        myWC.Add 20, "Twenty"
+        myWC.Add 30, "Thirty"
+        myWC.Add 40, "Forty"
+        myWC.Add 50, "Fifty"
+        myWC.Add 60, "Sixty"
+        
+        Dim myExpected  As Boolean = False
+        Dim myResult As Boolean
+        
+        'Act:
+        
+        myResult = myWC.HoldsKey("Nine")
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+        '@TestMethod("wCollection")
+    Private Sub Test6g_LacksKeyAsStringFalse()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+        
+        Dim myWC As wCollection = wCollection.Deb
+        myWC.Add 10, "Ten"
+        myWC.Add 20, "Twenty"
+        myWC.Add 30, "Thirty"
+        myWC.Add 40, "Forty"
+        myWC.Add 50, "Fifty"
+        myWC.Add 60, "Sixty"
+        
+        Dim myExpected  As Boolean = False
+        Dim myResult As Boolean
+        
+        'Act:
+        
+        myResult = myWC.LacksKey("Ten")
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+            '@TestMethod("wCollection")
+    Private Sub Test6h_LacksKeyAsStringTrue()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+        
+        Dim myWC As wCollection = wCollection.Deb
+        myWC.Add 10, "Ten"
+        myWC.Add 20, "Twenty"
+        myWC.Add 30, "Thirty"
+        myWC.Add 40, "Forty"
+        myWC.Add 50, "Fifty"
+        myWC.Add 60, "Sixty"
+        
+        Dim myExpected  As Boolean = True
+        Dim myResult As Boolean
+        
+        'Act:
+        
+        myResult = myWC.LacksKey("Nine")
+       
+
+        'Assert:
+        AssertStrictAreEqual myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    
+      '@TestMethod("wCollection")
+    Private Sub Test7a_ReverseLongs()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(60, 50, 40, 30, 20, 10))
+       
+        Dim myExpected  As Variant = Array(10, 20, 30, 40, 50, 60)
+        Dim myResult As Variant
+        
+        'Act:
+        
+        myResult = myWC.Reverse.ToArray
+       
+
+        'Assert:
+        AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("wCollection")
+    Private Sub Test8a_SortLongs()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+        
+        Dim myWC As wCollection = wCollection.Deb(Array(60, 10, 20, 30, 40, 50))
+       
+        Dim myExpected  As Variant = Array(10, 20, 30, 40, 50, 60)
+        Dim myResult As Variant
+        
+        'Act:
+        
+        myResult = myWC.Sort.ToArray
+       
+
+        'Assert:
+        AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("wCollection")
+    Private Sub Test8b_SortStrings()
+        
+    #If twinbasic Then
+        myProcedureName = CurrentProcedureName
+        myComponentName = CurrentComponentName
+    #Else
+        myProcedureName = ErrEx.LiveCallstack.ProcedureName
+        myComponentName = ErrEx.LiveCallstack.ModuleName
+    #End If
+        
+    'On Error GoTo TestFail
+        
+        'Arrange:    
+        
+        Dim myWC As wCollection = wCollection.Deb(Array("By", "Ay", "Fy", "Ey", "Dy", "Cy"))
+       
+        Dim myExpected  As Variant = Array("Ay", "By", "Cy", "Dy", "Ey", "Fy")
+        Dim myResult As Variant
+        
+        'Act:
+        
+        myResult = myWC.Sort.ToArray
+       
+
+        'Assert:
+        AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+    TestExit:
+        Exit Sub
+    TestFail:
+        Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+  
+End Module

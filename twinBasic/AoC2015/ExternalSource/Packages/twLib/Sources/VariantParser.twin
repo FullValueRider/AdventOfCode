@@ -1,0 +1,439 @@
+Option Explicit
+' VariantParser parses a variant as follows
+'array of two or more items -> array
+'otherwise only Item(0) is examined
+
+' For Option ToItems ParamArray(0) is decoded as
+'  
+' ParamArray(0) -> Cargo
+'
+' For Option ToForEach Cargo is poopulated as folows
+'Array                  ->  Array
+'ItemByForeach          ->  ItemByForEach
+'KeyByForEach           ->  Array from method Items
+'ItemByToArrayForEach   ->  Array from method ToArray
+'String                 ->  CharArray
+'Any other Item         ->  Array(Item)
+
+Class VariantParser
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "Parses a variant used to hold a paramArray and returns a cargo that can be used with foreach"
+    
+    Public Enum StringOp
+        
+        StringToArray
+        StringToCharArray
+        StringToCharSeq
+        StringAsString
+        
+    End Enum
+    
+    Public Enum VariantArrayType
+        
+        IsNotAllocated = 0
+        IsSingleItem
+        
+    End Enum
+    
+    Const MY_NAME                               As String = "VariantParser"
+  
+    Private Type Properties
+        
+	    Cargo                                     As Variant
+        
+    End Type
+    
+    Private p                                   As Properties
+    
+  
+    Public Function Deb(ByRef ipCargo As Variant) As VariantParser
+        With New VariantParser
+            Return .ConstructInstance(ipCargo)
+        End With
+    End Function
+    
+    Public Function ConstructInstance(ByRef ipCargo As Variant) As VariantParser
+        
+        If VBA.IsObject(ipCargo) Then
+            Set p.Cargo = ipCargo
+        Else
+            p.Cargo = ipCargo
+        End If
+        
+        Return Me
+        
+    End Function
+    /* 
+    This function was designed to parse the array of variants representing a ParamArray
+    Such arrays of variants are forwarded encapsulated as a single Variant (cvar(ipParamarray))
+    so that it is subsequently not necessary to disabmiguate Variant() and Variant.
+    COnsequently, any variant passed to this function, which contains an array, it is assumed 
+    that it is a forwarded paramarray.
+    If it is desired to pass a single array tothe 'ToForEach' or 'ToItems' method, then that array
+    should itself be encapsulated in an array.
+    
+    The function is predicated on the assumtion that a variant containing a forwarded paramarray
+    will have more than one item, in which case an array of those items is returned in Cargo.
+    
+    For the 'ToForEach' method, If the variant contains an array with only one item then that 
+    single item is processed to a form that can be evaluated by 'for each' based on the Type of the item.
+   
+    Other flags are used to identify either the state of the original 
+    paramarray, or the single item that was found in the forwarded paramarray.
+    
+    For the 'ToItems' method no other processing just updates the metadat related to the type
+    Should the single item be a an Arrray then the IsArray flag is set. 
+    
+    Strings represent an idiosyncratic case therefore the ToForEach' and 'ToItems' methods allow
+    strings to be processed as a string, a single item array, an array of characters, or a sequence 
+    of characters.  The default is an Array containing a single string (i.e. string is an item)
+    */
+    Public Function ToForEach(ByVal ipStringOp As StringOp = StringToArray) As ParserResult
+        
+        Dim myPR As ParserResult = New ParserResult
+        
+        ' Determine what the forwarded paramarray (p.cargo) represents  
+        If VBA.IsArray(p.Cargo) Then
+           
+            Select Case True
+                
+                Case ArrayInfo.IsNotQueryable(p.Cargo): ' Array is not allocated
+                    
+                    'no further processing possible
+                    myPR.InputGroup = OfArray
+                    myPR.ResultGroup = ofNoGroup
+                    myPR.InputBaseType = "variant"
+                    myPR.InputBaseOrd = vbVariant
+                    Return myPR
+                    
+                
+                Case ArrayInfo.HasItems(p.Cargo) ' Standard paramarray
+                    
+                    myPR.Cargo = p.Cargo
+                    myPR.InputBaseType = TypeInfo.BaseType(p.Cargo)
+                    myPR.Count = ArrayInfo.Count(p.Cargo)
+                    myPR.InputGroup = ofParamArray
+                    myPR.ResultGroup = OfArray
+                    myPR.InputBaseType = "variant"
+                    myPR.InputBaseOrd = vbVariant
+                    myPR.IsAllocated = True
+                    ' No further processing required
+                    Return myPR
+                    
+                                        
+                Case Else
+                    'Array is a single item
+                    ' so replace the single item array in p.cargo with the item itself.
+                    If VBA.IsObject(p.Cargo(0)) Then
+                        Set p.Cargo = p.Cargo(0)
+                    Else
+                        p.Cargo = p.Cargo(0)
+                    End If
+                   
+                    'further processing of the single item 
+                    'in p.cargo can now be done
+                    
+            End Select
+            
+        End If
+
+        If VBA.IsEmpty(p.Cargo) Then
+
+                 'no further processing possible
+                    myPR.InputGroup = OfAdmins
+                    myPR.ResultGroup = ofNoGroup
+                    myPR.InputBaseType = "empty"
+                    myPR.InputBaseOrd = vbEmpty
+                    Return myPR
+        End If
+
+        myPR.InputBaseType = TypeInfo.BaseType(p.Cargo)
+        myPR.InputBaseOrd = enums.Types.TypeNameToOrd.Item(myPR.InputBaseType)
+        myPR.IsAllocated = True
+       ' myPR.IsSIngleItem = True
+        
+        'p.cargo contains the item to be investigated
+        Select Case True
+            
+            Case VBA.IsArray(p.Cargo)
+            
+                myPR.Cargo = p.Cargo
+                myPR.Count = ArrayInfo.Count(p.Cargo)
+                ' disambiguate from a ParamArerray Array
+               ' myPR.IsArray = True
+                myPR.InputGroup = OfArray
+                myPR.ResultGroup = OfArray
+                
+            Case TypeInfo.Group(OfItemByForEach).HoldsKey(myPR.InputBaseType)
+            
+                Set myPR.Cargo = p.Cargo
+                myPR.Count = p.Cargo.count
+                ' Differentiate between arrays and enumerable objects
+                ' primarily for use with 'ToItem' method
+                myPR.InputGroup = OfItemByForEach
+                myPR.ResultGroup = OfItemByForEach
+                
+            Case TypeInfo.Group(OfItemByKeysForeach).HoldsKey(myPR.InputBaseType)
+            
+                ' The assumption is that a dictionary has been passed to the 'ToForEach'
+                ' method because we are only interested in the items
+                myPR.Cargo = p.Cargo.items
+            '    myPR.IsKeys = True
+                myPR.Count = p.Cargo.count
+                myPR.InputGroup = OfItemByKeysForeach
+                myPR.ResultGroup = OfArray
+                
+                 
+            Case TypeInfo.Group(OfItemByToArrayForEach).HoldsKey(myPR.InputBaseType)
+            
+                myPR.Cargo = p.Cargo.toarray
+                myPR.Count = p.Cargo.count
+                myPR.InputGroup = OfItemByToArrayForEach
+               myPR.ResultGroup = OfArray
+                
+            Case TypeInfo.Group(OfStrings).HoldsKey(myPR.InputBaseType)
+                
+                myPR.Count = VBA.Len(p.Cargo)
+                myPR.InputGroup = OfStrings
+        
+                Select Case ipStringOp
+                    
+                    Case StringToArray:
+                        
+                        myPR.Cargo = Array(p.Cargo)
+                        myPR.ResultGroup = OfArray
+                        myPR.Count = 1
+                        
+                    Case StringToCharArray:         
+                    
+                        myPR.Cargo = Seq.Deb.AddKnownRange(p.Cargo).ToArray
+                        myPR.ResultGroup = OfArray
+                        myPR.Count = VBA.Len(p.Cargo)
+                        
+                    Case StringToCharSeq:
+                        Set myPR.Cargo = Seq.Deb.AddKnownRange(p.Cargo)
+                        myPR.ResultGroup = OfItemByToArrayForEach
+                        myPR.Count = VBA.Len(p.Cargo)
+                        
+                    Case StringAsString:       
+                        myPR.ResultGroup = OfStrings
+                        myPR.Cargo = p.Cargo
+                        myPR.Count = 1
+                        
+                End Select
+               
+
+            Case Else
+            
+                Select Case True
+                    
+                    Case TypeInfo.Group(OfAdmins).HoldsKey(myPR.InputBaseType)
+                    
+                        myPR.InputGroup = OfAdmins
+                        myPR.ResultGroup = OfArray
+                        
+                    Case TypeInfo.Group(OfNumbers).HoldsKey(myPR.InputBaseType)
+                
+                	    myPR.InputGroup = OfNumbers
+                        myPR.ResultGroup = OfArray
+                        
+                    
+                    Case VBA.IsObject(p.Cargo)
+                    
+                        myPR.InputGroup = OfItemObjects
+                        myPR.ResultGroup = OfArray
+                        
+                        
+                    Case Else
+                    
+                        myPR.InputGroup = OfBooleans
+                        myPR.ResultGroup = OfArray
+                    
+                        
+                End Select
+
+                myPR.Cargo = Array(p.Cargo)
+                myPR.Count = 1
+                
+        End Select
+
+        Return myPR
+       
+    End Function
+    
+    
+    Public Function ToItems(ByVal ipStringOp As StringOp = StringAsString) As ParserResult
+    
+        Dim myPR As ParserResult = New ParserResult
+        
+        ' Determine whatforwarded paramarray (p.cargo) represents  
+        If VBA.IsArray(p.Cargo) Then
+            
+            Select Case True
+                
+                Case ArrayInfo.IsNotAllocated(p.Cargo) ' Array is not allocated
+                    
+                    'no further processing possible
+                    myPR.InputGroup = OfArray
+                    myPR.ResultGroup = ofNoGroup
+                    myPR.InputBaseType = "variant"
+                    myPR.InputBaseOrd = vbVariant
+                    Return myPR
+                    
+                
+                Case ArrayInfo.HasItems(p.Cargo)
+                    
+                    myPR.Cargo = p.Cargo
+                    myPR.InputBaseType = TypeInfo.BaseType(p.Cargo)
+                    myPR.InputBaseOrd = enums.Types.TypeNameToOrd.Item(myPR.InputBaseType)
+                    myPR.Count = ArrayInfo.Count(myPR.Cargo)
+                    myPR.InputGroup = ofParamArray
+                    myPR.ResultGroup = OfArray
+                    myPR.IsAllocated = True
+                    ' NO further processing required
+                    Return myPR
+                    
+                Case Else   ' Array is a single item
+                    'Array is a single item
+                    ' so replace the single item array in p.cargo with the item itself.
+                    If VBA.IsObject(p.Cargo(0)) Then
+                        Set p.Cargo = p.Cargo(0)
+                    Else
+                        p.Cargo = p.Cargo(0)
+                    End If
+            
+                    'further processing of the single item 
+                    'in p.cargo can now be done
+                    
+            End Select
+            
+        End If
+
+           If VBA.IsEmpty(p.Cargo) Then
+
+                 'no further processing possible
+                    myPR.InputGroup = OfAdmins
+                    myPR.ResultGroup = ofNoGroup
+                    myPR.InputBaseType = "empty"
+                    myPR.InputBaseOrd = vbEmpty
+                    Return myPR
+        End If
+
+    
+        myPR.InputBaseType = TypeInfo.BaseType(p.Cargo)
+        myPR.InputBaseOrd = enums.Types.TypeNameToOrd.Item(myPR.InputBaseType)
+        myPR.IsAllocated = True
+        'myPR.IsSIngleItem = True
+        
+        'p.cargo contains the item to be investigated
+        Select Case True
+            
+            Case VBA.IsArray(p.Cargo)
+            
+                myPR.Cargo = p.Cargo
+                myPR.Count = ArrayInfo.Count(p.Cargo)
+                ' disambiguate from a ParamArerray Array
+                myPR.InputGroup = OfArray
+                myPR.ResultGroup = OfArray
+                
+            Case TypeInfo.Group(OfItemByForEach).HoldsKey(myPR.InputBaseType)
+            
+                Set myPR.Cargo = p.Cargo
+                myPR.Count = p.Cargo.count
+                myPR.InputGroup = OfItemByForEach
+                myPR.ResultGroup = OfItemByForEach
+                
+            Case TypeInfo.Group(OfItemByToArrayForEach).HoldsKey(myPR.InputBaseType)
+            
+                Set myPR.Cargo = p.Cargo
+                myPR.Count = p.Cargo.count
+                myPR.InputGroup = OfItemByToArrayForEach
+                myPR.ResultGroup = OfItemByToArrayForEach
+                
+                
+            Case TypeInfo.Group(OfItemByToArrayForEach).HoldsKey(myPR.InputBaseType)
+            
+                Set myPR.Cargo = p.Cargo
+                myPR.Count = p.Cargo.count
+                myPR.InputGroup = OfItemByKeysForeach
+                myPR.ResultGroup = OfItemByKeysForeach
+               
+                
+            Case TypeInfo.Group(OfStrings).HoldsKey(myPR.InputBaseType)
+            
+                myPR.Count = VBA.Len(p.Cargo)
+                myPR.InputGroup = OfStrings
+           
+                Select Case ipStringOp
+                    
+                    Case StringToArray:
+                        
+                        myPR.Cargo = Array(p.Cargo)
+                        myPR.ResultGroup = OfArray
+                        myPR.Count = 1
+                        
+                    Case StringToCharArray:         
+                    
+                        myPR.Cargo = Seq.Deb.AddKnownRange(p.Cargo).ToArray
+                        myPR.ResultGroup = OfArray
+                        myPR.Count = VBA.Len(p.Cargo)
+                        
+                    Case StringToCharSeq:
+                        myPR.Cargo = Seq.Deb.AddKnownRange(p.Cargo)
+                        myPR.ResultGroup = OfItemByToArrayForEach
+                        myPR.Count = VBA.Len(p.Cargo)
+                        
+                    Case StringAsString:            
+                        myPR.Cargo = p.Cargo
+                        myPR.ResultGroup = OfStrings
+                        myPR.Count = 1
+                        
+                End Select
+               
+            Case Else
+            
+            Select Case True
+                    
+                Case TypeInfo.Group(OfNumbers).HoldsKey(myPR.InputBaseType)
+            
+                    myPR.InputGroup = OfNumbers
+                    myPR.ResultGroup = OfNumbers
+                    
+                
+                Case VBA.IsObject(p.Cargo)
+                
+                    myPR.InputGroup = OfItemObjects
+                    myPR.ResultGroup = OfItemObjects
+                    
+                Case Else
+                
+                
+                    myPR.InputGroup = OfBooleans
+                    myPR.ResultGroup = OfBooleans
+                
+                    
+            End Select
+            
+                If VBA.IsObject(p.Cargo) Then
+                    Set myPR.Cargo = p.Cargo
+                Else
+                    myPR.Cargo = p.Cargo
+                End If
+                
+                myPR.Count = 1
+                
+        End Select
+
+        Return myPR
+       
+    End Function
+    
+    Public Property Get Name() As String
+        Return MY_NAME
+    End Property
+
+    
+End Class

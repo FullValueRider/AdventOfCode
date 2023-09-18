@@ -1,0 +1,124 @@
+Class ParserResult
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "A carrier for the result of VariantParser paramArray and returns a cargo that can be used with foreach"
+    
+    Implements Extent Via Host
+    /*
+    ParserResult is a helper class for VariantParser.  
+    Consequently all properties of ParserResult should be set
+    by the VariantParser.  We don't want abt 'intelligennce'
+    inside ParserResult.
+    */
+    Private Const MY_NAME                   As String = "ParserResult"
+    
+    Private Type Properties
+        
+        Extent                              As Extent
+	    Cargo                               As Variant
+        IsQueryable                         As boolean ' True of the variant contained valid data
+        Count                               As long
+        InputGroup                          As GroupType
+        ResultGroup                         As GroupType
+        InputBaseType                       As string ' Basetype of input 
+        InputBaseOrd                        As TYpeOrd
+    End Type
+    
+    Private p                               As Properties
+    
+    
+    Private Sub Class_Initialize()
+        
+        p.IsQueryable = False
+        p.Cargo = Empty
+        
+        p.InputGroup = GroupType.OfAnyType
+        p.ResultGroup = GroupType.OfAnyType
+        'p.IsParamArray = False
+   
+        p.Count = -1
+        
+    End Sub
+    
+    Public Property Get Cargo() As Variant
+            Return p.Cargo
+    End Property
+    
+    Public Property Let Cargo(ByVal ipCargo As Variant)
+        p.Cargo = ipCargo
+        Set Host = Extent.Deb(ipCargo)
+    End Property
+    
+    Public Property Set Cargo(ByVal ipCargo As Variant)
+        Set p.Cargo = ipCargo
+        Set Host = Extent.Deb(ipCargo)
+    End Property
+    
+    
+    Public Property Get InputBaseType() As String
+        Return p.InputBaseType
+    End Property
+    
+    Public Property Let InputBaseType(ByVal ipBaseType As String)
+       p.InputBaseType = ipBaseType
+    End Property
+    
+    
+    Public Property Get InputBaseOrd() As TypeOrd
+        Return p.InputBaseOrd
+    End Property
+    
+    Public Property Let InputBaseOrd(ByVal ipInputBaseOrd As TypeOrd)
+       p.InputBaseOrd = ipInputBaseOrd
+    End Property
+    
+    
+    Public Property Get Count() As Long
+        Return p.Count
+    End Property
+    
+    Public Property Let Count(ByVal ipCount As Long)
+        p.Count = ipCount
+    End Property
+    
+    Public Property Get InputGroup() As GroupType
+        Return p.InputGroup
+    End Property
+    
+    Public Property Let InputGroup(ByVal ipGroupType As GroupType)
+        p.InputGroup = ipGroupType
+    End Property
+    
+    
+    Public Property Get ResultGroup() As GroupType
+        Return p.ResultGroup
+    End Property
+    
+    Public Property Let ResultGroup(ByVal ipGroupType As GroupType)
+        p.ResultGroup = ipGroupType
+    End Property
+    
+    
+    
+    Public Property Get Name() As String
+        Return MY_NAME
+    End Property
+    
+    
+    Public Property Get IsAllocated() As Boolean
+       Return p.IsQueryable
+    End Property
+    
+    Public Property Let IsAllocated(ByVal ipBoolean As Boolean)
+        p.IsQueryable = ipBoolean
+    End Property
+
+    
+    Public Property Get IsNotAllocated() As Boolean
+       Return Not p.IsQueryable
+    End Property
+    
+End Class

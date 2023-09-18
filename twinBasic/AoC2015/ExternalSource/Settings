@@ -1,0 +1,46 @@
+{
+	"configuration.inherits": "Defaults",
+	"project.buildPath": "${SourcePath}\\Build\\${ProjectName}_${Architecture}.${FileExtension}",
+	"project.buildType": "Standard EXE",
+	"project.description": "New project",
+	"project.exportPathIsV2": true,
+	"project.id": "{B3961E58-F8AF-41E2-81C1-3171AD62879F}",
+	"project.name": "NewProject",
+	"project.optionExplicit": true,
+	"project.references": [
+		{
+			"id": "{F50B82D0-DCAB-43FE-9631-11959D4A4728}",
+			"isCompilerPackage": true,
+			"licence": "MIT",
+			"name": "[COMPILER PACKAGE] WinNativeForms Package",
+			"path32": "/Packages/WindowsControlsPackage",
+			"path64": "/Packages/WindowsControlsPackage",
+			"publishedDate": "09-FEB-2022",
+			"publishedTime": "15:48:54",
+			"publisher": "TWINBASIC-COMPILER",
+			"symbolId": "WindowsControlsPackage",
+			"versionBuild": 0,
+			"versionMajor": 0,
+			"versionMinor": 0,
+			"versionRevision": 24
+		},
+		{
+			"id": "{B768C096-6072-450A-84A8-01D07F690907}",
+			"licence": "",
+			"name": "[IMPORTED] Lib",
+			"path32": "/Packages/twLib",
+			"path64": "/Packages/twLib",
+			"symbolId": "twLib",
+			"versionBuild": "0",
+			"versionMajor": "1",
+			"versionMinor": "0",
+			"versionRevision": "1"
+		}
+	],
+	"project.startupObject": "Form1",
+	"project.warnings": {
+		"errors": [],
+		"ignored": []
+	},
+	"runtime.useUnicodeStandardLibrary": true
+}

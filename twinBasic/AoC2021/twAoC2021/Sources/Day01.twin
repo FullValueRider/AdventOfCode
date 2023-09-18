@@ -1,0 +1,93 @@
+Class Day01
+
+	Attribute VB_Name = "Day01"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+
+
+    Private Const InputData             As String = "Day01.txt"
+
+    Private Type State
+
+        Integers                        As seq
+        
+    End Type
+
+    Private s                           As State
+
+
+
+    Public Sub Execute()
+        
+        Part01
+        Part02
+        
+    End Sub
+
+    Public Sub Part01()
+        
+        If s.Integers Is Nothing Then
+
+            Dim myStrings As Variant = Filer.GetFileAsArrayOfStrings(AoC2021Data & InputData, vbCrLf)
+            Set s.Integers = Seq.Deb(myStrings).MapIt(mpConvert(ToLong))
+        
+        End If
+        
+        Dim myResult As Long = 0
+        'Dim myI As IterNum = IterNum(2, s.Integers.LastIndex)
+        Dim myI As IterItems = IterItems(s.Integers).SetSpan(2)
+        Do
+            ' this should be a reducer
+            If myI.Item > myI.Item(-1) Then
+                myResult += 1
+            End If
+            
+        Loop While myI.MoveNext
+
+        Fmt.Dbg "The answer to Day 01 part 1 is 1711 .  Found is {0}", myResult
+    
+    End Sub
+
+
+    Public Sub Part02()
+
+        If s.Integers Is Nothing Then
+
+            Dim myStrings As Variant = Filer.GetFileAsArrayOfStrings(AoC2021Data & InputData, vbCrLf)
+            Set s.Integers = Seq.Deb(myStrings).MapIt(mpConvert(ToLong))
+        
+        End If
+        
+        Dim mySums As Seq = Seq.Deb
+        
+        ' Compile a list of sums of 3 consecutive values
+        
+        'Dim myI As IterNum = IterNum(3, s.Integers.LastIndex)
+        Dim myI As IterItems = IterItems(s.Integers).SetSpan(3)
+        Do
+            
+            mySums.Add myI.Item + myI.Item(-1) + myI.Item(-2)
+            
+        Loop While myI.MoveNext
+        
+        ' Now repeat the compare that we did for part 1 using mysums
+        Dim myResult As Long = 0
+        'Set myI As IterNum = IterNum(2)
+        Set myI = IterItems(mySums).SetSpan(2)
+        Do
+        
+            If myI.Item > myI.Item(-1) Then
+                myResult += 1
+            End If
+            
+        Loop While myI.MoveNext
+
+        Fmt.Dbg "The answer to Day 01 part 2 is 1743 .  Found is {0}", myResult
+        
+    End Sub
+
+End Class

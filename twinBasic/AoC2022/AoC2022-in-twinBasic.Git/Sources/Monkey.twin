@@ -1,0 +1,169 @@
+Class Monkey
+
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+Option Explicit
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+    
+   Private Const MY_TYPENAME            As String = "Monkey"
+   
+    Private Type State
+
+        Items                           As seq
+        Operation                       As seq
+        Test                            As long
+        TrueMonkey                      As String
+        FalseMonkey                     As String
+        RuleofThree                     As boolean
+        PrimesProduct                   As longlong
+        
+    End Type
+
+    Private s                           As State
+
+    Private Type Properties
+        Name                            As string
+        Throws                          As lookup
+        InspectionCount                 As long
+    End Type
+    
+    Private p                           As Properties
+
+    Public Function Deb(ByVal ipMonkeyInfo As String) As Monkey
+        With New Monkey
+            Return .ConstructInstance(ipMonkeyInfo)
+        End With
+    End Function
+    
+    
+    Friend Function ConstructInstance(ByVal ipMonkeyInfo As String) As Monkey
+    
+        Dim myInfo As Seq = Seq.Deb(VBA.Split(ipMonkeyInfo, vbCrLf)) _
+            .MapIt(mpTrimmer.Deb)
+            
+        p.Name = myInfo.First
+        Set s.Items = Seq.Deb(VBA.Split(myInfo(2), Char.twComma)).MapIt(mpConvert(ToLongLong))
+        Set s.Operation = Seq.Deb(VBA.Split(myInfo(3), Char.twSpace))
+        s.Test = CLng(myInfo(4))
+        s.TrueMonkey = myInfo(5)
+        s.FalseMonkey = myInfo(6)
+        
+        s.PrimesProduct = 2^ * 3^ * 5^ * 7^ * 11^ * 13^ * 17^ * 19^
+        
+        Return Me
+        
+    End Function
+    
+    
+    Public Function Add(ByVal ipItem As LongLong) As Monkey
+        s.Items.Add ipItem
+    End Function
+    
+    
+    Public Property Get Name() As String
+        Return p.Name
+    End Property
+    
+    
+    Public Property Get Throws() As Lookup
+        Return p.Throws
+    End Property
+    
+    
+    Public Property Get InspectionCount() As Long
+        Return p.InspectionCount
+    End Property
+    
+    
+    Public Property Get HasNoItems() As Boolean
+        Return s.Items.Count = 0
+    End Property
+    
+    
+    Public Sub InspectItems(ByVal ipRuleOfThree As Boolean)
+    
+        s.RuleofThree = ipRuleOfThree
+        Set p.Throws = Lookup.Deb
+        
+        If s.Items.IsNOtQueryable Then
+            Exit Sub
+        End If
+        
+        Dim myHeldItems As IterItems = IterItems.Deb(s.Items)
+        Do
+        
+            Dim myWorry As LongLong = WorryAbout(myHeldItems(0))
+        
+            ' If s.RuleofThree Then
+           
+            ' 	myWorry = myWorry Mod s.PrimesProduct
+            ' Else
+            '     myWorry = myWorry Mod s.Test
+            ' End If
+            
+            Dim myRecipientMonkey As String
+            Dim myDivisor As LongLong = IIf(s.RuleofThree, s.Test, s.PrimesProduct)
+            If myWorry Mod s.Test = 0 Then
+                myRecipientMonkey = s.TrueMonkey
+            Else
+                myRecipientMonkey = s.FalseMonkey
+            End If
+       
+            ' If Not s.RuleofThree Then
+            '     myWorry = myWorry Mod s.PrimesProduct
+            ' End If
+            
+            ' If p.Throws.LacksKey(myRecipientMonkey) Then
+            '     p.Throws.Add myRecipientMonkey, Seq.Deb
+            ' End If
+            
+            p.Throws.Item(myRecipientMonkey).add myWorry
+        
+        Loop While myHeldItems.MoveNext
+        
+        s.Items.RemoveAll
+        
+    End Sub
+    
+    
+    Public Function WorryAbout(ByVal ipItem As LongLong) As LongLong
+        
+        p.InspectionCount += 1
+        Dim myVal1 As LongLong = ipItem
+        Dim myVal2 As LongLong
+        ' can't use iif as s.operation(3) will sometimes be the string "old"
+        If s.Operation(3) = "old" Then
+            myVal2 = myVal1
+        Else
+             myVal2 = s.Operation(3)
+        End If
+        
+        Dim myNew As LongLong
+        Select Case s.Operation(2)
+        
+        	Case "+"
+                myNew = myVal1^ + myVal2^
+                
+            Case "*"
+            
+                myNew = myVal1^ * myVal2^
+                
+        End Select
+        
+        If s.RuleofThree Then
+        	myNew = myNew \ 3
+        End If
+        
+        Return myNew
+    
+    End Function
+    
+    
+    Public Property Get TypeName() As String
+        Return MY_TYPENAME
+    End Property
+    
+End Class

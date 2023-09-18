@@ -1,0 +1,9 @@
+Interface IIndexed
+
+	Property Get Item(ByVal ipIndex As Long) As Variant
+    Property Let Item(ByVal ipIndex As Long, ByRef ipItem As Variant)
+    Property Set Item(ByVal ipIndex As Long, ByRef ipItem As Variant)
+    Function HoldsItem(ByRef ipItem As Variant) As Boolean
+    Function LacksItem(ByRef ipItem As Variant) As Boolean
+    Function Host() As Variant
+End Class

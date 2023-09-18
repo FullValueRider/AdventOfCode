@@ -1,0 +1,406 @@
+Class Stringifier
+
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    ' Code line limit should be 120 characters.
+    ' Comment line limit should be 80 characters
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "Static class: Methods to convert VBA entities to strings"
+    Option Explicit
+ 
+    Private Const TRY_METHODS_LIST                 As String = "tostring,tojson,value,name,typename"
+  
+    Private Type State
+
+        ArrayMarkup                     As EntityMarkup
+        ObjectMarkup                    As EntityMarkup
+        DictionaryItemMarkup            As EntityMarkup
+        ItemSeparator                   As String
+        
+    End Type
+
+    Private s                           As State
+
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    '
+    ' Class admin
+    '
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    Private Sub Class_Initialize()
+        ResetMarkup
+    End Sub
+    
+    Public Function Deb() As Stringifier
+        With New Stringifier
+            Return .ConstructInstance
+        End With
+    End Function
+
+    Friend Function ConstructInstance() As Stringifier
+        Return Me
+    End Function
+
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    '
+    ' Implementation
+    '
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    Public Function ResetMarkup() As Stringifier
+        SetArrayMarkup
+        SetObjectMarkup
+        SetDictionaryItemMarkup
+        SetItemSeparator
+        Return Me
+    End Function
+
+    Public Function SetDictionaryItemMarkup _
+    ( _
+        Optional ByVal ipLeft As Variant = Char.twPlainDQuote, _
+        Optional ByVal ipSeparator As Variant = Char.twSpace, _
+        Optional ByVal ipRight As Variant = Char.twPlainDQuote _
+    ) As Stringifier
+        Set s.DictionaryItemMarkup = EntityMarkup.Deb(ipLeft, ipSeparator, ipRight)
+        Return Me
+    End Function
+    
+    
+    Public Function SetArrayMarkup _
+    ( _
+        Optional ByVal ipLeft As Variant = Char.twLBracket, _
+        Optional ByVal ipSeparator As Variant = Char.twComma, _
+        Optional ByVal ipRight As Variant = Char.twRBracket _
+    ) As Stringifier
+        Set s.ArrayMarkup = EntityMarkup.Deb(ipLeft, ipSeparator, ipRight)
+        Return Me
+    End Function
+
+
+    Public Function SetObjectMarkup _
+    ( _
+        Optional ByVal ipLeft As Variant = Char.twLCurly, _
+        Optional ByVal ipSeparator As Variant = Char.twComma, _
+        Optional ByVal ipRight As Variant = Char.twRCurly _
+    ) As Stringifier
+        Set s.ObjectMarkup = EntityMarkup.Deb(ipLeft, ipSeparator, ipRight)
+        Return Me
+    End Function
+
+
+    Public Function SetItemSeparator(Optional ByVal ipSeparator As Variant = char.twcomma) As Stringifier
+        s.ItemSeparator = ipSeparator
+        Return Me
+    End Function
+
+
+    Public Function SetNoMarkup() As Stringifier
+        SetArrayMarkup vbNullString, vbNullString, vbNullString
+        SetObjectMarkup vbNullString, vbNullString, vbNullString
+        SetItemSeparator vbNullString
+        Return Me
+    End Function
+
+    
+    '@Description("Converts the parameters a single string.")
+      Public Function ToString(ParamArray ipParamArray() As Variant) As String
+     
+        if arrayinfo.IsNotAllocated(ipParamarray) then 
+        	Return vbNullString
+        End If
+        
+        if arrayinfo.HasOneItem(ipParamArray) Then
+        	Return ToStringPartII(ipParamArray(0))
+        End If
+        
+        ' we iterate here rather than passing to PartII as 
+        ' we don't want to be seen as an array
+        Dim myS as Seq=seq.Deb
+        dim myIter as iteritems=IterItems.Deb(ipParamarray)
+        Do
+        	mys.Add ToStringPartII(myIter.Item)
+        Loop while myiter.MoveNext
+        
+        return mys.Join(Char.twComma)
+        
+    End Function
+     
+    
+    public function ToStringPartII(byref ipIterable As Variant) As String
+     
+        if typeinfo.isstring(ipiterable) Then
+        	return ipIterable
+        End If
+        
+        Dim myS as Seq=Seq.Deb
+        'Dim myIter as Iteritems=IterItems.Deb(ipIterable)
+       ' Do
+            dim myMeta As Meta = Meta(ipIterable)
+            Select Case True
+            
+                Case myMeta.IsArray
+                    
+                    mys.Add StringifyArray(ipIterable)
+                
+                
+                Case myMeta.IsItemByIndex0
+                
+                    mys.Add StringifyItemByIndex(ipIterable)
+                        
+                        
+                Case myMeta.IsItemByIndex1
+                
+                    mys.Add StringifyItemByIndex(ipIterable)
+                    
+                    
+                Case myMeta.IsItemByKey
+                
+                    mys.Add StringifyItembyKey(ipIterable)
+                    
+                    
+                Case myMeta.IsItemByToArray
+                
+                    mys.Add StringifyItemByArray(ipIterable)
+                    
+                    
+                Case myMeta.IsString
+                
+                    mys.Add ipIterable
+                    
+                Case myMeta.ISItemObject
+                
+                    mys.Add StringifyNonIterableObject(ipIterable)
+                    
+                    
+                Case myMeta.IsAdmin
+                
+                    mys.Add StringifyAdmin(ipIterable)
+                    
+                Case myMeta.IsNumber
+                
+                    mys.Add CStr(ipIterable)
+                    
+                    
+                Case myMeta.IsBoolean
+                
+                    mys.Add CStr(ipIterable)
+                
+                
+                Case Else
+                           
+                    ' ToDo: SHould we be raising an error here          
+                    myS.Add CStr(ipIterable)
+                    
+
+            End Select
+            
+       ' loop while myIter.MoveNext
+            
+        ResetMarkup
+        
+        return mys.Join(char.twcomma)
+        
+    End Function
+
+
+    Friend Function StringifyAdmin(ByRef ipAdmin As Variant) As String
+
+        Select Case True
+            
+            Case VBA.IsError(ipAdmin)
+                 
+                Return _
+                    s.ObjectMarkup.Left _
+                    & Char.twPlainDQuote _
+                    & ipAdmin.Source _
+                    & Char.twPlainDQuote _
+                    & s.ObjectMarkup.Separator _
+                    & ipAdmin.Number _
+                    & s.ObjectMarkup.Separator _
+                    & Char.twPlainDQuote _
+                    & ipAdmin.Description _
+                    & Char.twPlainDQuote _
+                    & s.ObjectMarkup.Right
+            
+                    
+            Case VBA.IsEmpty(ipAdmin)
+                
+                Return VBA.TypeName(ipAdmin)
+                    
+                        
+            Case VBA.IsNull(ipAdmin)
+            
+                Return VBA.TypeName(ipAdmin)
+                    
+                        
+            Case VBA.VarType(ipAdmin) = vbDataObject
+            
+               Return s.ObjectMarkup.Left & enums.Types.OrdToTypeName(idUnknown) & s.ObjectMarkup.Right
+                                                                        
+
+            Case  ipadmin is nothing
+    
+                ' Debug.Print s.ObjectMarkup.Left
+                ' Debug.Print s.ObjectMarkup.Right
+                ' Debug.Print s.ObjectMarkup.Separator
+                Return s.ObjectMarkup.Left & VBA.TypeName(ipAdmin) & s.ObjectMarkup.Right ' Nul is nothing
+
+            Case Else
+
+                Err.Raise _
+                    17 + vbObjectError, _
+                    "Stringifier.StringifyAdmin", _
+                    "Unexpected Item: " & TypeName(ipAdmin.cargo)
+                    
+                    
+        End Select
+            
+    End Function
+
+
+    Friend Function StringifyArray(ByRef ipArray As Variant) As String
+        ' The call to 'ToString' overwrites s.ArrayMarkup
+        ' so we preserve a copy here
+        dim myMarkup as EntityMarkup=s.ArrayMarkup
+        Dim myS As Seq = Seq.Deb
+        
+        Dim myItem As IterItems = IterItems.Deb(ipArray)
+        Do
+            dim myvar as variant = Array(myitem.item)
+            mys.Add ToString(myItem.Item)
+
+        loop while myItem.MoveNext
+        set s.ArrayMarkup=mymarkup
+        Return s.arrayMarkup.Left & myS.Join(s.arrayMarkup.Separator) & s.ArrayMarkup.Right
+        
+    End Function
+
+
+    Friend Function StringifyItemByIndex(ByRef ipItemByIndex As Variant) As String
+        
+        Dim myS As Seq = Seq.Deb
+        
+        Dim myItem As iteritems= iteritems.Deb(ipItemByIndex)
+        Do
+            dim mytmp as Variant = myItem.Item
+            Dim myString As String = ToString(mytmp)
+            mys.Add myString
+            
+            
+        loop while myItem.MoveNext
+        
+        Return s.ObjectMarkup.Left & myS.Join(s.ObjectMarkup.Separator) & s.ObjectMarkup.Right
+        
+    End Function
+    
+    
+    Friend Function StringifyItemByArray(ByRef ipItemByArray As Variant) As String
+        
+        Dim myS As Seq = Seq.Deb
+        
+        Dim myItem As IterItems = IterItems.Deb(ipItemByArray.toarray)
+        Do
+            
+            mys.Add ToString(myItem.Item)
+            
+            
+        loop while myitem.MoveNext
+        
+        Return s.ObjectMarkup.Left & myS.Join(s.ObjectMarkup.Separator) & s.ObjectMarkup.Right
+        
+    End Function
+    
+    
+    Friend Function StringifyItembyKey(ByRef ipItemByKey As Variant) As String
+        
+        Dim myS As Seq = Seq.Deb
+        
+        
+        Dim myIter As IterItems = IterItems.Deb(ipItemByKey)
+        Do
+        
+            Dim myT As String = s.DictionaryItemMarkup.Left
+            'dIM MYTMP As variant = myIter.Key
+            myT &= ToString(myIter.Key)
+            myT &= s.DictionaryItemMarkup.Right
+            myT &= s.DictionaryItemMarkup.Separator
+            'MYTMP = myiter.item
+            myT &= ToString(myIter.Item)
+            
+            mys.add myT 's.DictionaryItemMarkup.Left & ToString(myKey) & s.DictionaryItemMarkup.Right & s.DictionaryItemMarkup.Separator & ToString(ipItemByKey.item(myKey))
+            
+            
+        Loop While myIter.MoveNext
+        
+        Return s.ObjectMarkup.Left & myS.Join(s.ObjectMarkup.Separator) & s.ObjectMarkup.Right
+        
+    End Function
+
+
+    '@Description("Try to get string description of a non iterable object. Default result is '{<TypeName>}'"
+    Friend Function StringifyNonIterableObject(ByVal ipObject As Object) As String
+        
+        Dim myString As String
+        If TryStringifyByDefaultMember(ipObject, myString) Then
+        
+            Return s.ObjectMarkup.Left & myString & s.ObjectMarkup.Right
+            
+        End If
+        
+        'DefaultMember failed so try some other obvious methods/properties
+        
+        Dim myMethodNames As Variant
+        myMethodNames = VBA.Split(TRY_METHODS_LIST, Char.twComma)
+            
+        Dim myMethodName As iteritems = iteritems.Deb(myMethodNames)
+        Do
+            
+            Select Case True
+            
+                Case TryStringifyByCallByName(ipObject, myMethodName.Item, vbGet, myString)
+            
+                    Return s.ObjectMarkup.Left & myString & s.ObjectMarkup.Right
+                    
+                    
+                Case TryStringifyByCallByName(ipObject, myMethodName.Item, vbMethod, myString)
+            
+                    Return s.ObjectMarkup.Left & myString & s.ObjectMarkup.Right
+                
+                    
+            End Select
+        
+        Loop while myMethodName.MoveNext
+        
+        ' In desperation just return the typename wrapped in object markup
+        
+        Return s.ObjectMarkup.Left & "Object: " & TypeName(ipObject) & s.ObjectMarkup.Right
+                
+    End Function
+
+
+    Private Function TryStringifyByDefaultMember(ByVal ipObject As Object, ByRef opString As String) As Boolean
+
+        On Error Resume Next
+        opString = ipObject ' may need to be ipObject()
+        Return Err.Number = 0
+        
+    End Function
+
+    '@Ignore ParameterCanBeByVal
+    Private Function TryStringifyByCallByName _
+    ( _
+        ByRef ipObject As Object, _
+        ByVal ipMethodName As String, _
+        ByVal ipMethodType As VbCallType, _
+        ByRef opString As String _
+    ) As Boolean
+
+        On Error Resume Next
+        opString = CallByName(ipObject, ipMethodName, ipMethodType)
+        Return Err.Number = 0
+        
+    End Function
+
+End Class

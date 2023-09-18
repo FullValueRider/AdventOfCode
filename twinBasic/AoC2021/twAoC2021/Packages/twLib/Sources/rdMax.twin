@@ -1,0 +1,68 @@
+Class rdMax
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+    Option Explicit
+    
+    Implements IReducer
+    
+    Const MY_TYPENAME                  As String = "rdMax"
+    
+    Private Type State
+        Index                           As Variant
+        Max                             As LongLong
+    End Type
+    
+    Private s                           As state
+    
+    '@DefaultMember
+    Public Function Deb(Optional ByRef ipIndex As Variant = Empty) As rdMax
+        With New rdMax
+            Return .ConstructInstance(ipIndex)
+        End With
+    End Function
+    
+    Public Function ConstructInstance(ByRef ipIndex As Variant) As rdMax
+        s.Max = enums.Preset.Value(MinLongLong)
+        s.Index = ipIndex
+        Return Me
+    End Function
+
+    Public Function ExecReduction(ByRef ipHostItems As Variant) As Variant Implements IReducer.ExecReduction
+        
+        Dim myI As IterItems = IterItems.Deb(ipHostItems)
+        Do
+        	
+            Dim myItem As Variant
+            DoEvents
+            If VBA.IsEmpty(s.Index) Then
+                s.Max = IIf(s.Max > myI.GetItem, s.Max, myI.GetItem)
+                
+            Else
+               
+                If TypeInfo.IsString(myI.GetItem) Then
+                    myItem = VBA.Mid(myI.GetItem(), s.Index, 1)
+                    s.Max = IIf(s.Max > myItem, s.Max, myItem)
+                Else
+                    myItem = myI.GetItem()(s.Index)
+                    s.Max = IIf(s.Max > myItem, s.Max, myItem)
+                    
+                End If
+            End If
+                    
+            
+        Loop While myI.MoveNext
+    
+        Return s.Max
+        
+    End Function
+    
+    
+    Public Function TypeName() As String Implements IReducer.TypeName
+    	Return MY_TYPENAME
+    End Function
+
+End Class

@@ -1,0 +1,84 @@
+Class Coord
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    
+    Private Type State
+
+        X                               As long ' ToDo: do we want to allow decimal values?
+        Y                               As long
+        AsString                        As string
+    End Type
+
+    Private s                           As State
+    
+    [ DefaultMember ]
+    Public Function Deb() As Coord
+            Return Deb(0, 0)
+    End Function
+
+    Public Function Deb(ByVal ipX As Long, ByVal ipY As Long) As Coord
+    	With New Coord
+            Return .ConstructInstance(ipX, ipY)
+        End With
+    End Function
+        
+    Public Function Deb(ByRef ipString As String) As Coord
+        Dim myArray As Variant = VBA.Split(ipString, Char.twComma)
+        Return Deb(CLng(myArray(0)), CLng(myArray(1)))
+    End Function
+        
+    Public Function Deb(ByRef ipArray As Variant) As Coord
+        Return Deb(CLng(ipArray(0)), CLng(ipArray(1)))
+    End Function
+        
+    Public Function Deb(ByRef ipKVPair As KVPair) As Coord
+        Return Deb(CLng(ipKVPair.Key(0)), CLng(ipKVPair.Item(0)))
+    End Function
+        
+        
+    Friend Function ConstructInstance(ByVal ipX As Long, ByVal ipY As Long) As Coord
+        s.X = ipX
+        s.Y = ipY
+        s.AsString = VBA.CStr(ipX) & Char.twComma & VBA.CStr(ipY)
+        Return Me
+    End Function
+    
+    Public Property Get ToString() As String
+        Return CStr(s.X) & Char.twComma & CStr(s.Y)
+    End Property
+    
+    Public Function ToArray() As Variant
+        Return Array(s.X, s.Y)
+    End Function
+    
+    ' property for debugging QOL (Quality of Life)
+    Public Function ToSeq() As Variant
+        Return Seq.Deb.AddItems(s.X, s.Y)
+    End Function
+    
+    Public Property Get X() As Long
+        Return s.X
+    End Property
+    
+    Friend Property Let X(ByVal ipValue As Long)
+        s.X = ipValue
+    End Property
+    
+    Public Property Get Y() As Long
+        Return s.Y
+    End Property
+    
+    Friend Property Let Y(ByVal ipValue As Long)
+        s.Y = ipValue
+    End Property
+    
+    Public Function Clone() As Coord
+        Return Me.Deb(s.X, s.Y)
+    End Function
+    
+End Class

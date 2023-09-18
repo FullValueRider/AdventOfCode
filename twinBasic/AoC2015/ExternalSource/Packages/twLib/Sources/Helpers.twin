@@ -1,0 +1,55 @@
+Module Helpers
+
+	' Option Explicit
+
+    ' ' This type is used to eliminate the variants in the overloaded ArrayList Deb method.
+    ' Public Type vFE
+    '     Cargo As variant
+    ' End Type
+
+    ' Private Function ToCharArray(ByVal ipString As String) As Variant
+
+    '     Dim myArray As Variant
+    '     ReDim myArray(0 To VBA.Len(ipString) - 1)
+
+    '     Dim myIndex As Long
+    '     For myIndex = 1 To VBA.Len(ipString)
+    '         myArray(myIndex - 1) = VBA.Mid$(ipString, myIndex, 1)
+    '     Next
+    '     Return myArray
+    ' End Function
+
+    ' Public Function ToVFE(ByRef ipForEach As Variant) As vFE
+
+    '     Dim myVFE As vFE
+    '     Dim myPPA As ParsedPA = ParsedPA(ipForEach, ParseType.ToForEach)
+        
+    '     Select Case True
+
+    '         Case myPPA.IsString
+        	
+    '             myVFE.Cargo = myPPA.Cargo
+
+
+    '         Case myPPA.IsItem
+
+    '             myVFE.Cargo = Array(myPPA.Cargo)
+
+
+    '         Case VBA.IsArray(myPPA.Cargo)
+
+    '             myVFE.Cargo = myPPA.Cargo
+
+
+    '         Case Else
+
+    '             Set myVFE.Cargo = myPPA.Cargo
+                
+
+    '     End Select
+
+    '     Return myVFE
+            
+    ' End Function
+
+End Module

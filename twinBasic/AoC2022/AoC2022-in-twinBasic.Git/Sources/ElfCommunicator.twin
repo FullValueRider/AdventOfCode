@@ -1,0 +1,128 @@
+Class ElfCommunicator
+
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+Option Explicit
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+
+    Private Const Today             As String = "\2022\DayXXTest1.txt"
+    
+
+    Private Type State
+
+        Ticker                          As long
+        Xreg                            As long
+        Col                             As Long
+        Row                             As Long
+        
+    End Type
+
+    Private s                           As State
+
+    Private Type Properties
+    
+        Program                         As seq
+        Result                          As lookup
+        VDU                             As seq
+        
+    End Type
+    
+    Private p                           As Properties
+    
+    Public Function Deb() As ElfCommunicator
+        With New ElfCommunicator
+            Return .ConstructInstance
+        End With
+    End Function
+    
+    Friend Function ConstructInstance() As ElfCommunicator
+        Return Me
+    End Function
+    
+    Public Property Get Program() As Seq
+        Return p.Program
+    End Property
+    
+    Public Property Get VDU() As Seq
+        Return p.VDU
+    End Property
+    
+    Public Property Set Program(ByRef ipProgram As Seq)
+        Set p.Program = ipProgram.Clone
+    End Property
+    
+    Public Function Result() As Lookup
+        Return p.Result
+    End Function
+    
+    Public Sub Run(Optional ByRef ipInput As Seq)
+    
+        s.Xreg = 1
+        s.Ticker = 0
+        Set p.Result = Lookup.Deb
+        Set p.VDU = Seq.Deb.Repeat(String(40, Char.twPeriod), 6).MapIt(mpSplitToChars(ToSeq))
+        
+        Dim myInstructions As IterItems = IterItems.Deb(p.Program)
+        Do
+        	
+            Dim myOp As String = myInstructions(0)(1)
+            
+            Select Case myOp
+            
+                Case "noop"
+                
+                    UpdateVDU
+                    s.Ticker += 1
+                    CheckForOutput
+                    
+                    
+                Case "addx"
+                
+                    Dim myNumber As Long = myInstructions(0)(2)
+                    Dim myTick As Long
+                    For myTick = 1 To 2
+                        UpdateVDU
+                        s.Ticker += 1
+                        CheckForOutput
+                        
+                    Next
+                    s.Xreg += myNumber
+                    
+            End Select
+            
+        Loop While myInstructions.MoveNext
+        
+    End Sub
+    
+    
+    Private Sub CheckForOutput()
+    
+        If s.Ticker = 20 Then
+            p.Result.Add s.Ticker, s.Xreg
+        ElseIf (s.Ticker - 20) Mod 40 = 0 Then
+            p.Result.Add s.Ticker, s.Xreg
+        End If
+        
+    End Sub
+    
+    
+    Private Sub UpdateVDU()
+        
+        s.Row = s.Ticker \ 40
+        s.Row = s.Row Mod 6
+        s.Col = s.Ticker Mod 40
+        
+       ' seq indexing starts at 1 so we need to add 1 to get the correct row and column addresses
+       ' when accessing VDU
+        If s.Col >= s.Xreg - 1 And s.Col <= s.Xreg + 1 Then
+            p.VDU.Item(s.Row + 1).Item(s.Col + 1) = "#"
+        Else
+            p.VDU.Item(s.Row + 1).Item(s.Col + 1) = "."
+        End If
+       
+    End Sub
+    
+End Class

@@ -1,0 +1,76 @@
+Class rdMinGroup
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+    Option Explicit
+    
+    Implements IReducer
+    
+    Const MY_TYPENAME                  As String = "rdMinGroup"
+    
+    Private Type State
+        Index                           As Variant
+        Min                             As Variant
+    End Type
+    
+    Private s                           As state
+    
+    '@DefaultMember
+    Public Function Deb(ByVal ipIndex As Variant = Empty) As rdMinGroup
+        With New rdMinGroup
+            Return .ConstructInstance(ipIndex)
+        End With
+    End Function
+    
+    Public Function ConstructInstance(ByRef ipIndex As Variant) As rdMinGroup
+        s.Min = Empty
+        s.Index = ipIndex
+        Return Me
+    End Function
+
+    Public Function ExecReduction(ByRef ipHostItems As Variant) As Variant Implements IReducer.ExecReduction
+        
+        ' hostitems will be some sort of grouped values
+        Dim myI As IterItems = IterItems.Deb(ipHostItems)
+        Do
+        	DoEvents
+            Dim myItem As Variant = myI(0)
+            
+            If VBA.IsEmpty(s.Min) Then
+                Sys.Assign s.Min, myItem
+                Continue Do
+                ' If VBA.IsObject(myItem) Then
+                '     Set s.Min = myItem
+                '     Continue Do
+                ' Else
+                ' 	s.Min = myItem
+                '     Continue Do
+                ' End If
+            End If
+           
+            If TypeInfo.IsString(myItem) Then
+                
+                s.Min = IIf(VBA.Mid(s.Min, s.Index, 1) < VBA.Mid(myItem, s.Index, 1), s.Min, myItem)
+            Else
+                If VBA.IsObject(myItem) Then
+                    Set s.Min = IIf(s.Min(s.Index) < myItem(s.Index), s.Min, myItem)
+                Else
+                	s.Min = IIf(s.Min(s.Index) < myItem(s.Index), s.Min, myItem)
+                End If
+            End If
+           
+        Loop While myI.MoveNext
+    
+        Return s.Min
+        
+    End Function
+    
+    
+    Public Property Get TypeName() As String Implements IReducer.TypeName
+    	Return MY_TYPENAME
+    End Property
+
+End Class

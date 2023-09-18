@@ -1,0 +1,937 @@
+Module TestRanges
+
+	Attribute VB_Name = "TestRanges"
+
+    Option Explicit
+    Option Private Module
+    '@IgnoreModule
+    '@TestModule
+
+
+    #If twinbasic Then
+        'Do nothing
+    #Else
+
+    '@ModuleInitialize
+    Public Sub ModuleInitialize()
+        'this method runs once per module.
+        
+    End Sub
+
+    '@ModuleCleanup
+    Public Sub ModuleCleanup()
+        'this method runs once per module.
+        Set Assert = Nothing
+        Set Fakes = Nothing
+    End Sub
+
+    '@TestInitialize
+    Public Sub TestInitialize()
+        'This method runs before every test in the module..
+    End Sub
+
+    '@TestCleanup
+    Public Sub TestCleanup()
+        'this method runs after every test in the module.
+    End Sub
+    #End If
+
+
+    Public Sub RangesTests()
+
+    #If twinbasic Then
+        Debug.Print CurrentProcedureName ; vbTab, vbTab, vbTab,
+    #Else
+        Debug.Print ErrEx.LiveCallstack.ProcedureName; vbTab, vbTab,
+    #End If
+    
+        ' Test0_NoStartRunEndLenIsTen
+        
+        ' Test01a_StartIsTwoRunLenIsTen
+        ' Test01b_StartIsNeg2RunLenIsTen
+        
+        ' Test02a_EndIsTwoRunLenIsTen
+        ' Test02b_EndIsNeg2RunLenIsTen
+        
+        ' Test03a_RunIsTwoRunLenIsTen
+        ' Test03b_RunIsNeg2RunLenIsTen
+        
+        ' Test04a_StartIsTwoEndIsEightLenIsTen
+        ' Test04b_StartIsTwoEndIsNeg2LenIsTen
+        ' Test04cStartIsneg4EndIsEightLenIsTen
+        ' Test04d_StartIsNeg6EndIsNeg3LenIsTen
+        ' Test04e_StartIsNeg3EndIsNeg6LenIsTen
+        
+        ' Test05a_StartIsTwoERunIsEightLenIsTen
+        ' Test05b_StartIsTwoRunIsNeg2LenIsTen
+        ' Test05cStartIsneg4RunIsEightLenIsTen
+        ' Test05d_StartIsNeg6RunIsNeg3LenIsTen
+        ' Test05e_StartIsNeg3RunIsNeg6LenIsTen
+        
+        ' Test06a_EndIsTwoERunIsEightLenIsTen
+        ' Test06b_EndIsTwoRunIsNeg2LenIsTen
+        ' Test06cEndIsneg4RunIsEightLenIsTen
+        ' Test06d_EndIsNeg6RunIsNeg3LenIsTen
+        ' Test06e_EndIsNeg3RunIsNeg6LenIsTen
+        Debug.Print "Testing completed "
+        
+    End Sub
+
+'       '@TestMethod("Ranges")
+'     Public Sub Test0_NoStartRunEndLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(0, 10)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, Empty, Empty, Empty
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+
+'     '@TestMethod("Ranges")
+'     Public Sub Test01a_StartIsTwoRunLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(1, 9)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, 2, Empty, Empty
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+
+
+'     '@TestMethod("Ranges")
+'     Public Sub Test01b_StartIsNeg2RunLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(8, 2)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, -2, Empty, Empty
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+
+
+'    '@TestMethod("Ranges")
+'     Public Sub Test02a_EndIsTwoRunLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(0, 3)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, Empty, 2, Empty
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+
+
+'     '@TestMethod("Ranges")
+'     Public Sub Test02b_EndIsNeg2RunLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(0, 9)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, Empty, -2, Empty
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+'     '@TestMethod("Ranges")
+'     Public Sub Test03a_RunIsTwoRunLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(0, 2)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, Empty, Empty, 2
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+
+
+'     '@TestMethod("Ranges")
+'     Public Sub Test03b_RunIsNeg2RunLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(8, 2)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, Empty, Empty, -2
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+'     '@TestMethod("Ranges")
+'     Public Sub Test04a_StartIsTwoEndIsEightLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(2, 7)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, 2, 8, Empty
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+
+
+'    '@TestMethod("Ranges")
+'     Public Sub Test04b_StartIsTwoEndIsNeg2LenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(2, 7)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, 2, -2, Empty
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+'     '@TestMethod("Ranges")
+'     Public Sub Test04cStartIsneg4EndIsEightLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(6, 3)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, -4, 8, Empty
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+'      Public Sub Test04d_StartIsNeg6EndIsNeg3LenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(4, 4)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, -6, -3, Empty
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+    
+'      Public Sub Test04e_StartIsNeg3EndIsNeg6LenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(4, 4)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, -3, -6, Empty
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+    
+    
+'       '@TestMethod("Ranges")
+'     Public Sub Test05a_StartIsTwoERunIsEightLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(2, 8) 'bcause 8 exceeds the available run
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, 2, Empty, 8
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+
+
+'    '@TestMethod("Ranges")
+'     Public Sub Test05b_StartIsTwoRunIsNeg2LenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(1, 2)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, 2, Empty, -2
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+'     '@TestMethod("Ranges")
+'     Public Sub Test05cStartIsneg4RunIsEightLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(6, 4)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, -4, Empty, 8
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+'      Public Sub Test05d_StartIsNeg6RunIsNeg3LenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(2, 3)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, -6, Empty, -3
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+    
+'      Public Sub Test05e_StartIsNeg3RunIsNeg6LenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(2, 6)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, -3, Empty, -6
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+    
+'         '@TestMethod("Ranges")
+'     Public Sub Test05f_StartIsTwoERunIsEightLenIsTenbyOneToTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(2, 9) 'bcause 8 exceeds the available run
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'                                                                                                                                                                                                                                                          Ranges.ResolveStartEndRun myStart, myRun, 1, 10, 2, Empty, 8
+        
+'         'Act:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+'           '@TestMethod("Ranges")
+'     Public Sub Test06a_EndIsTwoERunIsEightLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(0, 3) 'bcause 8 exceeds the available run
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, Empty, 2, 8
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+
+
+'    '@TestMethod("Ranges")
+'     Public Sub Test06b_EndIsTwoRunIsNeg2LenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(2, 2)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, Empty, 2, -2
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+'     '@TestMethod("Ranges")
+'     Public Sub Test06cEndIsneg4RunIsEightLenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(0, 7)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, Empty, -4, 8
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+'      Public Sub Test06d_EndIsNeg6RunIsNeg3LenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(4, 3)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, Empty, -6, -3
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+    
+    
+'      Public Sub Test06e_EndIsNeg3RunIsNeg6LenIsTen()
+        
+'     #If twinbasic Then
+'         myProcedureName = CurrentProcedureName
+'         myComponentName = CurrentComponentName
+'     #Else
+'         myProcedureName = ErrEx.LiveCallstack.ProcedureName
+'         myComponentName = ErrEx.LiveCallstack.ModuleName
+'     #End If
+        
+'     'On Error GoTo TestFail
+        
+'         'Arrange:
+'         Dim myExpected  As Variant = Array(7, 3)
+        
+'         Dim myResult As Variant
+'         ReDim myResult(0 To 1)
+'         Dim myStart As Long = 0
+'         Dim myRun As Long = 0
+'         Ranges.ResolveStartEndRun myStart, myRun, 0, 9, Empty, -3, -6
+        
+'         'Act:
+'         myResult(0) = myStart
+'         myResult(1) = myRun
+    
+
+'         'Assert:
+'         AssertStrictSequenceEquals myExpected, myResult, myProcedureName
+
+'     TestExit:
+'         Exit Sub
+'     TestFail:
+'         Debug.Print myComponentName, myProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+'         Resume TestExit
+'     End Sub
+End Module

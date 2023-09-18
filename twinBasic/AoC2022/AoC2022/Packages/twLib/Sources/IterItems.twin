@@ -1,0 +1,746 @@
+Class IterItems
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "Iterates 'Collection' entities with only one rank, strings, and single values."
+    Option Explicit
+  
+    '2022 Nov 22 Revised GetItem method.
+    ' The get itemMethod has been changed to a property and the use of an optional Index as been deprecated
+    ' Thus instead of using GetItem/Set Item IterItems now uses a default Item method.
+    ' the downside to this change is that the current item must be referenced at Item(0)
+    ' or just (0) due to Item being the fefault method.
+    
+    
+   ' Implements via means that all methods of Meta appear as methods of IterItems
+   ' but which are directed to the object HostMeta
+   ' this there is no need to reference with HostMeta when using Meta methods
+    Implements Meta Via HostMeta
+    
+    
+    Const MY_NAME                               As String = "IterItems"
+
+    Private Type Properties
+        
+       ' Meta                                    As Meta     ' Data from Meta reflects the indexing of the entity
+                                                            ' Contains the entity to be enumerated
+        FTS                                     As FTS     ' FTS = From To Step Rank
+        Offset                                  As long     ' The current offset from first index
+        Items                                   As seq  ' Used for ItemByToArray objects
+        Keys                                    As seq  ' Keys from ItemByKey objects
+        
+    End Type
+    
+
+    Private p                                   As properties
+
+    
+    Public Function Deb(ByRef ipIterable As Variant) As IterItems
+        With New IterItems
+            Return .ConstructInstance(ipIterable)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByRef ipIterable As Variant) As IterItems
+    
+        Set HostMeta = Meta.Deb(ipIterable)
+       ' Set HostMeta = HostMeta
+        
+        Select Case True
+        
+            Case IsItemByToArray
+            
+                Set p.Items = Seq.Deb(ipIterable.ToArray)
+                
+                
+            Case IsItemByKey
+            
+                Set p.Keys = Seq.Deb(ipIterable.Keys)
+                
+                
+        End Select
+        
+        If Ranks.Count > 1 Then
+        
+            Err.Raise 17, "twLib.IterItems.ConstructInstance", "IterItems is restricted to one rank or less"
+            
+            
+        End If
+        
+        ' we use size rather than count from a rank because the input item may be a
+        ' multidimensional array with no specified setFTS used
+        Set p.FTS = FTS(0, Size - 1, 1)
+        
+        p.Offset = p.FTS.From
+        
+        Return Me
+        
+    End Function
+    
+    Private Function SetFTSByFTS(ByRef ipFTS As FTS) As IterItems
+    
+        If ipFTS Is Nothing Then
+            Set p.FTS = FTS.Deb(0, Size - 1, 1)
+        Else
+            Set p.FTS = ipFTS
+        End If
+        
+        p.Offset = p.FTS.From
+        If VBA.IsEmpty(p.FTS.To) Then
+            ' Indexes provided by the ranks object are the true object indexes
+            ' so we use the rank count to get the obased lastindex
+            p.FTS.To = Ranks.Item(p.FTS.Rank).count - 1
+        End If
+        
+        p.FTS.Step = VBA.Abs(p.FTS.Step) * IIf(p.FTS.From <= p.FTS.To, 1, -1)
+        Return Me
+    End Function
+
+    '@Description("Sets the range, step and rank to be iterated.  ipFrom and ipTo should be specified as offsets from the first index")
+    Public Function SetFTS _
+    ( _
+        Optional ByRef ipFromOrFTS As Variant = 0, _
+        Optional ByRef ipTo As Variant = Empty, _
+        Optional ByRef ipStep As Double = 1, _
+        Optional ByVal ipRank As Long = 1 _
+    ) As IterItems
+        
+        Dim myFts As FTS
+        If VBA.IsObject(ipFromOrFTS) Then
+        
+        
+            If VBA.TypeName(ipFromOrFTS) = "FTS" Then
+                Set myFts = ipFromOrFTS
+                Return SetFTSByFTS(myFts)
+            End If
+            
+            If ipFromOrFTS Is Nothing Then
+                Set myFts = ipFromOrFTS
+                Return SetFTSByFTS(myFts)
+            End If
+            
+        End If
+
+        Dim myRank As Long = IIf(ipRank < 0, 1, ipRank)
+        
+        'Dim myFrom As Long = IIf(ipFromOrFTS < 0, 0, ipFromOrFTS)
+        Dim myFrom As Long
+        If ipFromOrFTS < 0 Then
+            myFrom = 0
+        Else
+        	myFrom = CLng(ipFromOrFTS)
+        End If
+        
+        Dim myTo As Variant = IIf(VBA.IsEmpty(ipTo), Ranks.Item(ipRank).count - 1, ipTo)
+        
+        Dim myStep As Double = IIf(ipStep = 0, 1, ipStep)
+        myStep = VBA.Abs(myStep) * IIf(myFrom <= ipTo, 1, -1)
+        
+        Set p.FTS = FTS(myFrom, myTo, myStep, myRank)
+        
+        p.Offset = p.FTS.From
+        
+        Return Me
+
+    End Function
+    
+    
+    Private Function CanIncByOffset(Optional ByVal ipOffset As Long) As Boolean
+    
+        Dim myTryIndex As Long = p.Offset + (p.FTS.Step * ipOffset)
+        
+        If p.FTS.Step > 0 Then
+            Return IIf(myTryIndex <= p.FTS.To, True, False)
+        Else
+            Return IIf(myTryIndex >= p.FTS.To, True, False)
+        End If
+        
+    End Function
+    
+    
+    Private Function CanDecByOffset(ByVal ipOffset As Long) As Boolean
+    
+        Dim myTryIndex As Long = p.Offset - (p.FTS.Step * ipOffset)
+        
+        If p.FTS.Step > 0 Then
+            Return IIf(myTryIndex >= p.FTS.From, True, False)
+        Else
+            Return IIf(myTryIndex <= p.FTS.From, True, False)
+        End If
+        
+    End Function
+    
+    '@Description("Move to the next item by 'Step'. Optionally can specify the number of steps.  NB A step may be defined as greater than one in the SetSpan method.")
+    Public Function MoveNext(Optional ByVal ipOffset As Long = 1) As Boolean
+        If HostMeta Is Nothing Then
+            Return False
+        End If
+       If CanIncByOffset(ipOffset) Then
+            p.Offset += (p.FTS.Step * ipOffset)
+            Return True
+        	
+        Else
+            Return False
+        End If
+
+    End Function
+    
+    Public Function MovePrev(Optional ByVal ipOffset As Long = 1) As Boolean
+        If HostMeta Is Nothing Then
+            Return False
+        End If
+        If CanDecByOffset(ipOffset) Then
+            p.Offset -= (p.FTS.Step * ipOffset)
+            Return True
+        Else
+            Return False
+        End If
+        
+    End Function
+    
+
+    '@Description("Returns the current offset from the first index adjusted for the relative position")
+    Public Function Index(Optional ByRef ipOffset As Long = 0) As Long
+        ' p.offsett is the currect position.
+        ' ipOffset is a second offset which the position
+        ' relative to the current position
+        Return p.Offset + ipOffset
+    End Function
+    
+    
+    /*
+    We cannot use an indexed property if we wish the index to be optional.
+    For this reason we use GetItem, SetItem and LetItem functions
+    The getitem function is likely the most used function of Iteritems
+    and for this reason it is declared as the Defaultmember
+    */
+    ' Public Property Get TItem(Optional ByVal ipIndex As Variant = Empty) As Variant
+    ' End Property
+    
+    ' Public Property Set TItem(ByVal ipValue As Variant, Optional ipIndex As Variant = Empty)
+    ' End Property
+    
+    ' Public Property Let TItem(ByVal ipValue As Variant, Optional ipIndex As Variant = Empty)
+    ' End Property
+    '@DefaultMember
+    '@Description("Returns the Item at the specified adjusted offset")
+    Public Property Get Item(ByRef ipOffset As Long) As Variant
+       
+        ' Dim myRankFirstIndex As Long
+        ' Select Case True
+        
+        '     Case IsItemByKey
+        '         myRankFirstIndex = 0
+                
+        '     Case IsString
+            
+        '         myRankFirstIndex = 1
+                
+        '     Case Else
+            
+        '         myRankFirstIndex = FirstRank.FirstIndex
+                
+        ' End Select
+        
+        
+        Dim myIndex As Long
+        Select Case True
+        
+            Case IsArray
+            
+                myIndex = FirstRank.FirstIndex + p.Offset + ipOffset
+                If myIndex < FirstRank.FirstIndex Or myIndex > FirstRank.LastIndex Then
+                    Return Null
+                Else
+                    Return Cargo(myIndex)
+                End If
+                
+                
+            Case IsItemByIndex0
+                
+                myIndex = FirstRank.FirstIndex + p.Offset + ipOffset
+                If myIndex < FirstRank.FirstIndex Or myIndex > FirstRank.LastIndex Then
+                    Return Null
+                Else
+                    Return Cargo.Item(myIndex)
+                End If
+               
+                
+                
+            Case IsItemByIndex1
+            
+                myIndex = FirstRank.FirstIndex + p.Offset + ipOffset
+                If myIndex < FirstRank.FirstIndex Or myIndex > FirstRank.LastIndex Then
+                    Return Null
+                Else
+                    Return Cargo.Item(myIndex)
+                End If
+              
+                
+            
+            Case IsItemByToArray
+            
+                myIndex = FirstRank.FirstIndex + p.Offset + ipOffset
+                If myIndex < FirstRank.FirstIndex Or myIndex > FirstRank.LastIndex Then
+                    Return Null
+                Else
+                    Return p.Items(myIndex + 1)
+                End If
+               
+                
+                
+            Case IsItemByKey
+            
+                myIndex = p.Offset + ipOffset
+                If myIndex < 0 Or myIndex > p.Keys.Count - 1 Then
+                    Return Null
+                Else
+                    Return Cargo.Item(p.Keys(myIndex + 1)) 'Return p.Items(myIndex)
+                End If
+                
+               
+                
+            Case IsString
+            
+                If VBA.Len(Cargo) = 0 Then
+                
+                    Return vbNullString
+                    
+                Else
+                
+                    myIndex = FirstRank.FirstIndex + p.Offset + ipOffset
+                    If myIndex < FirstRank.FirstIndex Or myIndex > FirstRank.LastIndex Then
+                        Return Null
+                    Else
+                        Dim myString As String = Cargo
+                        Return VBA.Mid(myString, myIndex, 1)
+                    End If
+                        
+                End If
+                
+                
+            Case Else 'TyeInfo.HoldsSingleItem
+            
+                Return Cargo
+            
+        End Select
+    
+           
+    End Property
+    
+    Public Property Set Item(ByRef ipOffset As Long, ByRef ipItem As Variant)
+        
+        If Ranks(1).firstindex + p.Offset + ipOffset > Ranks(1).lastindex Then
+        
+            Err.Raise 17
+            
+        End If
+        
+        If Ranks(1).firstindex + p.Offset + ipOffset < Ranks(1).firstindex Then
+        
+            Err.Raise 17
+            
+        End If
+        
+        If Not VBA.IsObject(ipItem) Then
+        
+            Err.Raise 17
+            
+        End If
+        
+        
+        Select Case True
+        
+            Case IsArray
+                ' Dim myArrayIndex As Long = Ranks(1).firstindex + p.Offset + ipOffset
+                ' 'Cargo is returning a copy of the array so any changes made here will not be reflected
+                ' 'in the copy held by cargo.  This means we have to have a Meta Item method to allow arrays to be updated
+                ' If VBA.IsObject(ipItem) Then
+                    
+                '     Set HostMeta.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                ' Else
+                	
+                '     HostMeta.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                ' End If
+                
+                Err.Raise 17
+                
+            Case IsItemByIndex0, IsItemByIndex1
+            
+                If VBA.IsObject(ipItem) Then
+                
+                    Set Cargo.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                Else
+                	
+                    Cargo.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                End If
+                
+                
+            Case IsItemByToArray
+            
+                If VBA.IsObject(ipItem) Then
+                	
+                    Set p.Items(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                Else
+                	
+                    p.Items(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                End If
+                
+                
+            Case IsItemByKey
+            
+                If VBA.IsObject(ipItem) Then
+                    
+                    Set Cargo.Item(p.Keys(p.Offset + ipOffset)) = ipItem
+                    
+                Else
+                
+                     Cargo.Item(p.Keys(p.Offset + ipOffset)) = ipItem
+                    
+                End If
+                
+                
+            ' Case IsString
+            
+            '     Dim myString As String = Cargo
+            '     Mid(myString, Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+            '     Cargo = myString
+                
+                
+            Case Else
+            
+              ' If VBA.IsObject(ipItem) Then
+               
+                    Set Cargo = ipItem
+                    
+               ' Else
+                
+                '    Cargo = ipItem
+                
+              '  End If
+                
+            
+        End Select
+    
+       ' Return Me
+        
+    End Property
+    
+    Public Property Let Item(ByRef ipOffset As Long, ByRef ipItem As Variant)
+        
+        If Ranks(1).firstindex + p.Offset + ipOffset > Ranks(1).lastindex Then
+        
+            Err.Raise 17
+            
+        End If
+        
+        If Ranks(1).firstindex + p.Offset + ipOffset < Ranks(1).firstindex Then
+        
+            Err.Raise 17
+            
+        End If
+        
+        If VBA.IsObject(ipItem) Then
+        
+            Err.Raise 17
+            
+        End If
+        
+        
+        Select Case True
+        
+            Case IsListArray
+                Dim myArrayIndex As Long = Ranks(1).firstindex + p.Offset + ipOffset
+                'Cargo is returning a copy of the array so any changes made here will not be reflected
+                'in the copy held by cargo.  This means we have to have a Meta Item method to allow arrays to be updated
+                If VBA.IsObject(ipItem) Then
+                    
+                    Set HostMeta.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                Else
+                	
+                    HostMeta.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                End If
+                
+                
+            Case IsItemByIndex0, IsItemByIndex1
+            
+                'Err.Raise 17
+                If VBA.IsObject(ipItem) Then
+                
+                    Set Cargo.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                Else
+                	
+                    Cargo.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                End If
+                
+                
+            Case IsItemByToArray
+            
+                Err.Raise 17
+                ' If VBA.IsObject(ipItem) Then
+                	
+                '     Set p.Items(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                ' Else
+                	
+                '     p.Items(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                ' End If
+                
+                
+            Case IsItemByKey
+            
+                'Err.Raise 17
+            
+                If VBA.IsObject(ipItem) Then
+                    
+                    Set Cargo.Item(p.Keys(p.Offset + ipOffset)) = ipItem
+                    
+                Else
+                
+                     Cargo.Item(p.Keys(p.Offset + ipOffset)) = ipItem
+                    
+                End If
+                
+                
+            Case IsString
+            
+                Dim myString As String = Cargo
+                Mid(myString, Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                Cargo = myString
+                
+                
+            Case Else
+            
+              ' If VBA.IsObject(ipItem) Then
+               
+                   ' Set Cargo = ipItem
+                    
+               ' Else
+                
+                    Cargo = ipItem
+                
+              '  End If
+                
+            
+        End Select
+    
+       ' Return Me
+        
+    End Property
+    
+    ' The set Item method allows a value to be changed as part of a chained sequence of methods
+    Public Function SetItem(ByRef ipItem As Variant, Optional ByRef ipOffset As Long) As IterItems
+        
+        If Ranks(1).firstindex + p.Offset + ipOffset > Ranks(1).lastindex Then
+        
+            Return Me
+            
+        End If
+        
+        If Ranks(1).firstindex + p.Offset + ipOffset < Ranks(1).firstindex Then
+        
+            Return Me
+            
+        End If
+        
+        
+        Select Case True
+        
+            Case IsListArray
+                Dim myArrayIndex As Long = Ranks(1).firstindex + p.Offset + ipOffset
+                'Cargo is returning a copy of the array so any changes made here will not be reflected
+                'in the copy held by cargo.  This means we have to have a Meta Item method to allow arrays to be updated
+                If VBA.IsObject(ipItem) Then
+                    
+                    Set HostMeta.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                Else
+                	
+                    HostMeta.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                End If
+                
+                
+            Case IsItemByIndex0, IsItemByIndex1
+            
+                If VBA.IsObject(ipItem) Then
+                
+                    Set Cargo.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                Else
+                	
+                    Cargo.Item(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                End If
+                
+                
+            Case IsItemByToArray
+            
+                If VBA.IsObject(ipItem) Then
+                	
+                    Set p.Items(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                Else
+                	
+                    p.Items(Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                    
+                End If
+                
+                
+            Case IsItemByKey
+            
+                If VBA.IsObject(ipItem) Then
+                    
+                    Set Cargo.Item(p.Keys(p.Offset + ipOffset)) = ipItem
+                    
+                Else
+                
+                     Cargo.Item(p.Keys(p.Offset + ipOffset)) = ipItem
+                    
+                End If
+                
+                
+            Case IsString
+            
+                Dim myString As String = Cargo
+                Mid(myString, Ranks(1).firstindex + p.Offset + ipOffset) = ipItem
+                Cargo = myString
+                
+                
+            Case Else
+            
+               If VBA.IsObject(ipItem) Then
+               
+                    Set Cargo = ipItem
+                    
+                Else
+                
+                    Cargo = ipItem
+                
+                End If
+                
+            
+        End Select
+    
+        Return Me
+        
+    End Function
+    
+    ' not sure about the validity of this method
+    ' as the item wil not always be a variant
+    Private Function IsEmpty(Optional ByVal ipOffset As Long = 0) As Boolean
+        Return VBA.IsEmpty(Item(ipOffset))
+    End Function
+    
+    Private Function IsNotEmpty(Optional ByVal ipOffset As Long = 0) As Boolean
+        Return Not VBA.IsEmpty(Item(ipOffset))
+    End Function
+   
+    Public Function ItemIsEmpty(Optional ByVal ipOffset As Long = 0) As Boolean
+        Return VBA.IsEmpty(Item(ipOffset))
+    End Function
+    
+    Public Function ItemIsNotEmpty(Optional ByVal ipOffset As Long = 0) As Boolean
+        Return Not VBA.IsEmpty(Item(ipOffset))
+    End Function
+   
+   
+    Private Function IsObject(Optional ByVal ipOffset As Long = 0) As Boolean
+        Return VBA.IsObject(Item(ipOffset))
+    End Function
+    
+   Private Function IsNotObject(Optional ByVal ipOffset As Long = 0) As Boolean
+        Return Not IsObject(Item(ipOffset))
+    End Function
+    
+    Public Function ItemIsObject(Optional ByVal ipOffset As Long = 0) As Boolean
+        Return VBA.IsObject(Item(ipOffset))
+    End Function
+    
+    Public Function ItemIsNotObject(Optional ByVal ipOffset As Long = 0) As Boolean
+        Return Not IsObject(Item(ipOffset))
+    End Function
+    
+    '@Description("Return the Key at the specified offset from the first index. If the wrapped object is not a dictionary, the key is the native index of the current item adjust for the offset.)"
+    Public Function Key(Optional ByRef ipOffset As Long = 0) As Variant
+        If IsItemByKey Then
+            Return p.Keys(p.Offset + ipOffset + 1)' FirstIndex(1) +
+        Else
+            ' todo this line will need updating for multidimensional arrays
+            Return Ranks(1).FirstIndex + p.Offset + ipOffset
+        End If
+
+    End Function
+    
+    
+    Public Function HasNext(Optional ByVal ipOffset As Long = 1) As Boolean
+       Return CanIncByOffset(ipOffset)
+    End Function
+    
+    Public Function HasNoNext(Optional ByVal ipOffset As Long = 1) As Boolean
+       Return Not CanIncByOffset(ipOffset)
+    End Function
+    
+    
+    Public Function HasPrev(Optional ByVal ipOffset As Long = 1) As Boolean
+       Return CanDecByOffset(ipOffset)
+    End Function
+    
+    Public Function HasNoPrev(Optional ByVal ipOffset As Long = 1) As Boolean
+       Return Not CanDecByOffset(ipOffset)
+    End Function
+    
+    
+    Public Function Count(Optional ipRank As Long = 0) As Long
+        Return Size(ipRank)
+    End Function
+    
+    Public Function LastIndex(Optional ipRank As Long = 1) As Long
+        Return Size(ipRank) - 1
+    End Function
+    
+    Public Function FirstIndex() As Long
+        Return 0
+    End Function
+    
+    Public Function MoveToStart() As IterItems
+        p.Offset = 0
+        Return Me
+    End Function
+    
+    Public Function MoveToEnd() As IterItems
+        p.Offset = Ranks(1).count - 1
+        Return Me
+    End Function
+    
+    
+    Public Function MoveToFrom() As IterItems
+        p.Offset = p.FTS.From
+    End Function
+    
+    Public Function MoveToTo() As IterItems
+        p.Offset = p.FTS.To
+    End Function
+    
+    ' Public Function MoveBy(ByVal ipOffset As Long) As IterItems
+    '     p.Offset += ipOffset
+    ' End Function
+    
+    
+    Public Property Get TypeName() As String
+        Return MY_NAME
+    End Property
+    
+End Class

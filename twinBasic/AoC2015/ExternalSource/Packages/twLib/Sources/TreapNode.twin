@@ -1,0 +1,82 @@
+Public Class TreapNode
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Private Type State
+        Item                            As variant
+        Key                             As variant
+        Priority                        As Long
+        Left                            As TreapNode
+        Right                           As TreapNode
+    End Type
+    
+    Private s                           As state
+    
+   Public Function Deb() As TreapNode
+        With New TreapNode
+            Return .PopulatedInstance
+        End With
+   End Function
+   
+    Friend Function PopulatedInstance() As TreapNode
+        Return Me
+    End Function
+    
+    
+    Public Property Get Right() As TreapNode
+        Return s.Right
+    End Property
+    
+    Public Property Set Right(ByRef ipTreapNode As TreapNode)
+        Set s.Right = ipTreapNode
+    End Property
+    
+    
+    Public Property Get Left() As TreapNode
+        Return s.Left
+    End Property
+    
+    Public Property Set Left(ByRef ipTreapNode As TreapNode)
+        Set s.Left = ipTreapNode
+    End Property
+    
+    
+    Public Property Get Priority() As Long
+        Return s.Priority
+    End Property
+    
+    Public Property Let Priority(ByRef ipPriority As Long)
+        s.Priority = ipPriority
+    End Property
+    
+    
+    Public Property Get Item() As Variant
+        Return s.Item
+    End Property
+    
+    Public Property Let Item(ByRef ipItem As Variant)
+        s.Item = ipItem
+    End Property
+    
+    Public Property Set Item(ByRef ipItem As Variant)
+        Set s.Item = ipItem
+    End Property
+    
+    
+    Public Property Get Key() As Variant
+        Return s.Key
+    End Property
+    
+    Public Property Let Key(ByRef ipKey As Variant)
+        s.Key = ipKey
+    End Property
+    
+    Public Property Set Key(ByRef ipKey As Variant)
+        Set s.Key = ipKey
+    End Property
+        
+End Class

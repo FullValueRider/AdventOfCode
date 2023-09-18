@@ -1,0 +1,79 @@
+Class Day02_2022
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+
+    Private Const Today             As String = "\2022\Day02.txt"
+    
+
+    Private Type State
+
+        Data                            As seq
+        DeCrypterV1                     As lookup
+        DecrypterV2                     As lookup
+        Scorer                          As lookup
+    End Type
+
+    Private s                           As State
+
+    
+    Public Sub Execute()
+        
+        Part01
+        Part02
+            
+    End Sub
+
+ 
+    Private Sub Part01()
+
+        Initialise
+        Dim myResult As Long = s.Data _
+            .MapIt(mpInner(mpLookup(s.DeCrypterV1))) _
+            .MapIt(mpCallByName.Deb("Join", VbCallType.vbMethod)) _
+            .MapIt(mpLookup(s.Scorer)) _
+            .ReduceIt(rdSum)
+        
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "15523", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+
+        Initialise
+    
+        Dim myNewGames As Seq = Seq.Deb
+    
+        Dim myGames As IterItems = IterItems.Deb(s.Data)
+        Do
+            Dim myOpponent As String = s.DeCrypterV1(myGames(0).item(1))
+            myNewGames.Add myOpponent & Char.twComma & s.DecrypterV2.Item(myOpponent & Char.twComma & myGames(0).item(2))
+        Loop While myGames.MoveNext
+        
+        Dim myResult As Long = myNewGames.MapIt(mpLookup(s.Scorer)).ReduceIt(rdSum)
+                
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "15702", myResult
+
+    End Sub
+
+    Private Sub Initialise()
+    
+        Set s.Data = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC & Today, vbCrLf)) _
+            .MapIt(mpSplitToSubStr(ToSeq, Char.twSpace)) _
+            
+        Set s.DeCrypterV1 = Lookup.Deb.AddPairs(VBA.Split("A,B,C,X,Y,Z", Char.twComma), VBA.Split("R,P,S,R,P,S", Char.twComma))
+        Set s.DecrypterV2 = Lookup.Deb.AddPairs(VBA.Split("R,X;R,Y;R,Z;P,X;P,Y;P,Z;S,X;S,Y;S,Z", Char.twSemiColon), VBA.Split("S,R,P,R,P,S,P,S,R", Char.twComma))
+        Set s.Scorer = Lookup.Deb.AddPairs(VBA.Split("R,R;R,P;R,S;P,R;P,P;P,S;S,R;S,P;S,S", Char.twSemiColon), VBA.Split("4,8,3,1,5,9,7,2,6", Char.twComma))
+     End Sub
+     
+     Private Function Decode() As Seq
+        Dim myCodes As IterItems
+     End Function
+     
+End Class

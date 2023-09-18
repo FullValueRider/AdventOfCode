@@ -1,0 +1,107 @@
+Public Class TreapKvpNode
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Private Type Properties
+        Item                            As variant
+        Key                             As variant
+        Priority                        As Double
+        Left                            As TreapKvpNode
+        Right                           As TreapKvpNode
+    End Type
+    
+    Private p                           As Properties
+    
+    Public Function Deb() As TreapKvpNode
+        With New TreapKvpNode
+            Return .ConstructInstance
+        End With
+    End Function
+   
+    Public Function Deb(ByRef ipKey As Variant, ByRef ipItem As Variant) As TreapKvpNode
+        With New TreapKvpNode
+            ConstructInstance(ipKey, ipItem)
+        End With
+        Return Me
+    End Function
+   
+    Friend Function ConstructInstance(Optional ipKey As Variant = Null, Optional ipItem As Variant = Null) As TreapKvpNode
+    
+        If Not VBA.IsNull(ipKey) Then
+        
+        	If VBA.IsObject(ipKey) Then
+                Set p.Key = ipKey
+            Else
+            	p.Key = ipKey
+            End If
+            
+            If VBA.IsObject(ipItem) Then
+                Set p.Item = ipItem
+            Else
+            	p.Item = ipItem
+            End If
+            
+        End If
+        
+        Return Me
+        
+    End Function
+    
+    
+    Public Property Get Right() As TreapKvpNode
+        Return p.Right
+    End Property
+    
+    Public Property Set Right(ByRef ipTreapKvpNode As TreapKvpNode)
+        Set p.Right = ipTreapKvpNode
+    End Property
+    
+    
+    Public Property Get Left() As TreapKvpNode
+        Return p.Left
+    End Property
+    
+    Public Property Set Left(ByRef ipTreapKvpNode As TreapKvpNode)
+        Set p.Left = ipTreapKvpNode
+    End Property
+    
+    
+    Public Property Get Priority() As Double
+        Return p.Priority
+    End Property
+    
+    Public Property Let Priority(ByRef ipPriority As Long)
+        p.Priority = ipPriority
+    End Property
+    
+    
+    Public Property Get Item() As Variant
+        Return p.Item
+    End Property
+    
+    Public Property Let Item(ByRef ipItem As Variant)
+        p.Item = ipItem
+    End Property
+    
+    Public Property Set Item(ByRef ipItem As Variant)
+        Set p.Item = ipItem
+    End Property
+    
+    
+    Public Property Get Key() As Variant
+        Return p.Key
+    End Property
+    
+    Public Property Let Key(ByRef ipKey As Variant)
+        p.Key = ipKey
+    End Property
+    
+    Public Property Set Key(ByRef ipKey As Variant)
+        Set p.Key = ipKey
+    End Property
+        
+End Class

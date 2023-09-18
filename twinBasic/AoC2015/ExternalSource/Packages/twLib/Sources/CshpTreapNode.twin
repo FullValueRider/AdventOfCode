@@ -1,0 +1,127 @@
+Class CshpTreapNode
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+    Option Explicit
+    Private Type STate
+        Key                                      As Variant
+        Item                                        As Variant
+        Priority                                    As Integer
+        Left                                        As TreapNode
+        Right                                       As TreapNode
+    End Type
+    
+    Private s                                       As state
+   
+    Public Function Deb(ByVal ipPriority As Long) As CshpTreapNode
+        With New CshpTreapNode
+            Return .PopulatedInstance(ipPriority)
+        End With
+    End Function
+    
+    Public Function PopulatedInstance(ByVal ipPriority As Long) As CshpTreapNode
+        s.Priority = ipPriority
+        Set s.Left = Nothing
+        Set s.Right = s.Left
+        
+        Return Me
+    End Function
+    
+    Public Property Get Key() As Variant
+    	Return s.Key
+    End Property
+       
+    Public Property Set Key(ByVal ipKey As Variant)
+        Set s.Key = ipKey
+    End Property
+  
+    Public Property Let Key(ByVal ipKey As Variant)
+        s.Key = ipKey
+    End Property
+  
+    '@DefaultMember
+    Public Property Get Item() As Variant
+            Return s.Item
+    End Property
+
+    Public Property Set Item(ByVal ipItem As Variant)
+        Set s.Item = ipItem
+    End Property
+    
+    Public Property Let Item(ByVal ipItem As Variant)
+        s.Item = ipItem
+    End Property
+    
+    Public Property Get Priority() As Long
+            Return s.Priority
+    End Property
+    
+    Public Property Let Priority(ByVal ipPriority As Long)
+        Set s.Priority = ipPriority
+    End Property
+        
+        
+   Public Property Get Left() As CshpTreapNode
+            Return s.Left
+    End Property
+    
+    Public Property Set Left(ByVal ipTreapNode As CshpTreapNode)
+        Set s.Left = ipTreapNode
+    End Property
+    
+    Public Property Get Right() As CshpTreapNode
+            Return s.Right
+    End Property
+    
+    Public Property Set Right(ByVal ipTreapNode As CshpTreapNode)
+        Set s.Right = ipTreapNode
+    End Property
+ 
+   
+    Public Function RotateLeft() As TreapNode
+
+        Dim myTmp  As CshpTreapNode = Right
+        Set Right = Right.Left
+        Set myTmp.Left = Me
+
+        Return myTmp
+    End Function
+  
+  
+    Public Function RotateRight() As TreapNode
+        Dim myTmp As CshpTreapNode = Left
+        Set Left = Left.Right
+        Set myTmp.Right = Me
+
+        Return myTmp
+    End Function
+  
+  
+    Public Function DeleteRoot() As TreapNode
+    
+        Dim myTmp As TreapNode
+
+        If Left Is Nothing Then
+            Return Right
+        End If
+
+        If Right Is Nothing Then
+            Return Left
+        End If
+
+        If Left.Priority < Right.Priority Then
+            Set myTmp = RotateRight()
+            Set myTmp.Right = DeleteRoot()
+        Else
+            Set myTmp = RotateLeft()
+            Set myTmp.Left = DeleteRoot()
+        End If
+
+        Return myTmp
+        
+    End Function
+    
+End Class

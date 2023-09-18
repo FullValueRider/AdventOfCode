@@ -1,0 +1,45 @@
+Class Ghost
+
+     Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+	Private Type State
+    
+        FakeArray       As variant
+        EmptyVar        As variant
+    End Type
+    
+    Private s               As State
+    
+    
+    Public Sub class_terminate()
+        CopyMemoryToAny s.FakeArray, VarPtr(s.EmptyVar), 16
+    End Sub
+    Public Function Deb(ByRef ipArray As Variant) As Ghost
+        With New Ghost
+            Return .ConstructInstance(ipArray)
+        End With
+    End Function
+    
+    Friend Function ConstructInstance(ByRef ipArray As Variant) As Ghost
+        CopyMemoryToAny s.FakeArray, VarPtr(ipArray), 16
+        s.EmptyVar = Empty
+        Return Me
+        
+    End Function
+    
+    Public Property Get Item(ByVal ipIndex As Long) As Variant
+        Return s.FakeArray(ipIndex)
+    End Property
+    
+    Public Property Let Item(ByVal ipIndex As Long, ByRef ipValue As Variant)
+        s.FakeArray(ipIndex) = ipValue
+    End Property
+    
+    Public Function Spectre() As Variant
+        Return s.FakeArray
+    End Function
+
+End Class

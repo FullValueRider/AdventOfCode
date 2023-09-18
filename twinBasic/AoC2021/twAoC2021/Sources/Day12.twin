@@ -1,0 +1,171 @@
+Class Day12
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+
+    Const InputData           As String = "Day12Test1.txt"
+
+    Const First                         As string = "start"
+    Const Last                          As string = "end"
+    Private Type State
+        
+        ' Upper                           As Hkvp
+        ' Lower                           As Hkvp
+        ' vUpper                          As hkvp
+        ' vLower                          As hkvp
+        Nodes                           As Hkvp
+        Visited                         As Hkvp
+        Paths                           As long
+    End Type
+
+    Private s                           As State
+
+
+    Public Sub Execute()
+        
+        Part01
+        Part02
+        
+    End Sub
+
+
+    Public Sub Part01()
+    
+        Initialise
+        Set s.Visited = Hkvp.Deb
+        FindAllPaths(s.nodes.Item)
+        Fmt.Dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "xxxx", myResult
+        
+    End Sub
+
+
+    Public Sub Part02()
+    
+        Initialise
+        Dim myResult As Long = 0
+        
+    Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "xxxx", myResult
+        
+    End Sub
+
+    Public Sub FindAllPaths(ByVal ipName As String)
+    	
+        s.node.Item(ipName)
+        
+        
+    End Sub
+
+    ' Public Function CountPathsToEnd(ByRef ipStartKey As String) As Long
+    
+    '     Dim myCount As Long = 0
+    '     Dim myStack As Seq = Seq.Deb
+    '     Dim myVisited As Seq = Seq.Deb
+    '     myStack.Push ipStartKey
+
+    '     Do While myStack.IsQueryable
+        
+    '         DoEvents
+    '         Dim myCurrent As String = myStack.Pop
+    '         If IsEnd(myCurrent) Then
+    '             ' Transition to 'end' is one way so we don't add to the visited stack but we do count that its an end
+    '             myCount += 1
+    '             Continue Do
+    '         End If
+        
+    '         If CannotVisit(myCurrent, myVisited) Then
+    '             Continue Do
+    '         End If
+            
+    '         If IsNotUpper(myCurrent) Then
+    '              If myVisited.LacksItem(myCurrent) Then
+    '                 myVisited.Add myCurrent
+    '              End If
+    '         End If
+    '         ' Add the nodes we can visit from current to the stack
+    '         Dim myI As IterItems = IterItems(s.Nodes.Item(myCurrent))
+    '         Do
+            
+    '             DoEvents
+    '             If CanVisit(CStr(myI.Item), myVisited) Then
+    '                 myStack.Push myI.Item
+    '             End If
+            
+    '         Loop While myI.MoveNext
+            
+    '     Loop
+        
+    '     Return myCount
+        
+    ' End Function
+    
+    Private Sub Initialise()
+    
+        Dim myConnections As Seq = _
+        Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC2021Data & InputData)) _
+            .MapIt(mpMultiReplace.Deb(Array(Char.twSpace, Char.twCrLf))) _
+            .MapIt(mpSplitToSubStr.Deb(SplitType.ToArray, Char.twHyphen))
+        
+        ' Create a dictionary of each node vs seq of the connected nodes
+        Set s.Nodes = Hkvp.Deb
+        Dim myConnection As IterItems = IterItems(myConnections)
+        Do
+            Dim myConnectionArray As Variant = myConnection.Item
+            If s.Nodes.LacksKey(myConnectionArray(0)) Then
+                s.Nodes.Add myConnectionArray(0), Seq.Deb
+                
+            End If
+                
+            s.Nodes.Item(myConnectionArray(0)).additems myConnectionArray(1)
+            
+            ' now reverse the ends of the connection
+            
+            If s.Nodes.LacksKey(myConnectionArray(1)) Then
+                s.Nodes.Add myConnectionArray(1), Seq.Deb
+            End If
+            
+            s.Nodes.Item(myConnectionArray(1)).additems myConnectionArray(0)
+            
+        Loop While myConnection.MoveNext
+         
+        'Paths stop at the 'end' 
+        'therefore the "end" node can be removed
+        s.Nodes.Remove("end")
+        
+    End Sub
+    
+    
+    Public Function IsUpper(ByRef ipString As String) As Boolean
+    	Dim myCode  As Long = VBA.Asc(VBA.Left$(ipString, 1))
+       ' Debug.Print ipString, (myCode > 64) And (myCode < 91)
+        Return (myCode > 64) And (myCode < 91)
+    End Function
+    
+    Public Function IsNotUpper(ByRef ipString As String) As Boolean
+        Return Not IsUpper(ipString)
+    End Function
+    
+   Public Function IsEnd(ByRef ipString As String) As Boolean
+        Return ipString = "end"
+    End Function
+    
+    Public Function CanVisit(ByRef ipString As String, ByRef ipVisited As Seq) As Boolean
+    
+        Select Case True
+            Case ipVisited.LacksItem(ipString)
+        	    Return True
+            Case IsUpper(ipString)
+                Return True
+            Case Else
+                Return False
+        End Select
+    End Function
+    
+    Public Function CannotVisit(ByRef ipString As String, ipVisited As Seq) As Boolean
+        Return ipVisited.HoldsItem(ipString)
+    End Function
+    
+End Class

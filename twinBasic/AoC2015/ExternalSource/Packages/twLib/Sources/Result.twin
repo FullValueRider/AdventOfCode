@@ -1,0 +1,241 @@
+Class Result
+    Attribute VB_Name = "Result"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+
+    ' The function of the result class is allow the library to return an error status
+    ' rather than raising an exception
+    ' In all cases calls into the Library should indicate a success or fail through
+    ' the current status of the global Res object Res.Status or Res.IsOkay, Res.IsNotOkay.
+    ' Status is the default member of tthe Result class
+    '
+    ' The Res object performs the following tasks
+    ' 1. Returns the current status of the global error condition
+    ' 2. Allows the results of an operation to be returned as a variant array
+    ' via the cargo method
+    ' 3. Collects a log of Okay and NotOkay messages until cleared by the user.
+    ' 4. report the message log to Debug.print on request
+
+
+    Private Const MY_NAME                   As String = "Result"
+
+    Private Type Properties
+            
+        Status                              As Boolean
+        Cargo                               As Seq
+
+    End Type
+
+    Private p                               As Properties
+
+
+    Private Type State
+        
+        MsgOrd                              As Seq
+        Messages                            As Seq
+        
+    End Type
+
+    Private s                               As State
+
+
+    Private Sub Class_Initialize()
+
+        p.Status = Sys.IsOkay
+        Set p.Cargo = Seq.Deb
+        Set s.MsgOrd = Seq.Deb
+        Set s.Messages = Seq.Deb
+        
+    End Sub
+
+
+    Public Function Deb() As Result
+            Set Deb = Me
+    End Function
+
+
+    Public Property Get Name() As String
+        Name = MY_NAME
+    End Property
+
+
+    '@DefaultMember
+    Public Function Status() As Boolean
+    Attribute Status.VB_UserMemId = 0
+        Status = p.Status
+    End Function
+
+
+    Public Function CountItems() As Long
+        CountItems = p.Cargo.Count
+    End Function
+
+    Public Function CountMessages() As Long
+        CountMessages = s.Messages.Count
+    End Function
+
+
+    '@Description("Sugarfor 'Result.Status')
+    Public Function IsOkay() As Boolean
+        IsOkay = p.Status
+    End Function
+
+
+    '@Description("Sugar for Not Result.Status")
+    Public Function IsNotOkay() As Boolean
+    Attribute IsNotOkay.VB_Description = "Sugar for Not Result.Status"
+        IsNotOkay = Not p.Status
+    End Function
+
+
+    '@Description("Returns a variant array of the result items Seq")
+    Public Property Get Items() As Variant
+    Attribute Items.VB_Description = "Returns a variant array of the result items Seq"
+        Set Items = p.Cargo.ToArray
+    End Property
+
+
+    Public Property Set Items(ByVal ipItems As Seq)
+        Set p.Cargo = ipItems
+    End Property
+
+
+    ' '@Enumerator
+    ' Public Function NewEnum() As IUnknown
+    ' Attribute NewEnum.VB_UserMemId = -4
+
+    '     ' Dim enumerator As IUnknown
+    '     ' Set enumerator = p.ResultItems.GetEnumerator '  (0, s.Host.Count)
+    '     Set NewEnum = p.Cargo.
+
+    ' End Function
+
+
+    '@Description("Sets the values of p.ResultItems ")
+    Public Function SetItems(ParamArray ipResultItems() As Variant) As Result
+
+        If ArrayInfo.IsNotAllocated(ipResultItems) Then Return Me
+        
+        Set p.Cargo = Seq.Deb.AddKnownRange(ipResultItems)
+        Return Me
+                
+    End Function
+
+    ' SetOKay and SetNotOkay use a placeholder for method name.
+    ' This is required becuae currently twinbasic does not allow access to
+    ' the name of the calling method.
+
+    '@Description("Sets Status and Messageenum")
+    Public Function SetOkay _
+    ( _
+        Optional ByVal ipMsgOrd As MsgOrd = Okay, _
+        Optional ByVal ipMessage As String = vbNullString, _
+        Optional ByVal ipMessageArgs As Seq _
+    ) As Result
+    Attribute SetOkay.VB_Description = "Sets Status and Messageenum"
+            
+        Dim ipMethodName As String
+        ipMethodName = "MethodNamePlaceHolder"
+        p.Status = enums.Preset.Value(ResultStatusOkay)
+        '@Ignore FunctionReturnValueDiscarded
+        s.MsgOrd.AddItems ipMsgOrd
+    
+        If VBA.Len(ipMessage) = 0 Then
+
+            '@Ignore FunctionReturnValueDiscarded
+            s.Messages.AddItems Array(ipMethodName, p.Status, enums.Message.Value(ipMsgOrd), Empty)
+
+        Else
+
+            '@Ignore FunctionReturnValueDiscarded
+            s.Messages.AddItems Array(ipMethodName, p.Status, ipMessage, ipMessageArgs)
+
+
+        End If
+
+        Set SetOkay = Me
+        
+    End Function
+
+    '@Description("Sets Status and MsgOrd")
+    Public Function SetNotOkay _
+    ( _
+        Optional ByVal ipMsgOrd As MsgOrd = NotOkay, _
+        Optional ByVal ipMessage As String = vbNullString, _
+        Optional ByVal ipMessageArgs As Seq _
+    ) As Result
+    Attribute SetNotOkay.VB_Description = "Sets Status and MsgOrd"
+        Dim ipMethodName As String
+        ipMethodName = "MethodNamePlaceHolder"
+        p.Status = enums.Preset.Value(ResultStatusNotOkay)
+        '@Ignore FunctionReturnValueDiscarded
+        s.MsgOrd.AddItems ipMsgOrd
+
+        If VBA.Len(ipMessage) = 0 Then
+
+            '@Ignore FunctionReturnValueDiscarded
+            s.Messages.AddItems Array(ipMethodName, p.Status, enums.Message.Value(ipMsgOrd), Empty)
+
+
+        Else
+
+            If ipMessageArgs Is Nothing Then
+
+                '@Ignore FunctionReturnValueDiscarded
+                s.Messages.AddItems Array(ipMethodName, p.Status, ipMessage, Empty)
+
+
+            Else
+
+                '@Ignore FunctionReturnValueDiscarded
+                s.Messages.AddItems Array(ipMethodName, p.Status, ipMessage, ipMessageArgs, Empty)
+
+
+            End If
+
+        End If
+
+        Set SetNotOkay = Me
+        
+    End Function
+
+
+    ' Public Function Report() As String
+
+    '     Dim myMessages As String
+    '     Dim myIndex As Long
+    '     For myIndex = s.Messages.Count To 1 Step -1
+    '         myMessages = myMessages & Fmt.Txt("{0},{1},{2},{3}{nl}", enums.Message.Name(s.MsgOrd.Item(myIndex)), s.Messages(0), s.Messages(1), s.Messages(2))
+    '     Next
+        
+    '     Report = myMessages
+
+    ' End Function
+
+    '@Description("Clears the message Seq")
+    Public Function Reset() As Result ' Optional ByVal ipMsgOrd As MsgOrd = MsgOrd.Okay
+    Attribute Reset.VB_Description = "Clears the message Seq"
+        
+        Set p.Cargo = Seq.Deb
+        p.Status = enums.Preset.Value(ResultStatusNotOkay)
+        Set s.MsgOrd = Seq.Deb
+        Set s.Messages = Seq.Deb
+        
+        Set Reset = Me
+        
+    End Function
+
+
+    Private Function CloneItems() As Seq
+        Set CloneItems = Seq.Deb(p.Cargo.ToArray)
+    End Function
+
+    Private Sub ClearItems()
+        p.Cargo.RemoveAll
+    End Sub
+
+End Class

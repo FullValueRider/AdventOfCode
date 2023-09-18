@@ -1,0 +1,82 @@
+Class Day10_2022
+
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+Option Explicit
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+
+    Private Const Today             As String = "\2022\Day10.txt"
+    
+
+    Private Type State
+
+        Data                            As seq
+        
+    End Type
+
+    Private s                           As State
+
+    
+    Public Sub Execute()
+        
+        Part01
+        Part02
+            
+    End Sub
+
+ 
+    Private Sub Part01()
+
+        Initialise
+        Dim myCom As ElfCommunicator = ElfCommunicator.Deb
+        Set myCom.Program = s.Data
+        myCom.Run
+        Dim myOutput As Lookup = myCom.Result
+        
+        Dim mySumProduct As Long
+        Dim myItems As IterItems = IterItems.Deb(myOutput)
+        Do
+        	mySumProduct += (myItems.Key(0) * myItems(0))
+        Loop While myItems.MoveNext And myItems.Key(0) <= 220
+        
+        Dim myResult As Long = mySumProduct
+        
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "14820", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+
+        Initialise
+        Dim myCom As ElfCommunicator = ElfCommunicator.Deb
+        Set myCom.Program = s.Data
+        myCom.Run
+        Dim myVDU As Seq = myCom.VDU
+        
+        Debug.Print String(40, "_")
+        Dim myrow As Long
+        For myrow = 1 To 6
+            Debug.Print myVDU.Item(myrow).join(vbNullString)
+        Next
+        Debug.Print String(40, "_")
+        
+        Dim myResult As String = "See the eight charqcters in the output"
+                
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "RZEKEFHA", myResult
+
+    End Sub
+    
+
+    Private Sub Initialise()
+    
+        Set s.Data = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC & Today, vbCrLf)) _
+            .MapIt(mpSplitToSubStr(ToSeq, Char.twSpace)) _
+            .MapIt(mpInner(mpConvert(ToLong)))
+          
+     End Sub
+
+End Class

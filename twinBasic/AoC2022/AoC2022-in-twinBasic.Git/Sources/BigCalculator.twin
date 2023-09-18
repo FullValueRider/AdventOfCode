@@ -1,0 +1,95 @@
+Class BigCalculator
+
+	' a class that tries to replicate Net BigInteger
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+    
+
+    Private Type State
+
+        Val1                            As String
+        Va12                            As string
+       
+    End Type
+
+    Private s                           As State
+    
+    Public Function Deb() As BigCalculator
+        With New BigCalculator
+            Return .ConstructInstance
+        End With
+    End Function
+    
+    Friend Function ConstructInstance() As BigCalculator
+        Return Me
+    End Function
+    
+   
+        
+    Private Sub ValidateInput(ByRef ipNumber As Variant)
+    
+        If TypeInfo.IsNumber(ipNumber) Then
+        
+            s.Val1 = TrimDecimal(CStr(ipNumber))
+            
+        ElseIf TypeInfo.IsString(ipNumber) Then
+        
+            If VBA.Len(ipNumber) = 0 Then
+            
+                Err.Raise 17 + vbObjectError, "Lib.BigCalculator.ValidateInputs", "Input strings cannot be empty"
+                
+            End If
+            
+            s.Val1 = TrimDecimal(CStr(ipNumber))
+            
+        Else
+            
+            Err.Raise 17 + vbObjectError, "Lib.BigCalculator.Add", "Inputs must be a number or a string."
+            
+        End If
+    
+    
+    End Sub
+    
+    Public Function TrimDecimal(ByRef ipNumber As String) As String
+    	
+        Dim myPoint As Long = VBA.InStr(ipNumber, Char.twPeriod)
+        If myPoint > 0 Then
+            Return VBA.Mid$(ipNumber, 1, myPoint - 1)
+        Else
+        	Return ipNumber
+        End If
+    End Function
+    
+     Public Function Add(ByRef ipLHS As Variant, ByRef ipRHS As Variant) As String
+    
+        ValidateInput ipLHS
+        ValidateInput ipRHS
+        
+        ' make LHS the longest number
+        Dim myLHS As Seq
+        Dim myRHS As Seq
+        If VBA.Len(ipLHS) > VBA.Len(ipRHS) Then
+            Set myLHS = Seq.Deb(ipLHS).MapIt(mpConvert(ToLong))
+            Set myRHS = Seq.Deb(ipRHS).MapIt(mpConvert(ToLong))
+        Else
+        	Set myLHS = Seq.Deb(ipRHS).MapIt(mpConvert(ToLong))
+            Set myRHS = Seq.Deb(ipLHS).MapIt(mpConvert(ToLong))
+            
+        End If
+        
+        Dim myLHSChars As IterItems = IterItems.Deb(myLHS)
+        Dim myRHSChars As IterItems = IterItems.Deb(myRHS)
+        Do
+        	
+            
+            
+        Loop While myLHSChars.MoveNext
+    End Function
+End Class

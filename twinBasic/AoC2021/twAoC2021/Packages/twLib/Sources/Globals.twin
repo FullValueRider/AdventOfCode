@@ -1,0 +1,204 @@
+Module Globals
+
+    Option Explicit
+
+    Public Const ANY_IN_GROUP               As Long = -1
+    Public Const BAILOUT_RAISES_ERRORS      As boolean = False
+    
+    
+    Public Const LONG_MAX                   As Long = &H7FFFFFFF
+    Public Const LONG_MIN                   As long = &H80000000
+    Public Function Res() As Result
+        Return Result
+    End Function
+
+    ' Public Function ToVA(ParamArray ipParamarray() As Variant) As varArray
+        
+        
+    '     Dim myVA As varArray = New varArray
+    '     myVA.Cargo = Empty
+        
+    '     If ArrayInfo.IsNotAllocated(ipParamarray) Then Return myVA
+            
+    '     If ArrayInfo.HasItems(ipParamarray) Then
+        	
+    '         myVA.Cargo = CVar(ipParamarray)
+
+
+    '     ElseIf VBA.IsArray(ipParamarray(0)) Then
+
+    '         myVA.Cargo = ipParamarray(0)
+
+            
+    '     ElseIf TypeInfo.Group(GroupType.IsEnumerable).LacksKey(VBA.LCase$(VBA.TypeName(ipParamarray(0)))) Then
+
+    '         myVA.Cargo = Array(ipParamarray(0))
+            
+    '     Else
+            
+    '             Err.Raise 17
+                
+                
+    '     End If
+        
+    '    Return myVA
+
+    ' End Function
+
+    ' Public Function ToVE(ByRef ipEnumerable As Variant) As varEnumerable
+    	
+    '     Dim myVE As varEnumerable = New varEnumerable
+    '     myVE.Cargo = Empty
+    '    ' Debug.Print VBA.LCase$(VBA.TypeName(ipEnumerable))
+    '     If TypeInfo.Group(GroupType.IsEnumerableObject).LacksKey(VBA.LCase$(VBA.TypeName(ipEnumerable))) Then Exit Function
+            
+    '     If VBA.IsObject(ipEnumerable) Then
+            
+    '         Set myVE.Cargo = ipEnumerable
+    '     Else
+            
+    '         myVE.Cargo = ipEnumerable
+    '     End If
+    '     ' AssignToIndexed myVE.Cargo, ipEnumerable' Assign
+    '     Return myVE
+
+    ' End Function
+
+    ' Public Function ToVO(ByRef ipObject As Variant) As VarObject
+    	
+    '     Dim myVO As VarObject = New VarObject
+    '     myVO.cargo = Empty
+    '     If Not VBA.IsObject(ipObject) Then Exit Function
+        
+    '     Assign myVO.cargo, ipObject
+    '     Return myVO
+
+    ' End Function
+
+    ' Public Function ToVP(ByRef ipPrimitive As Variant) As varPrimitive
+    	
+    '     Dim myVP As varPrimitive = New varPrimitive
+    '     myVP.cargo = Empty
+    '     If TypeInfo.Group(GroupType.IsPrimitive).LacksKey(VBA.LCase$(VBA.TypeName((ipPrimitive)))) Then Exit Function
+        
+    '     Assign myVP.cargo, ipPrimitive
+    '     Return myVP
+
+    ' End Function
+
+    ' Public Function ToVAdmin(ByRef ipAdmin As Variant) As VarAdmin
+    	
+    '     Dim myVAdmin As VarAdmin = New VarAdmin
+    '     myVAdmin.cargo = Empty
+    '     If TypeInfo.Group(GroupType.IsAdmin).LacksKey(VBA.LCase$(VBA.TypeName((ipAdmin)))) Then Exit Function
+        
+    '     Assign myVAdmin.cargo, ipAdmin
+    '     Return myVAdmin
+
+    ' End Function
+
+    ' Public Function ToVV(ByRef ipVariant As Variant) As varVariant
+    	
+    '     Dim myVV As varVariant = New varVariant
+    '     If VBA.IsObject(ipVariant) Then
+    '         Set myVV.Cargo = ipVariant
+    '     Else
+    '         myVV.Cargo = ipVariant
+    '     End If
+    '    ' Assign myVV.Cargo, ipVariant
+      
+    '     Set ToVV = myVV
+    ' End Function
+ 
+    '@Description(" = without the pain")
+    Public Sub Assign(ByRef opTo As Variant, ByRef ipFrom As Variant)
+    Attribute Assign.VB_Description = " = without the pain"
+    ' VariantCopyInd ByVal VarPtr(mValues(IndexZeroBased)), ByVal VarPtr(RHS)
+    
+    ' VariantCopy KeyByIndex, ByVal VarPtr(mKeys(IndexZeroBased))
+        If IsObject(ipFrom) Then
+            
+            Set opTo = ipFrom
+            
+            
+        Else
+            
+            opTo = ipFrom
+            
+            
+        End If
+        
+    End Sub
+    
+    ' Public Sub AssignToIndexed(ByRef ipLHS As Variant, ByVal ipRHS As Variant)
+    '         VariantCopyInd VarPtr(ipLHS), ipRHS
+    ' End Sub
+
+    ' Public Sub AssignToVar(ByRef ipLHS As Variant, ByVal ipRHS As Variant)
+    '     VariantCopy ipLHS, ipRHS
+    ' End Sub
+    
+    Public Function IsTrue(ByRef ipRef As Variant, ByRef ipTest As Variant) As Boolean
+    	IsTrue = ipRef And ipTest
+    End Function
+    
+
+
+    ' Public Function ToVFE(ParamArray ipParamArray() As Variant) As varEnumerable
+    	
+    '     Dim myVFE As varEnumerable = New varEnumerable
+    '     myVFE.Cargo = Empty
+        
+    '     Select Case True
+            
+    '         Case ArrayInfo.HasItems(ipParamArray)
+            
+    '             myVFE.Cargo = CVar(ipParamArray)
+                
+                
+    '         Case VBA.IsArray(ipParamArray(0))
+        	
+    '             Set myVFE.Cargo = ipParamArray(0)
+            
+                
+    '         Case TypeInfo.Group(GroupType.IsItemByIndex).HoldsKey(VBA.LCase$(VBA.TypeName$(ipParamArray(0))))
+            
+    '             Set myVFE.Cargo = ipParamArray(0)
+                
+            
+    '         Case TypeInfo.Group(GroupType.IsItemByKey).HoldsKey(VBA.LCase$(VBA.TypeName(ipParamArray(0))))
+           
+    '             myVFE.Cargo = ipParamArray(0).Items
+                
+                
+    '         Case Else
+            
+    '             myVFE.Cargo = Array(ipParamArray(0))
+                
+                
+    '     End Select
+    '     Set ToVFE = myVFE
+
+    ' End Function
+
+    
+    'Description("Performs the ToArray method but taking forwarded paramarray")
+    Public Function ToArray(ByRef ipForEach As VarForEach) As Variant
+
+        ToArray = Empty
+        
+        If VBA.IsArray(ipForEach.Cargo) Then
+            
+            Return ipForEach.Cargo
+            
+            
+        Else
+            
+            Return Seq.Deb(ipForEach).ToArray
+            
+            
+        End If
+    
+    End Function
+
+End Module

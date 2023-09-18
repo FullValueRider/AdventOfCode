@@ -1,0 +1,304 @@
+Class ArrayInfo
+    Attribute VB_Name = "ArrayInfo"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+    '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+    'The 'Arrays' class provides a collection of functions that take an array and return information about the array.
+
+    Public Enum ArrayType
+        
+        AsAnyArrayType = -1
+        AsListArray = 0                 ' One dimension array
+        AsTableArray = 1                ' Two dimension array
+        AsMDArray = 2                   ' More than two dimension array
+
+    End Enum
+
+
+    Public Enum ArrayRanks
+        ListArrayRanks = 1
+        TableArrayRanks = 2
+        MDArrayRanks = 3
+    End Enum
+
+    
+    '@Description("Tests that an has been dimmed with valid bounds")
+    Public Function IsAllocated(ByRef ipArray As Variant) As Boolean
+
+        If Not VBA.IsArray(ipArray) Then Return False
+        Dim myRanks As Long = Ranks(ipArray)
+        Return myRanks > 0
+      
+    End Function
+
+    Public Function IsNotAllocated(ByRef ipArray As Variant) As Boolean
+        IsNotAllocated = Not IsAllocated(ipArray)
+    End Function
+    
+    
+    Public Function IsNotQueryable(ByRef ipArray As Variant) As Boolean
+       
+        If Not VBA.IsArray(ipArray) Then Return False
+        Return IsNotAllocated(ipArray)
+        
+    End Function
+    
+    
+    Public Function IsAnArray(ByRef ipArray As Variant, Optional ipArrayType As ArrayType = AsAnyArrayType) As Boolean
+        
+        If IsNotQueryable(ipArray) Then Return False
+        
+        Dim myRanks As Long = Ranks(ipArray)
+        
+        Select Case ipArrayType
+            
+            Case AsAnyArrayType:    Return True
+            Case AsListArray:       Return myRanks = ListArrayRanks
+            Case AsTableArray:      Return myRanks = TableArrayRanks
+            Case Else:              Return myRanks > TableArrayRanks
+            
+            
+        End Select
+        
+    End Function
+
+    Public Function IsNotAnArray(ByRef ipArray As Variant, Optional ipArrayType As ArrayType = AsAnyArrayType) As Boolean
+        
+        If IsNotQueryable(ipArray) Then Return False
+        
+            Dim myRanks As Long = Ranks(ipArray)
+            
+            Select Case ipArrayType
+                
+                Case AsAnyArrayType:    Return Not VBA.IsArray(ipArray)
+                Case AsListArray:       Return myRanks <> ListArrayRanks
+                Case AsTableArray:      Return myRanks <> TableArrayRanks
+                Case Else:              Return myRanks < TableArrayRanks
+                
+                
+            End Select
+            
+    End Function
+    
+
+    Public Function Count(ByRef ipArray As Variant, Optional ByVal ipRank As Long = 0) As Long
+        
+        If IsNotQueryable(ipArray) Then Return -1
+    
+       Return CountKnownArray(ipArray, ipRank)
+        
+    End Function
+        
+    
+    Friend Function CountKnownArray(ByVal ipArray As Variant, Optional ByVal ipRank As Long = 0) As Long
+        
+        Dim mySize As Long
+        If ipRank = 0 Then ' Count all elements of the array
+            
+            mySize = 1
+            Dim myRank As Long
+            Dim myRanks As Long
+            myRanks = Me.Ranks(ipArray)
+            
+            For myRank = 1 To myRanks
+                
+                mySize = mySize * (UBound(ipArray, myRank) - LBound(ipArray, myRank) + 1)
+                
+                
+            Next
+            
+        Else
+            
+            If Me.LacksRank(ipArray, ipRank) Then
+                
+                mySize = 0
+                
+                
+            Else
+            
+                mySize = UBound(ipArray, ipRank) - LBound(ipArray, ipRank) + 1
+            
+                
+            End If
+            
+        End If
+                
+       Return mySize
+        
+    End Function
+
+   
+    '@Description("Returns the number of dimensions of an array. Return values >1:No of Ranks, 0: ")
+    Public Function Ranks(ByVal ipArray As Variant) As Long
+    Attribute Ranks.VB_Description = "Returns the number of dimensions of an array. Return values >1:No of Ranks, 0: "
+
+        Dim myIndex As Long
+        For myIndex = 1 To 60000
+        
+            On Error Resume Next
+
+            Dim myDummy As Long
+            myDummy = UBound(ipArray, myIndex)
+            
+            If Err.Number <> 0 Or myDummy = -1 Then
+                
+                Err.Clear
+                Exit For
+                
+                
+            End If
+            
+            Err.Clear
+            
+            
+        Next
+        
+        Ranks = myIndex - 1
+        
+    End Function
+
+
+    '@Ignore ParameterCanBeByVal
+    Public Function HasRank(ByRef ipArray As Variant, ByVal ipRank As Long) As Boolean
+       
+        Dim myRanks As Long = Ranks(ipArray)
+        If myRanks < 1 Then Return False
+        If ipRank > myRanks Then Return False
+        Return True
+        
+    End Function
+
+    Public Function LacksRank(ByRef ipArray As Variant, ByVal ipRank As Long) As Boolean
+        LacksRank = Not HasRank(ipArray, ipRank)
+    End Function
+
+    
+    Public Function HasItems(ByRef ipArray As Variant) As Boolean
+        
+       If IsNotQueryable(ipArray) Then Return False
+       Return Count(ipArray) > 1
+
+    End Function
+
+    '@Description("True if ipArray is an array holding One item.  Optionally can query the GroupType of the single item")
+    Public Function HasOneItem(ByRef ipArray As Variant) As Boolean
+       
+        If IsNotQueryable(ipArray) Then Return False
+        Return Me.Count(ipArray) = 1
+        
+    End Function
+
+    Public Function HasAnyItems(ByRef ipArray As Variant) As Boolean
+       
+        If IsNotQueryable(ipArray) Then Return False
+        Return Count(ipArray) > 0
+       
+    End Function
+
+
+    '@Description(True if the count Test and Ref is the same (Arrays can be compared with Ranks))
+    Public Function IsSameCount _
+    ( _
+        ByVal ipTestArray As Variant, _
+        ByVal ipRefArray As Variant, _
+        Optional ByVal ipTestRank As Long = 0, _
+        Optional ByVal ipRefRank As Long = 0 _
+    ) As Boolean
+        
+        If IsNotQueryable(ipTestArray) Then Return False
+        If IsNotQueryable(ipRefArray) Then Return False
+    
+        Dim myRefCount As Long
+        If ipRefRank = 0 Then
+            myRefCount = Count(ipRefArray)
+            
+        Else
+            
+            Dim myRefRanks As Long = Ranks(ipRefArray)
+            If ipRefRank > myRefRanks Then
+                 Return False
+            Else
+                myRefCount = Count(ipRefArray, ipRefRank)
+            End If
+            
+        End If
+            
+        Dim myTestCount As Long
+        If ipTestRank = 0 Then
+            myTestCount = Count(ipTestArray)
+            
+        Else
+            
+            Dim myTestRanks As Long = Ranks(ipTestArray)
+            If ipTestRank > myTestRanks Then
+                 Return False
+            Else
+                myTestCount = Count(ipTestArray, ipTestRank)
+            End If
+            
+        End If
+           
+        Return myRefCount = myTestCount
+        
+    End Function
+
+
+    Public Function FirstIndex(ByRef ipArray As Variant, Optional ByVal ipRank As Long = 1) As Variant
+        
+        If IsNotQueryable(ipArray) Then Return Null
+        Dim myRanks As Long = Ranks(ipArray)
+        If ipRank >= 1 And ipRank <= myRanks Then
+            Return LBound(ipArray, ipRank)
+        Else
+            Return Null
+        End If
+        
+    End Function
+
+    Public Function LastIndex(ByRef ipArray As Variant, Optional ByVal ipRank As Long = 1) As Variant
+        
+        If IsNotQueryable(ipArray) Then Return Null
+            Dim myRanks As Long = Ranks(ipArray)
+            If ipRank >= 1 And ipRank <= myRanks Then
+                Return UBound(ipArray, ipRank)
+            Else
+                Return Null
+            End If
+            
+    End Function
+
+
+    '@Ignore ParameterCanBeByVal
+    Public Function IsListArray(ByRef ipArray As Variant) As Boolean
+        IsListArray = IsAnArray(ipArray, AsListArray)
+    End Function
+
+    Public Function IsNotListArray(ByRef ipArray As Variant) As Boolean
+        IsNotListArray = Not IsAnArray(ipArray, AsListArray)
+    End Function
+
+    '@Ignore ParameterCanBeByVal
+    Public Function IsTableArray(ByRef ipArray As Variant) As Boolean
+        IsTableArray = IsAnArray(ipArray, AsTableArray)
+    End Function
+
+    Public Function IsNotTableArray(ByRef ipArray As Variant) As Boolean
+        IsNotTableArray = Not IsAnArray(ipArray, AsTableArray)
+    End Function
+
+    '@Ignore ParameterCanBeByVal
+    Public Function IsMDArray(ByRef ipArray As Variant) As Boolean
+        IsMDArray = IsAnArray(ipArray, AsMDArray)
+    End Function
+
+    Public Function IsNotMDArray(ByRef ipArray As Variant) As Boolean
+        IsNotMDArray = Not IsAnArray(ipArray, AsMDArray)
+    End Function
+
+End Class

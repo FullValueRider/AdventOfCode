@@ -1,0 +1,137 @@
+Class Day09_2022
+
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+Option Explicit
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+    /*
+     Todays problem involves tracking the location of multiple points
+     tracking the movement of a point is common in AoC questions so I have
+     developed a Class specifically for this activity (Trail)
+     The Trail class tracks where a point has been (its path), and which
+     coordinates have been visited (a count of the number of times visited)
+     Trail can also calculate manhatten distances and other properties relating
+     to one or more points. 
+    */
+    Private Const Today             As String = "\2022\Day09.txt"
+    
+    Private Type State
+
+        Data                            As seq
+        Directions                      As lookup
+        
+    End Type
+
+    Private s                           As State
+
+    
+    Public Sub Execute()
+        
+        Part01
+        Part02
+            
+    End Sub
+
+ 
+    Private Sub Part01()
+
+        Initialise
+        Dim myHead As Trail = Trail.Deb(Coord.Deb(0, 0), Eight)
+        Dim myTail As Trail = Trail.Deb(Coord.Deb(0, 0), Eight)
+        
+        Dim myInstructions As IterItems = IterItems.Deb(s.Data)
+        Do
+            Dim myInstruction As Seq = myInstructions(0)
+
+        	Dim myCount As Long
+            For myCount = 1 To myInstruction(2)
+                myHead.Move myInstruction(1)
+                catchup myTail, myHead
+            Next
+        Loop While myInstructions.MoveNext
+        
+        Dim myResult As Long = myTail.Visited.Count
+        
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "6642", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+
+        Initialise
+        Dim myKnots As Seq = Seq.Deb
+        
+        ' create 10 knots (Trails)
+        Dim myIndex As Long
+        For myIndex = 1 To 10
+            myKnots.Add Trail.Deb(Coord.Deb(0, 0), Eight)
+        Next
+        
+        Dim myInstructions As IterItems = IterItems.Deb(s.Data)
+        Do
+            Dim myDirection As String = myInstructions(0)(1)
+            Dim myDistance As String = myInstructions(0)(2)
+        	Dim myCount As Long
+            For myCount = 1 To myDistance
+               
+                myKnots.First.Move myDirection
+                
+                Dim myFollows As IterItems = IterItems.Deb(myKnots).SetFTS(1)
+                Do
+                    Dim myHead As Trail = myFollows(-1)
+                    Dim myTail As Trail = myFollows(0)
+                    catchup myTail, myHead
+                Loop While myFollows.MoveNext
+            Next
+            
+        Loop While myInstructions.MoveNext
+        
+        Dim myResult As Long = myKnots.Last.visited.count
+                
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "2765", myResult
+
+    End Sub
+    
+
+    Private Sub Initialise()
+    
+        Set s.Data = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC & Today, vbCrLf)) _
+            .MapIt(mpReplacer(Array("R", "E"), Array("L", "W"))) _
+            .MapIt(mpSplitToSubStr(ToSeq, Char.twSpace)) _
+            .MapIt(mpInner(mpConvert(ToLong)))
+            
+        ' The direction of the head fom the tail 
+        Set s.Directions = Lookup.Deb
+        With s.Directions
+            .Add "0,1", "N"
+            .Add "1,1", "NE"
+            .Add "1,0", "E"
+            .Add "1,-1", "SE"
+            .Add "0,-1", "S"
+            .Add "-1,-1", "SW"
+            .Add "-1,0", "W"
+            .Add "-1,1", "NW"
+        End With
+     End Sub
+
+    Private Sub catchup(ByRef ipTail As Trail, ByRef ipHead As Trail)
+    
+        Dim myXDisp As Long = ipHead.X - ipTail.X
+        Dim myYDisp As Long = ipHead.Y - ipTail.Y
+        
+        If VBA.Abs(myXDisp) = 2 Or VBA.Abs(myYDisp) = 2 Then
+        	
+            Dim myX As Long = IIf(myXDisp = 0, 0, VBA.Sgn(myXDisp))
+            Dim myY As Long = IIf(myYDisp = 0, 0, VBA.Sgn(myYDisp))
+            Dim myDirection As String = s.Directions.Item(Fmt.Text("{0},{1}", myX, myY))
+            ipTail.Move myDirection
+           
+        End If
+        
+    End Sub
+    
+End Class

@@ -1,0 +1,351 @@
+Class IterItems
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "Iterates Items"
+    Option Explicit
+  
+    Implements Meta Via HostMeta
+    
+    
+    Const MY_NAME                               As String = "IterItems"
+
+    Private Type Properties
+        
+        'Host                                    As variant
+        Meta                                    As Meta
+        Span                                    As Span
+        Index                                   As long
+        Items                                   As Variant ' Used for ITemByToArrayByIndex objects
+        Keys                                    As variant ' Keys from ItemByKey objects
+        
+    End Type
+    
+
+    Private p                                   As properties
+
+    Public Function Deb(ByRef ipIterable As Variant) As IterItems
+        With New IterItems
+            Return .ConstructInstance(ipIterable)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByRef ipIterable As Variant) As IterItems
+    
+        Set HostMeta = Meta(ipIterable, LoadIt)
+        Set p.Meta = HostMeta
+        
+        Select Case True
+        
+            Case p.Meta.IsItemByToArray
+                p.Items = ipIterable.ToArray
+                
+            Case p.Meta.IsItemByKey
+                p.Keys = ipIterable.Keys
+                
+        End Select
+        
+        Set p.Span = Span(p.Meta.FirstRank.FirstIndex, p.Meta.FirstRank.LastIndex)
+        
+        p.Index = 0
+        
+        Return Me
+        
+    End Function
+
+   
+    Public Function SetSpan _
+    ( _
+        Optional ByRef ipFromOrSpan As Variant = Empty, _
+        Optional ByRef ipTo As Variant = Empty, _
+        Optional ByRef ipStep As Variant = 1, _
+        Optional ByVal ipRank As Long = 1 _
+    ) As IterItems
+
+        If (ipRank < 1) Or (ipRank > p.Meta.RanksCount) Then
+            Return Me
+        End If
+    
+        If VBA.TypeName(ipFromOrSpan) = Span.TypeName Then
+            Set p.Span = ipFromOrSpan
+        Else
+            
+            
+            Dim myFrom As Variant = IIf(VBA.IsEmpty(ipFromOrSpan), p.Meta.FirstIndex(1), ipFromOrSpan)
+            Dim myTo As Variant = IIf(VBA.IsEmpty(ipTo), p.Meta.LastIndex(1), ipTo)
+            Dim mystep As Variant = IIf(ipStep = 0, 1, ipStep)
+            mystep = VBA.Abs(mystep) * IIf(myFrom <= ipTo, 1, -1)
+            Set p.Span = Span(myFrom, myTo, mystep, ipRank)
+
+        End If
+        
+        p.Index = p.Span.From
+        
+        Return Me
+
+    End Function
+    
+    
+    Private Function CanIncIndex() As Boolean
+    
+        If p.Span.To < 0 Then
+            Return False
+        End If
+    
+        Dim myTryIndex As Long = p.Span.From + p.Index + p.Span.Step
+        
+        If p.Span.Step > 0 Then
+            Return IIf(myTryIndex <= p.Span.To, True, False)
+        Else
+            Return IIf(myTryIndex >= p.Span.To, True, False)
+        End If
+        
+    End Function
+    
+    
+    Private Function CanDecIndex() As Boolean
+    
+        Dim myTryIndex As Long = p.Span.From + p.Index - p.Span.Step
+        
+        If p.Span.Step > 0 Then
+            Return IIf(myTryIndex >= p.Span.From, True, False)
+        Else
+            Return IIf(myTryIndex <= p.Span.From, True, False)
+        End If
+        
+    End Function
+    
+    
+    Public Function MoveNext() As Boolean
+
+       If CanIncIndex Then
+            p.Index += p.Span.Step
+            Return True
+        	
+        Else
+            Return False
+        End If
+
+    End Function
+    
+    Public Function MovePrev() As Boolean
+    
+        If CanDecIndex Then
+            p.Index -= p.Span.Step
+            Return True
+        Else
+            Return False
+        End If
+        
+    End Function
+    
+
+    '@Description("Returns the GroupType.Holdsfset from the first index GroupType.Holds 'container' being iterated")
+    Public Function Index(Optional ByRef ipOffset As Long = 0) As Long
+        Return p.Index + ipOffset
+    End Function
+    
+    
+    /*
+    We cannot use an indexed property if we wish the index to be optional.
+    For this reason we use GetItem, SetItem and LetItem functions
+    The getitem function is likely the most used function of Iteritems
+    and for this reason it is declared as the Defaultmember
+    */
+    
+    '@Description("Returns the Item at the specified offfset from the first index")
+    '@DefaultMember
+    Public Function Item(Optional ByRef ipOffset As Long = 0) As Variant
+       
+        Select Case True
+        
+            Case p.Meta.IsArray
+            
+                Return p.Meta.Cargo(p.Meta.FirstRank.FirstIndex + p.Index + ipOffset)
+                
+                
+            Case p.Meta.IsItemByIndex0
+                
+                Return p.Meta.Cargo.Item(p.Meta.FirstRank.FirstIndex + p.Index + ipOffset)
+                
+                
+            Case p.Meta.IsItemByIndex1
+            
+                Dim myIndex As Long = p.Meta.FirstRank.FirstIndex + p.Index + ipOffset
+                Dim myItem As Variant = p.Meta.Cargo.Item(myIndex)
+                Return myItem
+                
+            
+            Case p.Meta.IsItemByToArray
+            
+                Return p.Items(p.Meta.FirstRank.FirstIndex + p.Index + ipOffset)
+                
+                
+            Case p.Meta.IsItemByKey
+            
+               Return p.Meta.Cargo.Item(p.Keys(p.Index + ipOffset))
+               
+                
+            Case p.Meta.IsString
+            
+                If VBA.Len(p.Meta.Cargo) = 0 Then
+                
+                    Return vbNullString
+                    
+                Else
+                
+            
+                    Return Mid(p.Meta.Cargo, p.Meta.FirstRank.FirstIndex + p.Index + ipOffset, 1)
+                    
+                End If
+                
+                
+            Case Else 'TyeInfo.p.Meta.HoldsSingleItem
+            
+                Return p.Meta.Cargo
+            
+        End Select
+    
+           
+    End Function
+    
+    
+    Public Function LetItem(ByRef ipItem As Variant, Optional ByRef ipOffset As Long) As IterItems
+    
+        If Not VBA.IsObject(ipItem) Then
+            Err.Raise 17 + vbObjectError, "Lib.Iteritems.SetItem", "Primitive expected not Object " & Char.twPlainSQuote & VBA.TypeName(ipItem) & Char.twPlainSQuote
+        End If
+        
+        Select Case True
+        
+            Case TypeInfo.IsArray(p.Meta.Cargo)
+            
+               p.Meta.Cargo(p.Meta.Ranks(1).firstindex + p.Index + ipOffset) = ipItem
+                
+                
+            Case TypeInfo.IsItemByIndex0(p.Meta.Cargo), TypeInfo.IsItemByIndex1(p.Meta.Cargo)
+            
+                p.Meta.Cargo.Item(p.Meta.Ranks(1).firstindex + p.Index + ipOffset) = ipItem
+                
+                
+            Case TypeInfo.IsItemByToArray(p.Meta.Cargo)
+            
+                p.Items(p.Meta.Ranks(1).firstindex + p.Index + ipOffset) = ipItem
+                
+                
+            Case TypeInfo.IsItemByKey(p.Meta.Cargo)
+            
+                p.Meta.Cargo.Item(p.Keys(p.Index + ipOffset)) = ipItem
+                
+                
+            Case TypeInfo.IsString(p.Meta.Cargo)
+            
+                Dim myString As String = p.Meta.Cargo
+                Mid(myString, p.Meta.Ranks(1).firstindex + p.Index + ipOffset) = ipItem
+                p.Meta.Cargo = myString
+                
+            Case Else
+            
+               p.Meta.Cargo = ipItem
+                
+            
+        End Select
+    
+        Return Me
+        
+    End Function
+    
+     Public Function SetItem(ByRef ipItem As Variant, Optional ByRef ipOffset As Long) As IterItems
+    
+        If Not VBA.IsObject(ipItem) Then
+            Err.Raise 17 + vbObjectError, "Lib.Iteritems.SetItem", "Object expected. Not type " & Char.twPlainSQuote & VBA.TypeName(ipItem) & Char.twPlainSQuote
+        End If
+        
+        Select Case True
+        
+            Case TypeInfo.IsArray(p.Meta.Cargo)
+            
+                Set p.Meta.Cargo(p.Meta.Ranks(1).firstindex + p.Index + ipOffset) = ipItem
+                
+                
+            Case TypeInfo.IsItemByIndex0(p.Meta.Cargo), TypeInfo.IsItemByIndex1(p.Meta.Cargo)
+            
+                Set p.Meta.Cargo.Item(p.Meta.Ranks(1).firstindex + p.Index + ipOffset) = ipItem
+                
+                
+            Case TypeInfo.IsItemByToArray(p.Meta.Cargo)
+            
+                Set p.Items(p.Meta.Ranks(1).firstindex + p.Index + ipOffset) = ipItem
+                
+                
+            Case TypeInfo.IsItemByKey(p.Meta.Cargo)
+            
+                Set p.Meta.Cargo.Item(p.Keys(p.Index + ipOffset)) = ipItem
+                
+                
+            ' No requirement for string handling in Set
+            
+            Case TypeInfo.IsItemObject(p.Meta.Cargo)
+            
+                Set p.Meta.Cargo = ipItem
+                
+                
+        End Select
+    
+        Return Me
+        
+    End Function
+    
+   
+    '@Description("Return the Key at the specified index or the the native index GroupType.Holds the itemd)"
+    Public Function Key(Optional ByRef ipOffset As Long = 0) As Variant
+        If p.Meta.IsItemByKey Then
+            Return p.Keys(p.Index + ipOffset)' p.Meta.FirstIndex(1) +
+        Else
+            ' todo this line will need updating for multidimensional arrays
+            Return p.Meta.Ranks(1).FirstIndex + p.Index + ipOffset
+        End If
+
+    End Function
+    
+    
+    Public Function HasNext() As Boolean
+       Return CanIncIndex
+    End Function
+    
+    Public Function HasNoNext() As Boolean
+       Return Not CanIncIndex
+    End Function
+    
+    
+    Public Function HasPrev() As Boolean
+       Return CanDecIndex
+    End Function
+    
+    Public Function HasNoPrev() As Boolean
+       Return Not CanDecIndex
+    End Function
+    
+    
+    Public Function count() As Long
+        Return p.Meta.Ranks.Count
+    End Function
+    
+    
+    Public Function MoveToStart() As IterItems
+        p.Index = 0
+        Return Me
+    End Function
+    
+    Public Function MoveToEnd() As IterItems
+        p.Index = ((p.Span.To - p.Span.From) \ VBA.Abs(p.Span.Step)) * VBA.Abs(p.Span.Step)
+        Return Me
+    End Function
+    
+    
+    Public Property Get TypeName() As String
+        Return MY_NAME
+    End Property
+    
+End Class

@@ -1,0 +1,1312 @@
+Private Module ActiveXControlExtenderHelper
+	Public Function CreateBaseControlWindowless() As Object         ' FIXME This wrapper needed due to a compiler bug
+        Return New WinNativeFormsBASE.BaseControlWindowless(ControlTypeConstants.vbActiveXExtender)
+    End Function
+End Module
+
+[ Description ("ActiveX Control wrapper") ]
+[ WindowsControl ("/miscellaneous/ActiveXExtender.png") ]
+[ ClassId ("FFAF24A4-C5A5-4F1F-8914-D3A7BFEAD4B6") ]
+[ InterfaceId ("939AE90D-ED35-4C47-974C-E35EB2626157") ]
+[ COMCreatable (False) ]
+Class ActiveXControlExtender(Of T)
+    
+    ' FIXME Windowless ActiveX controls are not yet supported (except for completely invisible controls)
+
+    #Region "INHERITANCE"
+    
+        [ WithDispatchForwarding ] Implements Control
+        Implements WithEvents T Via ClientObject
+        Implements WindowsControls.IWindowsControl
+        Implements WinNativeFormsBase.BaseControlWindowless Via _BaseControl = CreateBaseControlWindowless()
+        
+        ' [ IDEOnly ]               FIXME
+        Implements ITwinBasicDesignerExtensions
+        
+        Implements ITwinBasicRuntimeControlExtensions
+
+        Implements IOleClientSite
+        Implements IAdviseSink
+        Implements IOleInPlaceFrame
+        Implements IOleControlSite
+        Implements IOleInPlaceSiteWindowless
+
+        Implements ISimpleFrameSite
+
+        Implements IVBGetControl
+
+        ' This must be the last interface
+        Implements IUnsupportedInterface
+
+    #End Region
+        
+    #Region "STATE"
+        Public Visible As Boolean = True
+        Public HelpContextID As Long
+        
+        Private WithEvents RootWindowElement As WindowElement
+        Private ClientObject_IOleObject As IOleObject
+        Private ClientObject_IOleControl As IOleControl
+        Private ClientObject_IViewObject As IViewObject
+        Private ClientObject_IOleInPlaceObjectWindowless As IOleInPlaceObjectWindowless
+        Private ClientObject_IOleInPlaceObject As IOleInPlaceObject
+        Private WithEvents ClientObject_IPropertyNotifySink As PropertyNotifySink
+
+        Private ActiveObject As IOleInPlaceActiveObject
+        Private ActiveObjectSetCount As Long
+        Private AdviseConnectionCookie As Long
+        Private AcceleratorTable As LongPtr
+        Private AcceleratorTableCount As Long
+        Private MiscStatus As Long
+        Private UserMode As Boolean
+        Private UIActive As Boolean
+        Private InPlaceActive As Boolean
+        Private HasFocus As Boolean
+        Private ContainerHWND As LongPtr
+        Private LogID As Long = 1
+        Private HasExclusiveDefaultValue As Boolean
+
+        Const OLEMISC_INVISIBLEATRUNTIME        As Long = &H400
+        Const OLEIVERB_HIDE                     As Long = -3
+        Const OLECLOSE_NOSAVE                   As Long = 1
+        Const DVASPECT_CONTENT                  As Long = 1
+        Const E_NOINTERFACE                     As Long = &H80004002
+        Const INPLACE_E_NOTOOLSPACE             As Long = &H800401A1
+        Const XFORMCOORDS_POSITION              As Long	= &H1
+        Const XFORMCOORDS_SIZE                  As Long	= &H2
+        Const XFORMCOORDS_HIMETRICTOCONTAINER   As Long	= &H4
+        Const XFORMCOORDS_CONTAINERTOHIMETRIC   As Long	= &H8
+        Const XFORMCOORDS_EVENTCOMPAT           As Long	= &H10
+        Const OLEMISC_SETCLIENTSITEFIRST        As Long = &H20000
+        Const OLEMISC_SIMPLEFRAME               As Long = &H10000
+    #End Region
+
+    #Region "EVENTS"
+        Event ExperimentalLog(ByVal Text As String)
+    #End Region
+               
+    #Region "MEMBERS"
+
+        Private Sub Log(ParamArray Values() As Variant)
+            ' FIXME accessing Name now causes the form to load (Load event fires)
+            'Dim logText As String = LogID & " " & VBA.Format(VBA.Now, "hh:nn:ss") & " " & Hex(ObjPtr(Me)) & "[" & Name & "] " & Join(Values, ", ")
+            Dim logText As String = LogID & " " & VBA.Format(VBA.Now, "hh:nn:ss") & " " & Hex(ObjPtr(Me)) & " " & Join(Values, ", ")
+            LogID += 1
+            RaiseEvent ExperimentalLog(logText)
+'            Debug.Print logText
+        End Sub
+
+        Public Sub New(Serializer As WindowsControls.SerializationInfo)
+            Me.UserMode = If(Serializer.IsDesignMode, False, True)
+            InitAcceleratorTable()
+
+            If Not Serializer.Deserialize(Me) Then
+                'InitializeDefaultValues
+            End If
+        End Sub
+        
+        Private Sub Class_Terminate()
+            Log("ActiveXControlExtender.Class_Terminate")
+        End Sub
+
+        Private Sub HandleInitialize(ByVal ControlContext As WindowsControls.WindowsControlContext) _
+                Implements IWindowsControl.Initialize
+
+            ControlContext.SetControlArrayIndex(Me.IndexINIT)
+                
+            Log("ActiveXControlExtender.HandleInitialize")
+            ' We create a window element for allowing the runtime to handle the positional side of things
+            '  (even though we don't create an actual HWND ourselves)
+            Set RootWindowElement = CreateRootWindowElement(ControlContext)
+            
+        End Sub
+
+        Private Sub HandleCreate() _
+                Handles RootWindowElement.Create
+            
+            Me.ContainerHWND = RootWindowElement.ContainerHWND
+
+            ' We do this as late as possible, so that controls like XTreme TabControl can enumerate child controls
+            '   and access the Container property of them
+            Set ClientObject = New T
+            InitOLEInterfaces()
+
+            ControlContext.InitializeActiveX()       ' this will call the IPersist* methods as necessary, from the serialized data
+
+            PrepareOLEInterfaces()
+
+            Log("ActiveXControlExtender.HandleCreate")
+            ShowOLEObject()
+        End Sub
+                
+        Private Sub HandleDestroy() _
+                Implements IWindowsControl.Destroy
+
+            Log("ActiveXControlExtender.HandleDestroy")
+            HandsOffOLE()
+        End Sub
+
+        Private Sub HandleAfterLoad() _
+                Handles RootWindowElement.Load
+
+            Log("ActiveXControlExtender.HandleAfterLoad")
+            If Me.ClientObject_IOleControl IsNot Nothing Then
+               	Me.ClientObject_IOleControl.FreezeEvents(0)
+            End If
+        End Sub
+
+        Private Sub InitAcceleratorTable()
+        	Dim accel As ACCEL
+            Me.AcceleratorTable = USER32_CreateAcceleratorTableW(accel, 1)
+            Me.AcceleratorTableCount = 1
+        End Sub
+
+        Private Sub DestroyAcceleratorTable()
+        	If Me.AcceleratorTable <> 0 Then
+                USER32_DestroyAcceleratorTable(Me.AcceleratorTable)
+            End If
+        End Sub
+
+        Private Sub InitOLEInterfaces()
+            Set Me.ClientObject_IOleObject = Me.ClientObject
+
+            Me.ClientObject_IOleObject.GetMiscStatus(1, Me.MiscStatus)
+            Log("**** MISCSTATUS: " & Hex(Me.MiscStatus))
+
+            If Me.MiscStatus And OLEMISC_SETCLIENTSITEFIRST Then
+                Me.ClientObject_IOleObject.SetClientSite(Me)
+            End If
+        End Sub
+
+        Private Sub PrepareOLEInterfaces()
+            If (Me.MiscStatus And OLEMISC_SETCLIENTSITEFIRST) = 0 Then
+                Me.ClientObject_IOleObject.SetClientSite(Me)
+            End If
+
+            Set Me.ClientObject_IViewObject = Me.ClientObject
+            Set Me.ClientObject_IOleControl = Me.ClientObject
+            Set Me.ClientObject_IOleInPlaceObject = Me.ClientObject
+
+            ' Some controls, like SSTAB require that FreezeEvents has been called, otherwise things
+            '  don't quite work right at runtime.  We toggle it ON here, and then OFF after the Form Load event.
+            If Me.UserMode Then
+                Me.ClientObject_IOleControl.FreezeEvents(1)
+            End If
+
+            On Error Resume Next
+                ' optionally supported interface
+                Set Me.ClientObject_IPropertyNotifySink = Me.ClientObject
+                Set Me.ClientObject_IOleInPlaceObjectWindowless = Me.ClientObject
+            On Error GoTo 0
+
+            If Me.ClientObject_IPropertyNotifySink IsNot Nothing Then
+            	Me.HasExclusiveDefaultValue = VBA.[_HiddenModule].HasExclusiveDefaultDispatchValue(ClientObject_IPropertyNotifySink)
+                If Me.HasExclusiveDefaultValue Then
+                    Me.RootWindowElement.IsExclusiveValueWithinContainer()
+                End If
+            End If
+
+            Log("**** WINDOWLESS: " & (Me.ClientObject_IOleInPlaceObjectWindowless IsNot Nothing))
+
+            Me.ClientObject_IViewObject.SetAdvise(DVASPECT_CONTENT, 0, Me)
+            ClientObject_IOleObject.Advise(Me, Me.AdviseConnectionCookie)
+
+            ' FIXME what does VB6 set here?
+            Me.ClientObject_IOleObject.SetHostNames(StrPtr("AXWIN"), 0)
+
+            ' Dim controlInfo As CONTROLINFO
+            ' controlInfo.cb = LenB(controlInfo)
+            ' Me.ClientObject_IOleControl.GetControlInfo(controlInfo)
+
+            If (Me.MiscStatus And OLEMISC_INVISIBLEATRUNTIME) = 0 Then
+                ' FIXME ATL also sets and then gets the dimensions here
+                ' Dim mRect As SIZEL
+                ' mRect.cx = 50000
+                ' mRect.cy = 50000
+                ' ClientObject_IOleObject.SetExtent(DVASPECT_CONTENT, mRect)
+            End If
+
+            Dim userType As LongPtr
+            Me.ClientObject_IOleObject.GetUserType(1, VarPtr(userType))
+            Log("UserType: " & WinNativeFormsBASE.OLEAUT32_SysAllocString(userType))
+
+            If UserMode = 0 Then
+                Dim clientWindow As LongPtr = GetWindowHandle()
+                If clientWindow <> 0 Then
+                    Dim clientWindowParent As LongPtr = WinNativeFormsBASE.USER32_GetParent(clientWindow)
+                    If clientWindowParent <> 0 Then
+                        ' If we don't do this in the IDE, VB6 can pop up a psuedo static window in the taskbar here
+                        'USER32_ShowWindow(clientWindowParent, SW_HIDE)
+                    End If
+                End If
+            End If
+
+            On Error Resume Next
+                Dim simpleSite As IObjectWithSite = Me.ClientObject
+                If simpleSite IsNot Nothing Then
+                    ' untested
+                    simpleSite.SetSite(Me)
+                End If
+            On Error GoTo 0
+        End Sub
+
+        Private DeclareWide PtrSafe Function InvalidateRect Lib "user32" (ByVal hWnd As LongPtr, ByRef lpRect As WinNativeFormsBASE.RECT, ByVal bErase As Long) As Long
+
+        Private Sub ShowOLEObject()
+            On Error GoTo ShowError
+
+            If (Me.MiscStatus And OLEMISC_INVISIBLEATRUNTIME) = 0 Then
+            	Dim temp As Object = Me.ClientObject
+                
+                ' VBCCR.OptionButton initial state is wrong if OLEIVERB_INPLACEACTIVATE is used
+                'Me.ClientObject_IOleObject.DoVerb(OLEIVERB_INPLACEACTIVATE, 0, Me, 0, Me.ContainerHWND, GetRECT())
+                'Me.ClientObject_IOleObject.DoVerb(0, 0, Me, 0, Me.ContainerHWND, GetRECT())
+                Me.ClientObject_IOleObject.DoVerb(WinNativeFormsBASE.OLEIVERB_SHOW, 0, Me, 0, Me.ContainerHWND, GetRECT())
+                 'Me.ClientObject_IOleObject.DoVerb(OLEIVERB_UIACTIVATE, 0, Me, 0, Me.ContainerHWND, GetRECT())
+
+                'If ClientObject_IOleInPlaceObject IsNot Nothing Then
+                '    ' Needed for CODEJOCK controls?
+               ' 	ClientObject_IOleInPlaceObject.UIDeactivate
+                'End If
+                SyncControlPosition()
+                
+                'InvalidateRect(Me.ContainerHWND, GetRECT(), 0)
+
+                Dim clientWindow As LongPtr = GetWindowHandleWithFallback()
+                'RedrawWindow(GetWindowHandle, Null, Null, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE | RDW_INTERNALPAINT | RDW_FRAME);
+
+                If clientWindow <> 0 Then
+                    Log("BringWindowToTop")
+                    USER32_BringWindowToTop(clientWindow)
+                End If
+            End If
+            
+            Exit Sub
+
+        ShowError:
+            Err.Raise "ActiveX (" & Me.Name & ") ShowOLEObject error: " & Err.Description & " (" & Hex(Err.Number) & ")"
+        End Sub
+        
+        Private Sub HandsOffOLE()
+            Log("HandsOffOLE")
+
+            Me.ClientObject_IOleControl.FreezeEvents(1)
+
+            If (Me.MiscStatus And OLEMISC_INVISIBLEATRUNTIME) = 0 Then
+                Me.ClientObject_IOleObject.DoVerb(OLEIVERB_HIDE, 0, Nothing, 0, 0, GetRECT())
+            End If
+
+            Me.ClientObject_IViewObject.SetAdvise(DVASPECT_CONTENT, 0, Nothing)
+            Me.ClientObject_IOleObject.Unadvise(Me.AdviseConnectionCookie)
+            Me.ClientObject_IOleObject.Close(OLECLOSE_NOSAVE)
+            Me.ClientObject_IOleObject.SetClientSite(Nothing)
+
+            Set Me.ClientObject_IOleInPlaceObject = Nothing
+            Set Me.ClientObject_IOleInPlaceObjectWindowless = Nothing
+            Set Me.ClientObject_IPropertyNotifySink = Nothing
+            Set Me.ClientObject_IOleObject = Nothing
+            Set Me.ClientObject_IOleControl = Nothing
+            Set Me.ClientObject_IViewObject = Nothing
+            Set Me.ClientObject = Nothing
+
+            DestroyAcceleratorTable()
+            
+            Log("HandsOffOLE... DONE")
+        End Sub
+
+        [ Serialize (False) ]
+        Public Property Get Object() As Object
+            Me.ControlContext.EnsureFormIsLoaded()
+            Log("ActiveXControlExtender.Object")
+        	Return ClientObject
+        End Property
+
+        Private Sub SyncControlPosition()
+            On Error Resume Next
+        	Dim myRect As WinNativeFormsBASE.RECT
+            myRect.Left = RootWindowElement.CurrentLeft
+            myRect.Right = RootWindowElement.CurrentLeft + RootWindowElement.CurrentWidth
+            myRect.Top = RootWindowElement.CurrentTop
+            myRect.Bottom = RootWindowElement.CurrentTop + RootWindowElement.CurrentHeight
+            ClientObject_IOleInPlaceObject.SetObjectRects(myRect, myRect)
+        End Sub
+
+        Private Function GetRECT() As WinNativeFormsBASE.RECT
+            Dim myRect As WinNativeFormsBASE.RECT
+            myRect.Left = RootWindowElement.CurrentLeft
+            myRect.Top = RootWindowElement.CurrentTop
+            myRect.Right = myRect.Left + RootWindowElement.CurrentWidth
+            myRect.Bottom = myRect.Top + RootWindowElement.CurrentHeight
+            Return myRect
+        End Function
+        
+        Private Function GetWindowHandle() As LongPtr _
+        	    Implements ITwinBasicRuntimeControlExtensions.GetWindowHandle
+
+            Log("ActiveXControlExtender.GetWindowHandle")
+            Return GetWindowHandleWithFallback()
+        End Function
+
+        Private DeclareWide PtrSafe Function GetWindow123 Lib "user32" Alias "GetWindow" (ByVal hWnd As LongPtr, ByVal uCmd As Long) As LongPtr
+    
+        Private Function GetWindowHandleWithFallback() As LongPtr
+            
+            Log("ActiveXControlExtender.GetWindowHandleWithFallback")
+            On Error GoTo NoIOleWindowSupport
+                Dim clientWindow As IOleWindow = Me.ClientObject_IOleControl
+                Dim clientWIndowHWND As LongPtr
+                clientWindow.GetWindow(clientWIndowHWND)
+            
+        NoIOleWindowSupport:
+            On Error GoTo -1
+
+            'Dim clientWindow As LongPtr = GetWindowHandle()
+            If clientWIndowHWND = 0 Then
+                ' CODEJOCK controls don't return a HWND for the IOleWindow::GetWindow implementation...
+            	On Error Resume Next
+                ' FIXME should use DISPID_HWND rather than .hWnd
+                clientWIndowHWND = CVar(ClientObject).hWnd
+                If clientWIndowHWND <> 0 Then
+                    Log("ActiveX Control did not provide a IOleWindow::GetWindow value, but ClientObject.hWnd did, so using that (", clientWindow, ")")
+                Else
+                    ' Finally, hopefully the control created a child window within the container HWND, so use that...
+                    clientWIndowHWND = GetWindow123(Me.ContainerHWND, WinNativeFormsBASE.GW_CHILD)
+                    clientWIndowHWND = GetWindow123(clientWIndowHWND, WinNativeFormsBASE.GW_CHILD)
+                End If
+            End If
+            Return clientWIndowHWND
+        End Function
+
+        Private Sub OnLostFocus() _
+        	    Implements ITwinBasicRuntimeControlExtensions.OnLostFocus
+
+            Log("OnLostFocus -> UIDeactivate()")
+
+            ClientObject_IOleInPlaceObject.UIDeactivate
+        End Sub
+
+        Private DeclareWide PtrSafe Function SetFocus123 Lib "user32" Alias "SetFocus" (ByVal hWnd As LongPtr) As LongPtr
+    
+        Private Sub OnGotFocus() _
+        	    Implements ITwinBasicRuntimeControlExtensions.OnGotFocus
+
+            'MsgBox "OnGotFocus"
+
+            Log("OnGotFocus -> DoVerb(OLEIVERB_INPLACEACTIVATE)")
+            'Me.ClientObject_IOleObject.DoVerb(OLEIVERB_INPLACEACTIVATE, 0, Me, 0, Me.ContainerHWND, GetRECT())
+            'Me.ClientObject_IOleObject.DoVerb(OLEIVERB_UIACTIVATE, 0, Me, 0, Me.ContainerHWND, GetRECT())
+
+            If ClientObject_IOleInPlaceObject IsNot Nothing Then
+               ' Needed for CODEJOCK controls?
+               ClientObject_IOleInPlaceObject.UIDeactivate
+            End If
+            
+            ' if we don't use OLEIVERB_SHOW, CODEJOCK controls wont call SetActiveObject, and so message capturing wont work
+            'Me.ClientObject_IOleObject.DoVerb(OLEIVERB_SHOW, 0, Me, 0, Me.ContainerHWND, GetRECT())
+            'Me.ClientObject_IOleObject.DoVerb(OLEIVERB_UIACTIVATE, 0, Me, 0, Me.ContainerHWND, GetRECT())
+            SetFocus123(GetWindowHandleWithFallback)
+            Log("OnGotFocus -> DoVerb(OLEIVERB_INPLACEACTIVATE)... DONE")
+        End Sub
+
+        Private Function IsNonVisualControl() As Boolean _
+        	    Implements ITwinBasicRuntimeControlExtensions.IsNonVisualControl
+
+            Log("ActiveXControlExtender.IsNonVisualControl")
+     	    Return (MiscStatus And OLEMISC_INVISIBLEATRUNTIME) <> 0
+        End Function
+            
+        Private Sub IUnsupportedInterface_UnsupportedInterfaceRequested(iid As WinNativeFormsBASE.GUID2) _
+                Implements IUnsupportedInterface.UnsupportedInterfaceRequested
+
+            Log("UNSUPPORTED INTERFACE: " & GuidToString(iid))
+        End Sub
+
+        Private Sub RootWindowElement_Resize() _
+                Handles RootWindowElement.Resize
+
+            SyncControlPosition()
+            Log("RESIZE: " & RootWindowElement.CurrentWidth & ", HEIGHT: " & RootWindowElement.CurrentHeight & " [x: " & RootWindowElement.CurrentLeft & ", y: " & RootWindowElement.CurrentTop & "]")
+        End Sub
+
+        Private Sub RootWindowElement_CapturedMessage(ByRef msg As MSG) _
+                Handles RootWindowElement.CapturedMessage
+
+'            Log("RootWindowElement_CapturedMessage: " & Hex(msg.message))
+
+            If Me.ActiveObject IsNot Nothing Then
+
+                Me.ActiveObject.TranslateAccelerator(msg)
+                Dim hr As Long = Err.LastHResult
+
+                If hr = 0 Then
+                    ' The message has been consumed
+                    msg.message = 0
+                End If
+
+                'Log("RootWindowElement_CapturedMessage: " & Hex(msg.message) & " >>> " & Hex(hr))
+                
+            End If
+
+            ' FIXME for windowless ActiveX controls, we need to pass on messages through
+            '   ClientObject_IOleInPlaceObjectWindowless.OnWindowMessage here
+        End Sub
+        
+        Private Sub ITwinBasicDesignerExtensions_GetPropertyExtensions(ByRef out() As String) _
+                Implements ITwinBasicDesignerExtensions.GetPropertyExtensions
+
+            Dim propertyPages As ISpecifyPropertyPages = Me.ClientObject
+            Dim pages As CAUUID
+            propertyPages.GetPages(pages)
+
+            If pages.cElems > 0 Then
+            	ReDim out(0)
+                out(0) = "Custom"
+            End If
+        End Sub
+
+        Private DeclareWide PtrSafe Function SendMessage123 Lib "user32" Alias "SendMessageW" (ByVal HWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As LongPtr
+
+        Private Sub ITwinBasicDesignerExtensions_InvokePropertyExtension(ByVal Name As String) _
+                Implements ITwinBasicDesignerExtensions.InvokePropertyExtension
+
+            If Name = "Custom" Then
+                VBA.[_HiddenModule].ShowPropertyPages(Me.Name, Me.ClientObject)
+            End If
+        End Sub
+
+        Private Function ITwinBasicDesignerExtensions_GetClientObject() As Object _
+                Implements ITwinBasicDesignerExtensions.GetClientObject
+
+        	Return Me.ClientObject
+        End Function
+
+        Private DeclareWide PtrSafe Function GetWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal uCmd As Long) As LongPtr
+        Private Declare PtrSafe Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
+
+        Private Sub DesignerClick(ByVal X As Long, ByVal Y As Long) _
+                Implements ITwinBasicDesignerExtensions.DesignerClick
+
+            SyncControlPosition()
+
+        	Const MK_LBUTTON As Long = 1
+            Dim dpiScale As Double = Me.RootWindowElement.DPI / 96.0
+            Dim clickPos As Long = ((CLng(Y * dpiScale)) << 16) Or CLng(X * dpiScale)
+            Dim clientWindow As LongPtr = GetWindowHandleWithFallback()
+
+            SendMessage123(clientWindow, WinNativeFormsBASE.WM_LBUTTONDOWN, MK_LBUTTON, clickPos)
+            SendMessage123(clientWindow, WinNativeFormsBASE.WM_LBUTTONUP, MK_LBUTTON, clickPos)
+        End Sub
+
+        Private Function IsFrame() As Boolean _
+                Implements ITwinBasicDesignerExtensions.IsFrame
+
+            Log("ActiveXControlExtender.IsFrame")
+     	    Return (MiscStatus And OLEMISC_SIMPLEFRAME) <> 0
+        End Function
+
+        Private Sub ITwinBasicDesignerExtensions_DesignTimePrepareSnapshot() _
+                Implements ITwinBasicDesignerExtensions.DesignTimePrepareSnapshot
+
+            Log("ITwinBasicDesignerExtensions_DesignTimePrepareSnapshot")
+            SyncControlPosition()
+            Log("ITwinBasicDesignerExtensions_DesignTimePrepareSnapshot -> DONE")
+        End Sub
+        
+        ' Private Function ITwinBasicDesignerExtensions_DesignTimeGetSnapshotWindow() As LongPtr _
+        '         Implements ITwinBasicDesignerExtensions.DesignTimeGetSnapshotWindow
+
+        '     Dim clientWindow As LongPtr = GetWindowHandleWithFallback()
+        '     Log("ITwinBasicDesignerExtensions_DesignTimeGetSnapshotWindow")
+        '     SyncControlPosition()
+        '     Log("ITwinBasicDesignerExtensions_DesignTimeGetSnapshotWindow --> " & clientWindow)
+        '     Return clientWindow
+        ' End Function
+        
+        ' Private Sub ITwinBasicDesignerExtensions_DesignTimeDrawSnapshot(ByVal hdc As LongPtr) _
+        '         Implements ITwinBasicDesignerExtensions.DesignTimeDrawSnapshot
+
+        '     Dim ignore As RECT = GetRECT
+        '     Log("ITwinBasicDesignerExtensions_DesignTimeDrawSnapshot (HDC: " & Hex(hdc) & ")")
+        '     ClientObject_IViewObject.Draw(1, -1, 0, 0, 0, hdc, ignore, ignore, 0, 0)
+        '     Log("ITwinBasicDesignerExtensions_DesignTimeDrawSnapshot --> DONE")
+        ' End Sub
+        
+    #End Region
+    
+    ' -------------------------------------------------------------------------------------------------------------
+
+    Private Sub IOleClientSite_SaveObject() _
+            Implements IOleClientSite.SaveObject
+
+        Log("IOleClientSite_SaveObject")
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+    End Sub
+    
+    Private Sub IOleClientSite_GetMoniker(ByVal dwAssign As Long, ByVal dwWhichMoniker As Long, ppmk As IMoniker) _
+            Implements IOleClientSite.GetMoniker
+
+        Log("IOleClientSite_GetMoniker")
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+    End Sub
+    
+    Private Sub IOleClientSite_GetContainer(ByRef ppContainer As IOleContainer) _
+            Implements IOleClientSite.GetContainer
+        Log("IOleClientSite_GetContainer")
+        SetOutParamToNothing(VarPtr(ppContainer))
+        
+        ' Just return an empty container for now.  VBCCR.TabStrip property page needs this for the enumeration of image lists
+        Set ppContainer = New EmptyOleContainer(Me, RootWindowElement, Me.UserMode)
+    End Sub
+    
+    Private Sub IOleClientSite_ShowObject() _
+            Implements IOleClientSite.ShowObject
+
+        Log("IOleClientSite_ShowObject")
+
+        ' FIXME the ATL version does m_spViewObject->Draw here
+        'Err.ReturnHRESULT = WinNativeFormsBase.E_NOTIMPL
+    End Sub
+    
+    Private Sub IOleClientSite_OnShowWindow(ByVal fShow As Long) _
+            Implements IOleClientSite.OnShowWindow
+
+        Log("IOleClientSite_OnShowWindow")
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+    End Sub
+    
+    Private Sub IOleClientSite_RequestNewObjectLayout() _
+            Implements IOleClientSite.RequestNewObjectLayout
+
+        Log("IOleClientSite_RequestNewObjectLayout")
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+    End Sub
+    
+    ' -------------------------------------------------------------------------------------------------------------
+
+    Private Sub IAdviseSink_OnDataChange(ByVal pFormatetc As LongPtr, ByVal pStgmed As LongPtr) _
+            Implements IAdviseSink.OnDataChange
+
+        Log("IAdviseSink_OnDataChange")
+    End Sub
+    
+    Private Sub IAdviseSink_OnViewChange(ByVal dwAspect As Long, ByVal lindex As Long) _
+            Implements IAdviseSink.OnViewChange
+
+        Log("IAdviseSink_OnViewChange")
+    End Sub
+    
+    Private Sub IAdviseSink_OnRename(ByVal pmk As IMoniker) _
+            Implements IAdviseSink.OnRename
+
+        Log("IAdviseSink_OnRename")
+    End Sub
+    
+    Private Sub IAdviseSink_OnSave() _
+            Implements IAdviseSink.OnSave
+
+        Log("IAdviseSink_OnSave")
+    End Sub
+    
+    Private Sub IAdviseSink_OnClose() _
+            Implements IAdviseSink.OnClose
+
+        Log("IAdviseSink_OnClose")
+    End Sub
+
+    ' -------------------------------------------------------------------------------------------------------------
+
+    Private Sub IOleInPlaceSite_CanInPlaceActivate() _
+            Implements IOleInPlaceSiteWindowless.CanInPlaceActivate
+
+        Log("IOleInPlaceSite_CanInPlaceActivate")
+    End Sub
+    
+    Private Sub IOleInPlaceSite_GetWindowContext(ByRef ppFrame As IOleInPlaceFrame, ByRef ppDoc As IOleInPlaceUIWindow, ByRef lprcPosRect As WinNativeFormsBASE.RECT, ByRef lprcClipRect As WinNativeFormsBASE.RECT, ByRef lpFrameInfo As OLEINPLACEFRAMEINFO) _
+            Implements IOleInPlaceSiteWindowless.GetWindowContext
+
+        Log("IOleInPlaceSite_GetWindowContext")
+
+        SetOutParamToNothing(VarPtr(ppFrame))
+        SetOutParamToNothing(VarPtr(ppDoc))
+        
+        If VarPtr(ppFrame) <> 0 Then
+            Set ppFrame = Me
+        End If
+
+        If VarPtr(lprcPosRect) <> 0 Then
+            lprcPosRect = GetRECT()
+        End If
+
+        If VarPtr(lprcClipRect) <> 0 Then
+            lprcClipRect = GetRECT()
+        End If
+
+        If VarPtr(lpFrameInfo) <> 0 Then
+            lpFrameInfo.fMDIApp = False
+            lpFrameInfo.hwndFrame = Me.ContainerHWND
+            lpFrameInfo.haccel = Me.AcceleratorTable
+            lpFrameInfo.cAccelEntries = Me.AcceleratorTableCount
+        End If
+
+        Log("IOleInPlaceSite_GetWindowContext... DONE")
+
+    End Sub
+    
+    Private Sub IOleInPlaceSite_OnInPlaceActivate() _
+            Implements IOleInPlaceSiteWindowless.OnInPlaceActivate
+
+        Log("IOleInPlaceSite_OnInPlaceActivate")
+        ' should only be called once the first time control is inplace-activated
+
+        InPlaceActive = True
+
+        On Error Resume Next
+            Dim runnableObject As IRunnableObject = ClientObject_IOleObject
+            If runnableObject IsNot Nothing Then
+                runnableObject.LockRunning(1, 0)
+            End If
+        On Error GoTo 0
+
+        Set Me.ClientObject_IOleInPlaceObject = Me.ClientObject_IOleObject
+        
+        ' see atlhost.h...
+		'm_bWindowless = False ;
+    End Sub
+    
+    Private Sub IOleInPlaceSite_Scroll(ByVal scrollExtantX As Long, ByVal scrollExtantY As Long) _
+            Implements IOleInPlaceSiteWindowless.Scroll
+
+        Log("IOleInPlaceSite_Scroll")
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+    End Sub
+    
+    Private Sub IOleInPlaceSite_OnInPlaceDeactivate() _
+            Implements IOleInPlaceSiteWindowless.OnInPlaceDeactivate
+
+        Log("IOleInPlaceSite_OnInPlaceDeactivate")
+        InPlaceActive = False
+    End Sub
+    
+    Private Sub IOleInPlaceSite_OnUIActivate() _
+            Implements IOleInPlaceSiteWindowless.OnUIActivate
+
+        Log("IOleInPlaceSite_OnUIActivate")
+        UIActive = True
+    End Sub
+
+    Private Sub IOleInPlaceSite_OnUIDeactivate(ByVal fUndoable As Long) _
+            Implements IOleInPlaceSiteWindowless.OnUIDeactivate
+
+        Log("IOleInPlaceSite_OnUIDeactivate")
+        UIActive = False
+    End Sub
+    
+    Private Sub IOleInPlaceSite_DiscardUndoState() _
+            Implements IOleInPlaceSiteWindowless.DiscardUndoState
+
+        Log("IOleInPlaceSite_DiscardUndoState")
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+    End Sub
+    
+    Private Sub IOleInPlaceSite_DeactivateAndUndo() _
+            Implements IOleInPlaceSiteWindowless.DeactivateAndUndo
+
+        Log("IOleInPlaceSite_DeactivateAndUndo")
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+    End Sub
+    
+    Private Sub IOleInPlaceSite_OnPosRectChange(ByRef lprcPosRect As WinNativeFormsBASE.RECT) _
+            Implements IOleInPlaceSiteWindowless.OnPosRectChange
+
+        Log("IOleInPlaceSite_OnPosRectChange [Left: " & lprcPosRect.Left & ", Top: " & lprcPosRect.Top & ", Width: " & (lprcPosRect.Right - lprcPosRect.Left) & ", Height: " & (lprcPosRect.Bottom - lprcPosRect.Top))
+
+        ' This causes problems with Windows Media Player
+        
+        ' Dim dpiScale As Double = Me.RootWindowElement.DPI / 96.0
+        ' lprcPosRect.Left /= dpiScale
+        ' lprcPosRect.Top /= dpiScale
+        ' lprcPosRect.Right /= dpiScale
+        ' lprcPosRect.Bottom /= dpiScale
+
+        ' Me.Move(lprcPosRect.Left, lprcPosRect.Top, lprcPosRect.Right - lprcPosRect.Left, lprcPosRect.Bottom - lprcPosRect.Top)
+    End Sub
+    
+    Private Sub IOleInPlaceSite_GetWindow(ByRef phwnd As LongPtr) _
+            Implements IOleInPlaceSiteWindowless.GetWindow
+
+        Log("IOleInPlaceSite_GetWindow")
+        phwnd = Me.ContainerHWND
+    End Sub
+    
+    Private Sub IOleInPlaceSite_ContextSensitiveHelp(ByVal fEnterMode As Long) _
+            Implements IOleInPlaceSiteWindowless.ContextSensitiveHelp
+
+        Log("IOleInPlaceSite_ContextSensitiveHelp")
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+    End Sub
+
+    ' -------------------------------------------------------------------------------------------------------------
+
+    Sub IOleInPlaceSiteEx_OnInPlaceActivateEx(ByRef pfNoRedraw As Long, ByVal dwFlags As Long) _
+    	    Implements IOleInPlaceSiteWindowless.OnInPlaceActivateEx
+
+            InPlaceActive = True
+
+            On Error Resume Next
+                Dim runnableObject As IRunnableObject = Me.ClientObject_IOleObject
+                If runnableObject IsNot Nothing Then
+                    runnableObject.LockRunning(1, 0)
+                End If
+            On Error GoTo 0
+
+            Set Me.ClientObject_IOleInPlaceObject = Me.ClientObject_IOleObject
+            Me.SyncControlPosition()
+
+        If VarPtr(pfNoRedraw) <> 0 Then
+        	pfNoRedraw = False
+        End If
+        Log("IOleInPlaceSiteEx_OnInPlaceActivateEx [dwFlags: ", dwFlags, "]")
+    End Sub
+
+    Sub IOleInPlaceSiteEx_OnInPlaceDeactivateEx(ByVal fNoRedraw As Long) _
+    	    Implements IOleInPlaceSiteWindowless.OnInPlaceDeactivateEx
+
+        Log("IOleInPlaceSiteEx_OnInPlaceDeactivateEx [fNoRedraw: ", fNoRedraw, "]")
+    End Sub
+
+    Sub IOleInPlaceSiteEx_RequestUIActivate() _
+    	    Implements IOleInPlaceSiteWindowless.RequestUIActivate
+
+        Log("IOleInPlaceSiteEx_RequestUIActivate")
+    End Sub
+    ' -------------------------------------------------------------------------------------------------------------
+    
+    Private Sub IOleInPlaceFrame_InsertMenus(ByVal hmenuShared As LongPtr, ByRef lpMenuWidths As OLEMENUGROUPWIDTHS) _
+            Implements IOleInPlaceFrame.InsertMenus
+
+        Log("IOleInPlaceFrame_InsertMenus")
+    End Sub
+    
+    Private Sub IOleInPlaceFrame_SetMenu(ByVal hmenuShared As LongPtr, ByVal holemenu As LongPtr, ByVal hwndActiveObject As LongPtr) _
+            Implements IOleInPlaceFrame.SetMenu
+
+        Log("IOleInPlaceFrame_SetMenu")
+    End Sub
+    
+    Private Sub IOleInPlaceFrame_RemoveMenus(ByVal hmenuShared As LongPtr) _
+            Implements IOleInPlaceFrame.RemoveMenus
+
+        Log("IOleInPlaceFrame_RemoveMenus")
+    End Sub
+    
+    Private Sub IOleInPlaceFrame_SetStatusText(ByVal pszStatusText As LongPtr) _
+            Implements IOleInPlaceFrame.SetStatusText
+
+        Log("IOleInPlaceFrame_SetStatusText")
+    End Sub
+    
+    Private Sub IOleInPlaceFrame_EnableModeless(ByVal fEnable As Long) _
+            Implements IOleInPlaceFrame.EnableModeless
+
+        Log("IOleInPlaceFrame_EnableModeless [fEnable: ", fEnable, "]")
+
+     	Err.ReturnHResult = WinNativeFormsBASE.S_FALSE
+    End Sub
+    
+    Private Sub IOleInPlaceFrame_TranslateAccelerator(ByRef lpmsg As MSG, ByVal wID As Integer) _
+            Implements IOleInPlaceFrame.TranslateAccelerator
+
+        Log("IOleInPlaceFrame_TranslateAccelerator")
+        Err.ReturnHResult = WinNativeFormsBASE.S_FALSE
+
+    End Sub
+    
+    Private Sub IOleInPlaceFrame_GetBorder(ByRef lprectBorder As WinNativeFormsBASE.RECT) _
+            Implements IOleInPlaceFrame.GetBorder
+
+        Log("IOleInPlaceFrame_GetBorder")
+    End Sub
+    
+    Private Sub IOleInPlaceFrame_RequestBorderSpace(ByRef pborderwidths As WinNativeFormsBASE.RECT) _
+            Implements IOleInPlaceFrame.RequestBorderSpace
+
+        Log("IOleInPlaceFrame_RequestBorderSpace")
+        Err.ReturnHResult = INPLACE_E_NOTOOLSPACE
+    End Sub
+    
+    Private Sub IOleInPlaceFrame_SetBorderSpace(ByRef pborderwidths As WinNativeFormsBASE.RECT) _
+            Implements IOleInPlaceFrame.SetBorderSpace
+
+        Log("IOleInPlaceFrame_SetBorderSpace")
+    End Sub
+        
+    Private Sub IOleInPlaceFrame_SetActiveObject(ByVal pActiveObject As IOleInPlaceActiveObject, ByVal pszObjName As LongPtr) _
+            Implements IOleInPlaceFrame.SetActiveObject
+
+        'MsgBox Me.Name & " SetActiveObject " & ObjPtr(pActiveObject)
+        Log("IOleInPlaceFrame_SetActiveObject: " & Hex(ObjPtr(pActiveObject)))
+        Set ActiveObject = pActiveObject
+        ActiveObjectSetCount += 1
+
+         If pActiveObject IsNot Nothing Then
+            'MsgBox Me.Name & " Capturing messages... ON"
+             Me.RootWindowElement.CaptureMessages(True)   ' this will cause CapturedMessage events to fire at us
+         Else
+            'MsgBox Me.Name & " Capturing messages... OFF"
+             Me.RootWindowElement.CaptureMessages(False)   ' CapturedMessage wont fire
+         End If
+    End Sub
+    
+    Private Sub IOleInPlaceFrame_GetWindow(ByRef phwnd As LongPtr) _
+            Implements IOleInPlaceFrame.GetWindow
+
+        Log("IOleInPlaceFrame_GetWindow")
+        phwnd = GetWindowHandleWithFallback()
+    End Sub
+    
+    Private Sub IOleInPlaceFrame_ContextSensitiveHelp(ByVal fEnterMode As Long) _
+            Implements IOleInPlaceFrame.ContextSensitiveHelp
+
+        Log("IOleInPlaceFrame_ContextSensitiveHelp")
+    End Sub
+
+    ' -------------------------------------------------------------------------------------------------------------
+
+    Private Sub IOleControlSite_OnControlInfoChanged() _
+            Implements IOleControlSite.OnControlInfoChanged
+
+        Log("IOleControlSite_OnControlInfoChanged")
+    End Sub
+
+    Private Sub IOleControlSite_LockInPlaceActive(ByVal fLock As Long) _
+            Implements IOleControlSite.LockInPlaceActive
+
+        Log("IOleControlSite_LockInPlaceActive")
+    End Sub
+
+    Private Sub IOleControlSite_GetExtendedControl(ByRef ppDisp As Object) _
+            Implements IOleControlSite.GetExtendedControl
+
+        Log("IOleControlSite_GetExtendedControl")
+        SetOutParamToNothing(VarPtr(ppDisp))
+        Set ppDisp = Me
+    End Sub
+
+    Private Sub IOleControlSite_TransformCoords(ByRef pPtlHimetric As POINTL, ByRef pPtfContainer As POINTF, ByVal dwFlags As Long) _
+            Implements IOleControlSite.TransformCoords
+
+        Log("IOleControlSite_TransformCoords")
+
+        ' Currently tB forms use only pixel measurements
+        Dim scaleFactor As Double = 2540# / 96#
+
+        If dwFlags And XFORMCOORDS_HIMETRICTOCONTAINER Then
+            pPtfContainer.x = pPtlHimetric.x / scaleFactor
+            pPtfContainer.y = pPtlHimetric.y / scaleFactor
+        ElseIf dwFlags And XFORMCOORDS_CONTAINERTOHIMETRIC Then
+            pPtlHimetric.x = pPtfContainer.x * scaleFactor
+            pPtlHimetric.y = pPtfContainer.y * scaleFactor
+        Else
+            Err.Raise 5, , "unexpected arguments"
+        End If
+
+    End Sub
+
+    Private Sub IOleControlSite_TranslateAccelerator(ByRef pMsg As MSG, ByVal grfModifiers As Long) _
+            Implements IOleControlSite.TranslateAccelerator
+
+        'Log("IOleControlSite_TranslateAccelerator")
+        Err.ReturnHResult = WinNativeFormsBASE.S_FALSE
+
+    End Sub
+
+    Private Sub IOleControlSite_OnFocus(ByVal fGotFocus As Long) _
+            Implements IOleControlSite.OnFocus
+
+        Log("IOleControlSite_OnFocus")
+        HasFocus = If(fGotFocus, True, False)
+
+        If HasFocus Then
+           If ClientObject_IOleInPlaceObject IsNot Nothing Then
+               ' Needed for CODEJOCK controls?
+               ClientObject_IOleInPlaceObject.UIDeactivate
+           End If
+
+           ' CODEJOCK controls need this, otherwise they don't call SetActiveObject
+           'Me.ClientObject_IOleObject.DoVerb(OLEIVERB_SHOW, 0, Me, 0, Me.ContainerHWND, GetRECT())
+           'Me.ClientObject_IOleObject.DoVerb(OLEIVERB_UIACTIVATE, 0, Me, 0, Me.ContainerHWND, GetRECT())
+           Me.ClientObject_IOleObject.DoVerb(WinNativeFormsBASE.OLEIVERB_INPLACEACTIVATE, 0, Me, 0, Me.ContainerHWND, GetRECT())
+        End If
+    End Sub
+
+    Private Sub IOleControlSite_ShowPropertyFrame() _
+            Implements IOleControlSite.ShowPropertyFrame
+
+        Log("IOleControlSite_ShowPropertyFrame")
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+    End Sub
+
+    ' -------------------------------------------------------------------------------------------------------------
+
+    Sub PreMessageFilter(ByVal hwnd As LongPtr, ByVal msg As Long, ByVal wp As LongPtr, ByVal lp As LongPtr, ByRef plResult As LongPtr, ByRef pdwCookie As Long) _
+    	    Implements ISimpleFrameSite.PreMessageFilter
+
+        Log("PreMessageFilter [", Hex(msg), "]")
+
+        If msg = WinNativeFormsBASE.WM_COMMAND Then
+            SendMessage123(Me.ContainerHWND, msg, wp, lp)
+        End If
+    End Sub
+
+    Sub PostMessageFilter(ByVal hwnd As LongPtr, ByVal msg As Long, ByVal wp As LongPtr, ByVal lp As LongPtr, ByRef plResult As LongPtr, ByVal pdwCookie As Long) _
+    	    Implements ISimpleFrameSite.PostMessageFilter
+
+        Log("PostMessageFilter [", Hex(msg), "]")
+        Err.ReturnHResult = WinNativeFormsBASE.S_FALSE
+    End Sub
+
+    ' -------------------------------------------------------------------------------------------------------------
+
+    Sub EnumControls(ByVal dwOleContF As Long, ByVal dwWhich As Long, ByRef ppenum As IEnumUnknown) _
+    	        Implements IVBGetControl.EnumControls
+
+        Log("IVBGetControl.EnumControls [dwOleContF: ", Hex(dwOleContF), ", dwWhich: ", Hex(dwWhich), "]")
+        SetOutParamToNothing(VarPtr(ppenum))
+        Set ppenum = RootWindowElement.CreateControlsEnumerator(dwOleContF, dwWhich)
+    End Sub
+
+    ' -------------------------------------------------------------------------------------------------------------
+
+    Private Sub OnChanged(ByVal dispID As Long) _
+            Handles ClientObject_IPropertyNotifySink.OnChanged
+
+        Log("IPropertyNotifySink.OnChanged &H" & Hex(dispID))
+        
+        If (dispID = 0) And Me.HasExclusiveDefaultValue Then
+            ' If the new value is TRUE, then the container must set all other exclusive siblings to FALSE
+            ' (this is for radio buttons support)
+            Dim newValue As Boolean = (ClientObject_IPropertyNotifySink)
+            If newValue Then
+                Me.RootWindowElement.ResetExclusiveValuesInContainer()
+            End If
+        End If
+    End Sub
+
+	Private Sub OnRequestEdit(ByVal dispID As Long) _
+    	    Handles ClientObject_IPropertyNotifySink.OnRequestEdit
+        
+        Log("IPropertyNotifySink.OnRequestEdit &H" & Hex(dispID))
+	End Sub
+    ' -------------------------------------------------------------------------------------------------------------
+
+    Private Sub IOleInPlaceSiteWindowless_CanWindowlessActivate() Implements IOleInPlaceSiteWindowless.CanWindowlessActivate
+        Log("IOleInPlaceSiteWindowless_CanWindowlessActivate")
+        Err.ReturnHResult = WinNativeFormsBASE.S_FALSE
+    End Sub
+    
+    Private Sub IOleInPlaceSiteWindowless_GetCapture() Implements IOleInPlaceSiteWindowless.GetCapture
+        Log("IOleInPlaceSiteWindowless_GetCapture")
+        Err.ReturnHResult = WinNativeFormsBASE.S_FALSE
+    End Sub
+    
+    Private Sub IOleInPlaceSiteWindowless_SetCapture(ByVal fCapture As Long) Implements IOleInPlaceSiteWindowless.SetCapture
+        Log("IOleInPlaceSiteWindowless_SetCapture")
+        Err.ReturnHResult = WinNativeFormsBASE.S_FALSE
+    End Sub
+    
+    Private Sub IOleInPlaceSiteWindowless_GetFocus() Implements IOleInPlaceSiteWindowless.GetFocus
+        Log("IOleInPlaceSiteWindowless_GetFocus")
+        Err.ReturnHResult = WinNativeFormsBASE.S_FALSE
+    End Sub
+    
+    Private Sub IOleInPlaceSiteWindowless_SetFocus(ByVal fFocus As Long) Implements IOleInPlaceSiteWindowless.SetFocus
+        Log("IOleInPlaceSiteWindowless_SetFocus")
+        Err.ReturnHResult = WinNativeFormsBASE.S_FALSE
+    End Sub
+    
+    Private DeclareWide PtrSafe Function GetDC123 Lib "user32" Alias "GetDC" (ByVal hWnd As LongPtr) As LongPtr
+    Private DeclareWide PtrSafe Function ReleaseDC123 Lib "user32" Alias "ReleaseDC" (ByVal hWnd As LongPtr, ByVal hDC As LongPtr) As Long
+    
+    Private Sub IOleInPlaceSiteWindowless_GetDC(pRect As WinNativeFormsBASE.RECT, ByVal grfFlags As Long, phDC As LongPtr) Implements IOleInPlaceSiteWindowless.GetDC
+        Log("IOleInPlaceSiteWindowless_GetDC")
+        phDC = GetDC123(Me.ContainerHWND)
+    End Sub
+    
+    Private Sub IOleInPlaceSiteWindowless_ReleaseDC(ByVal hDC As LongPtr) Implements IOleInPlaceSiteWindowless.ReleaseDC
+        Log("IOleInPlaceSiteWindowless_ReleaseDC")
+        ReleaseDC123(Me.ContainerHWND, hDC)
+    End Sub
+    
+    Private Sub IOleInPlaceSiteWindowless_InvalidateRect(pRect As WinNativeFormsBASE.RECT, ByVal fErase As Long) Implements IOleInPlaceSiteWindowless.InvalidateRect
+        Log("IOleInPlaceSiteWindowless_InvalidateRect")
+    End Sub
+    
+    Private Sub IOleInPlaceSiteWindowless_InvalidateRgn(ByVal hRGN As LongPtr, ByVal fErase As Long) Implements IOleInPlaceSiteWindowless.InvalidateRgn
+        Log("IOleInPlaceSiteWindowless_InvalidateRgn")
+    End Sub
+    
+    Private Sub IOleInPlaceSiteWindowless_ScrollRect(ByVal dx As Long, ByVal dy As Long, pRectScroll As WinNativeFormsBASE.RECT, pRectClip As WinNativeFormsBASE.RECT) Implements IOleInPlaceSiteWindowless.ScrollRect
+        Log("IOleInPlaceSiteWindowless_ScrollRect")
+    End Sub
+    
+    Private Sub IOleInPlaceSiteWindowless_AdjustRect(prc As WinNativeFormsBASE.RECT) Implements IOleInPlaceSiteWindowless.AdjustRect
+        Log("IOleInPlaceSiteWindowless_AdjustRect")
+    End Sub
+    
+    Private Sub IOleInPlaceSiteWindowless_OnDefWindowMessage(ByVal msg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr, plResult As LongPtr) Implements IOleInPlaceSiteWindowless.OnDefWindowMessage
+        Log("IOleInPlaceSiteWindowless_OnDefWindowMessage")
+        Err.ReturnHResult = WinNativeFormsBASE.S_FALSE
+    End Sub
+
+    ' -------------------------------------------------------------------------------------------------------------
+
+    [ DispId (-701) ]           ' DISPID_AMBIENT_BACKCOLOR
+    [ Serialize (False) ]
+    Public Property Get Ambient_BackColor() As OLE_COLOR
+        Log("Ambient_BackColor")
+        On Error GoTo ErrorHandler
+            Return Me.RootWindowElement.Container.BackColor
+    ErrorHandler:
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+        Return 0
+    End Property
+
+    [ DispId (-702) ]           ' DISPID_AMBIENT_DISPLAYNAME
+    [ Serialize (False) ]
+    Public Property Get Ambient_DisplayName() As String
+        Log("Ambient_DisplayName")
+        On Error GoTo ErrorHandler
+            Return Me.RootWindowElement.Container.Name
+    ErrorHandler:
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+        Return "{UNNAMED}"
+    End Property
+
+    [ DispId (-703) ]           ' DISPID_AMBIENT_FONT
+    [ Serialize (False) ]
+    Public Property Get Ambient_Font() As stdole.Font
+        Log("Ambient_Font")
+        Return New StdFont      ' use Me.RootWindowElement.Container.Font?
+    End Property
+
+    [ DispId (-704) ]           ' DISPID_AMBIENT_FORECOLOR
+    [ Serialize (False) ]
+    Public Property Get Ambient_ForeColor() As OLE_COLOR
+        Log("Ambient_ForeColor")
+        On Error GoTo ErrorHandler
+            Return Me.RootWindowElement.Container.ForeColor
+    ErrorHandler:
+        Err.ReturnHResult = WinNativeFormsBASE.E_NOTIMPL
+        Return 0
+    End Property
+
+    [ DispId (-705) ]           ' DISPID_AMBIENT_LOCALEID
+    [ Serialize (False) ]
+    Public Property Get Ambient_LocaleID() As Long
+        Log("Ambient_LocaleID")
+        Return 0
+    End Property
+
+    [ DispId (-706) ]           ' DISPID_AMBIENT_MESSAGEREFLECT
+    [ Serialize (False) ]
+    Public Property Get Ambient_MessageReflect() As Boolean
+        Log("Ambient_MessageReflect")
+        Return False
+    End Property
+
+    [ DispId (-707) ]           ' DISPID_AMBIENT_SCALEUNITS
+    [ Serialize (False) ]
+    Public Property Get Ambient_ScaleUnits() As String
+        Log("Ambient_ScaleUnits: (result) pixels")
+        Return "pixels"
+    End Property
+
+    [ DispId (-708) ]           ' DISPID_AMBIENT_TEXTALIGN
+    [ Serialize (False) ]
+    Public Property Get Ambient_TextAlign() As Long
+        Log("Ambient_TextAlign")
+        Return 0
+    End Property
+
+    [ DispId (-709) ]           ' DISPID_AMBIENT_USERMODE
+    [ Serialize (False) ]
+    Public Property Get Ambient_UserMode() As Boolean
+        Log("Ambient_UserMode: (result) " & Me.UserMode)
+        Return Me.UserMode
+    End Property
+
+    [ DispId (-710) ]           ' DISPID_AMBIENT_UIDEAD
+    [ Serialize (False) ]
+    Public Property Get Ambient_UIDead() As Boolean
+        Log("Ambient_UIDead")
+        Return False
+    End Property
+    
+    [ DispId (-711) ]           ' DISPID_AMBIENT_SHOWGRABHANDLES
+    [ Serialize (False) ]
+    Public Property Get Ambient_ShowGrabHandles() As Boolean
+        Log("Ambient_ShowGrabHandles")
+        Return False
+    End Property
+
+    [ DispId (-712) ]           ' DISPID_AMBIENT_SHOWHATCHING
+    [ Serialize (False) ]
+    Public Property Get Ambient_ShowHatching() As Boolean
+        Log("Ambient_ShowHatching")
+        Return False
+    End Property
+
+    [ DispId (-713) ]           ' DISPID_AMBIENT_DISPLAYASDEFAULT
+    [ Serialize (False) ]
+    Public Property Get Ambient_DisplayAsDefault() As Boolean
+        Log("Ambient_DisplayAsDefault")
+        Return False
+    End Property
+
+    [ DispId (-714) ]           ' DISPID_AMBIENT_SUPPORTSMNEMONICS
+    [ Serialize (False) ]
+    Public Property Get Ambient_SupportsMnemonics() As Boolean
+        Log("Ambient_SupportsMnemonics")
+        Return False
+    End Property
+
+    [ DispId (-715) ]           ' DISPID_AMBIENT_AUTOCLIP
+    [ Serialize (False) ]
+    Public Property Get Ambient_AutoClip() As Boolean
+        Log("Ambient_AutoClip")
+        Return False
+    End Property
+
+    [ DispId (-716) ]           ' DISPID_AMBIENT_APPEARANCE
+    [ Serialize (False) ]
+    Public Property Get Ambient_Appearance() As Long
+        Log("Ambient_Appearance")
+        Return 0    ' 0 for flat, 1 for 3d
+    End Property
+
+    [ DispId (-725) ]           ' DISPID_AMBIENT_CODEPAGE
+    [ Serialize (False) ]
+    Public Property Get Ambient_CodePage() As Long
+        Log("Ambient_CodePage")
+        Return 0
+    End Property
+
+'    Private DeclareWide Function GetStockObject Lib "gdi32" (ByVal i As Long) As LongPtr
+
+    [ DispId (-726) ]           ' DISPID_AMBIENT_PALETTE
+    [ Serialize (False) ]
+    Public Property Get Ambient_Palette() As LongPtr
+        Log("Ambient_Palette")
+        'Const DEFAULT_PALETTE As Long = 15
+        'Return GetStockObject(DEFAULT_PALETTE)
+        Return 0
+    End Property
+
+    ' [ DispId (-727) ]           ' DISPID_AMBIENT_CHARSET
+    ' [ Serialize (False) ]
+    ' Public Property Get Ambient_Charset() As Long
+    '     Log("Ambient_Charset")
+    '     Return 0
+    ' End Property
+
+    ' [ DispId (-728) ]           ' DISPID_AMBIENT_TRANSFERPRIORITY
+    ' [ Serialize (False) ]
+    ' Public Property Get Ambient_TransferPriority() As Long
+    '     Log("Ambient_TransferPriority")
+    '     Return 0
+    ' End Property
+
+    [ DispId (-732) ]           ' DISPID_AMBIENT_RIGHTTOLEFT
+    [ Serialize (False) ]
+    Public Property Get Ambient_RightToLeft() As Boolean
+        Log("Ambient_RightToLeft")
+        Return False
+    End Property
+
+    ' [ DispId (-733) ]           ' DISPID_AMBIENT_TOPTOBOTTOM
+    ' [ Serialize (False) ]
+    ' Public Property Get Ambient_TopToBottom() As Boolean
+    '     Log("Ambient_TopToBottom")
+    '     Return False
+    ' End Property
+
+    ' -------------------------------------------------------------------------------------------------------------
+
+    'This is currently to prevent against recursion in VBCCR
+    '(Property sheets, Picture tabs crash without it)
+    [ Serialize (False) ]
+    Public Property Get DragIcon() As IPictureDisp
+        Log("ActiveXControlExtender.DragIcon")
+    	Return Nothing
+    End Property
+
+    Private Sub OnTouchedFormProperties() _
+            Handles Visible.OnPropertyGet, _
+                    Visible.OnPropertyLet, _
+                    HelpContextID.OnPropertyGet, _
+                    HelpContextID.OnPropertyLet
+                        
+        Me.ControlContext.EnsureFormIsLoaded()
+    End Sub
+    
+    [ Serialize (False) ]
+    Public Property Get Parent() As Form
+        Return ControlContext.GetForm
+    End Property
+    
+End Class
+
+[ COMCreatable (False) ]
+Private Class EmptyOleContainer
+	Implements IOleContainer
+    
+    Private Container As Object
+    Private RootWindowElement As WindowElement
+    Private UserMode As Boolean
+
+    Sub New(Container As Object, RootWindowElement As WindowElement, UserMode As Boolean)
+        Set Me.Container = Container
+    	Set Me.RootWindowElement = RootWindowElement
+        Me.UserMode = UserMode
+    End Sub
+
+    Private Sub IOleContainer_EnumObjects(ByVal grfFlags As Long, ppenum As IEnumUnknown) _
+            Implements IOleContainer.EnumObjects
+
+'        Debug.Print "IOleContainer_EnumObjects"
+        SetOutParamToNothing(VarPtr(ppenum))
+
+        Set ppenum = Me.RootWindowElement.CreateControlsEnumerator(0, 0)        ' FIXME use VBA flags here
+    End Sub
+    
+    Private Sub IOleContainer_LockContainer(ByVal fLock As Long) _
+            Implements IOleContainer.LockContainer
+        
+'        Debug.Print "IOleContainer_LockContainer"
+    End Sub
+    
+    Private Sub IOleContainer_ParseDisplayName(ByVal pbc As stdole.IUnknown, ByVal pszDisplayName As LongPtr, pchEaten As Long, ppmkOut As IMoniker) _
+            Implements IOleContainer.ParseDisplayName
+        
+        SetOutParamToNothing(VarPtr(ppmkOut))
+
+'        Debug.Print "IOleContainer_ParseDisplayName"
+    End Sub
+
+    ' This is accessed through UserControl.Parent.Controls on the VB6 side.  Seen in SSTabEx
+    Public Function Controls() As Collection
+        'Debug.Print "EmptyOleContainer.Controls"
+    	Dim retVal As Collection = New Collection
+        Dim enum As IEnumUnknown = Me.RootWindowElement.CreateControlsEnumerator(0, 0)
+        Do
+            Dim countOut As Long
+            Dim control As stdole.IUnknown
+            enum.Next(1, control, countOut)
+            If Err.LastHResult = WinNativeFormsBASE.S_FALSE Then Exit Do
+            Dim controlDisp As Object = control
+            retVal.Add controlDisp
+        Loop
+        Return retVal
+    End Function
+
+End Class

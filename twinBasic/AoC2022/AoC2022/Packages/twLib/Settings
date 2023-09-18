@@ -1,0 +1,61 @@
+{
+	"configuration.inherits": "Defaults",
+	"project.buildPath": "${SourcePath}\\Build\\${ProjectName}_${Architecture}.${FileExtension}",
+	"project.buildType": "Package TWINPACK",
+	"project.depAware": true,
+	"project.description": "Lib",
+	"project.exportPathIsV2": true,
+	"project.id": "{B768C096-6072-450A-84A8-01D07F690907}",
+	"project.largeAddressAware": true,
+	"project.name": "twLib",
+	"project.optionExplicit": true,
+	"project.references": [
+		{
+			"id": "{00020430-0000-0000-C000-000000000046}",
+			"lcid": 0,
+			"name": "OLE Automation",
+			"path32": "C:\\Windows\\SysWOW64\\stdole2.tlb",
+			"path64": "C:\\Windows\\System32\\stdole2.tlb",
+			"versionMajor": 2,
+			"versionMinor": 0
+		},
+		{
+			"id": "{420B2830-E718-11CF-893D-00A0C9054228}",
+			"lcid": 0,
+			"name": "Microsoft Scripting Runtime",
+			"path32": "C:\\Windows\\SysWOW64\\scrrun.dll",
+			"path64": "C:\\Windows\\System32\\scrrun.dll",
+			"versionMajor": 1,
+			"versionMinor": 0
+		},
+		{
+			"id": "{BED7F4EA-1A96-11D2-8F08-00A0C9A6186D}",
+			"lcid": 0,
+			"name": "mscorlib.dll",
+			"path32": "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\mscorlib.tlb",
+			"path64": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\mscorlib.tlb",
+			"versionMajor": 2,
+			"versionMinor": 4
+		},
+		{
+			"id": "{9847A10D-8987-44B2-8B87-EA77DEF7F1D9}",
+			"lcid": 0,
+			"name": "[twinBASIC Extension] Unit Testing Assertion Library",
+			"versionBuild": 0,
+			"versionMajor": 1,
+			"versionMinor": 0,
+			"versionRevision": 0
+		}
+	],
+	"project.startupObject": "(none)",
+	"project.versionAutoIncrement": "Revision",
+	"project.versionBuild": 0,
+	"project.versionMajor": 1,
+	"project.versionMinor": 0,
+	"project.versionRevision": 129,
+	"project.warnings": {
+		"errors": [],
+		"ignored": []
+	},
+	"runtime.useUnicodeStandardLibrary": true
+}

@@ -1,0 +1,123 @@
+Class Day10
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+    Const InputData           As String = "Day10.txt"
+
+
+    Private Type State
+        
+        Data                            As Seq
+        P1Scoring                       As Hkvp
+        Openers                         As Hkvp
+        Closers                         As Hkvp
+        
+        
+    End Type
+
+    Private s                           As State
+
+
+
+    Public Sub Execute()
+        
+        Part01
+        Part02
+        
+    End Sub
+
+    Public Sub Part01()
+    
+        Initialise
+        Dim myResult As Long = 0
+        Dim myString As IterItems = IterItems(s.Data)
+        Do
+            Dim myStack As Seq = Seq.Deb
+            Dim myChar As IterItems = IterItems(myString.Item)
+            Do
+            Dim myC As String = myChar.Item
+                If s.Openers.HoldsKey(myC) Then
+                    myStack.Push myC
+                Else
+                    Dim myS As String = s.Openers.Item(myStack.Last)
+                    If myS = myC Then
+                        myStack.Pop
+                    Else
+                        'broken chunk
+                        'Debug.Print myS, myC
+                        myResult += s.P1Scoring.Item(myC)
+                        Exit Do
+                    End If
+                End If
+                
+                
+            Loop While myChar.MoveNext
+            
+        Loop While myString.MoveNext
+    
+        Fmt.Dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "xxxxxx", myResult
+        
+    End Sub
+
+    Public Sub Part02()
+        
+        Initialise
+        Dim myScoring As Hkvp = Hkvp.Deb.AddPairs(Split(") ] } >"), Array(1, 2, 3, 4))
+        Dim myScores As Seq = Seq.Deb
+        
+        Dim myResult As LongLong = 0
+        Dim myString As IterItems = IterItems(s.Data).MoveToEnd
+        Do
+            'Fmt.Dbg "{0}", myString.Item
+            Dim myStack As Seq = Seq.Deb
+            Dim myChar As IterItems = IterItems(myString.Item)
+            Do
+                Dim myC As String = myChar.Item
+                If s.Openers.HoldsKey(myC) Then
+                    myStack.Push myC
+                Else
+                    Dim myS As String = s.Openers.Item(myStack.Last)
+                    If myS = myC Then
+                        myStack.Pop
+                    Else
+                        'we have found a broken chunk
+                        myStack.Clear
+                        Exit Do
+                    End If
+                End If
+
+            Loop While myChar.MoveNext
+            
+            If myStack.IsQueryable Then
+          
+                
+                myResult = 0
+                Dim myCompletionchar As IterItems = IterItems(myStack).MoveToEnd
+                Do
+                    'Debug.Print myCompletionchar.Item
+                    myResult *= 5
+                    myResult += myScoring.Item(s.Openers.Item(myCompletionchar.Item))
+                    
+                Loop While myCompletionchar.MovePrev
+                myScores.Add myResult
+            End If
+        Loop While myString.MovePrev
+        myScores.Sort
+        myResult = myScores((myScores.Count \ 2) + 1)
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "98925151", myResult
+            
+    End Sub
+
+
+    Private Sub Initialise()
+        Set s.Data = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC2021Data & InputData)).MapIt(mpSplitToChars)
+        Set s.P1Scoring = Hkvp.Deb.AddPairs(Split(") ] } >"), Array(3, 57, 1197, 25137))
+        Set s.Openers = Hkvp.Deb.AddPairs(Split("( [ { <"), Split(") ] } >"))
+        
+    End Sub
+
+End Class

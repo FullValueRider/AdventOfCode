@@ -1,0 +1,203 @@
+Class Area
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "This class provides utilities for dealing with points in TableArrays"
+    Option Explicit
+   
+    '@ModuleDescription("This class provides utilities for dealing with points in TableArrays")
+    '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+    Public Enum CoordType
+        asArray = 0
+        asString
+    End Enum
+    
+    
+    Public Enum SearchArea
+
+        FourWay = 0
+        Eightway
+            
+    End Enum
+
+
+    Public Enum RankOrientation
+
+        ByFirst = 0
+        BySecondumn
+            
+    End Enum
+
+
+    '@Description("Returns an array of valid coordinates based on the provided x,y coordinate and the specified boundaries.")
+    Public Function GetAdjacentCoordinatesInArea _
+    ( _
+        ByVal ipFirst As Long, _
+        ByVal ipFirstMin As Long, _
+        ByVal ipFirstMax As Long, _
+        ByVal ipSecond As Long, _
+        ByVal ipSecondMin As Long, _
+        ByVal ipSecondMax As Long, _
+        Optional ByVal ipSearchArea As SearchArea = Searcharea.FourWay, _
+        Optional ByVal ipCoordType As CoordType = coordtype.asarray _
+    ) As Seq
+
+         Dim myCoords As Seq = Seq.Deb
+        
+        'Ignore out of bounds points
+        If ipFirst < ipFirstMin Then Return myCoords
+        If ipFirst > ipFirstMax Then Return myCoords
+        If ipSecond < ipSecondMin Then Return myCoords
+        If ipSecond > ipSecondMax Then Return myCoords
+        
+        ' from this point on we know that x,y is located in ipSearchArea
+        
+        If ipFirst + 1 <= ipFirstMax Then myCoords.Add ToCoordType(ipCoordType, ipFirst + 1, ipSecond)
+        If ipFirst - 1 >= ipFirstMin Then myCoords.Add ToCoordType(ipCoordType, ipFirst - 1, ipSecond)
+        
+        If ipSecond + 1 <= ipSecondMax Then
+            myCoords.Add ToCoordType(ipCoordType, ipFirst, ipSecond + 1)
+            If ipSearchArea = Eightway Then
+            
+                If ipFirst - 1 >= ipFirstMin Then
+                    myCoords.Add ToCoordType(ipCoordType, ipFirst - 1, ipSecond + 1)
+                End If
+                
+                If ipFirst + 1 <= ipFirstMax Then
+                    myCoords.Add ToCoordType(ipCoordType, ipFirst + 1, ipSecond + 1)
+                End If
+                
+            End If
+        	
+        End If
+        
+        If ipSecond - 1 >= ipSecondMin Then
+            myCoords.Add ToCoordType(ipCoordType, ipFirst, ipSecond - 1)
+        
+            If ipSearchArea = Eightway Then
+            
+                If ipFirst - 1 >= ipFirstMin Then
+                    myCoords.Add ToCoordType(ipCoordType, ipFirst - 1, ipSecond - 1)
+                End If
+                
+                If ipFirst + 1 <= ipFirstMax Then
+                    myCoords.Add ToCoordType(ipCoordType, ipFirst + 1, ipSecond - 1)
+                End If
+            
+            End If
+            
+        End If
+            
+        Return myCoords
+            
+    End Function
+    
+    
+    Public Function ToCoordType(ByVal ipCoordType As CoordType, ByRef ipRank1 As Long, ByRef ipRank2 As Long) As Variant
+        If ipCoordType = asArray Then
+            Return Array(ipRank1, ipRank2)
+        Else
+            Return Fmt.Text("{0},{1}", ipRank1, ipRank2)
+        End If
+    End Function
+    
+    
+    ' Public Function GetSumOfAdjacentValuesInTable _
+    ' ( _
+    '     ByRef ipArray As Variant, _
+    '     ByVal ipFirst As Long, _
+    '     ByVal ipSecond As Long, _
+    '     ByVal ipType As SearchArea _
+    ' ) As Long
+    ' Attribute GetSumOfAdjacentValuesInTable.VB_Description = "Returns the sum of values in the adjacentcells."
+
+    '     Dim myBorder As Seq = GetAdjacentCoordinatesInTable(ipFirst, ipSecond, ipArray, SearchArea.Eightway)
+    '     Dim mySum As Long = 0
+    '     Dim mycoords As IterItems = IterItems.Deb(myBorder)
+    '     Do
+    '     	Dim myArray As Variant = mycoords(0)
+    '         mySum += ipArray(myArray(0), myArray(1))
+            
+    '     Loop While mycoords.MoveNext
+        
+    '     Return mySum
+            
+    ' End Function
+    
+     '@Description("Returns an array of valid coordinates based on the provided x,y coordinate and the provided array.")
+    Public Function GetAdjacentCoordinatesInTable _
+    ( _
+        ByVal ipFirst As Long, _
+        ByVal ipSecond As Long, _
+        ByRef ipArray As Variant, _
+        Optional ByVal ipSearchArea As SearchArea = searcharea.fourway, _
+        Optional ByVal ipCoordType As CoordType = asarray _
+    ) As Seq
+    
+        Dim mySecondMin As Long = LBound(ipArray, 2)
+        Dim mySecondMax As Long = UBound(ipArray, 2)
+        Dim myFirstMin As Long = LBound(ipArray, 1)
+        Dim myFirstMax As Long = UBound(ipArray, 1)
+        
+        Return GetAdjacentCoordinatesInArea(ipFirst, myFirstMin, myFirstMax, ipSecond, mySecondMin, mySecondMax, ipSearchArea, ipCoordType)
+        ' Dim myCoords As Seq = Seq.Deb
+        
+        ' 'Ignore out of bounds points
+        ' If ipFirst < myFirstMin Or ipFirst > myFirstMax Then Return myCoords
+        ' If ipSecond < mySecondMin Or ipSecond > mySecondMax Then Return myCoords
+        ' ' from this point on we know that x,y is OK
+        ' ' so we only need to check offsets from x or y	
+        
+        ' If ipFirst + 1 <= myFirstMax Then myCoords.Add Array(ipFirst + 1, ipSecond)
+        ' If ipFirst - 1 >= myFirstMin Then myCoords.Add Array(ipFirst - 1, ipSecond)
+        
+        ' If ipSecond + 1 <= mySecondMax Then
+        '     myCoords.Add Array(ipFirst, ipSecond + 1)
+        '     If ipSearchArea = Eightway Then
+            
+        '         If ipFirst - 1 >= myFirstMin Then myCoords.Add Array(ipFirst - 1, ipSecond + 1)
+        '         If ipFirst + 1 <= myFirstMax Then myCoords.Add Array(ipFirst + 1, ipSecond + 1)
+            
+        '     End If
+        	
+        ' End If
+        
+        ' If ipSecond - 1 >= mySecondMin Then
+        '     myCoords.Add Array(ipFirst, ipSecond - 1)
+        
+        '     If ipSearchArea = Eightway Then
+            
+        '         If ipFirst - 1 >= myFirstMin Then myCoords.Add Array(ipFirst - 1, ipSecond - 1)
+        '         If ipFirst + 1 <= myFirstMax Then myCoords.Add Array(ipFirst + 1, ipSecond - 1)
+            
+        '     End If
+        ' End If
+            
+        ' Return myCoords
+            
+    End Function
+
+    Public Function GetMoveCoordinates(ByVal ipType As SearchArea) As Hkvp
+
+        Dim myDirections As Hkvp
+        Set myDirections = Hkvp.Deb
+            
+        myDirections.AddPairs VBA.Split("N,E,S,W", Char.twComma), Array(Array(1, 0), Array(0, 1), Array(-1, 0), Array(0, -1))
+          
+            If ipType = SearchArea.Eightway Then
+                myDirections.AddPairs VBA.Split("NE,NW,SW,SE", Char.twComma), Array(Array(1, 1), Array(1, -1), Array(-1, -1), Array(-1, 1))
+            End If
+            
+        Set GetMoveCoordinates = myDirections
+
+    End Function
+    
+     Public Function Coord(ByRef ipItem As Variant) As String
+        Return Fmt.Text("{0},{1}", ipItem(0), ipItem(1))
+    End Function
+
+End Class

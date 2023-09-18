@@ -1,0 +1,342 @@
+Class CshpTreap
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+    Option Explicit
+
+    Private Type State
+ 
+        Priority                            As Random
+        Count                            As Long
+        HashCode                            As Long
+        Identifier                          As String
+        treapTree                           As CshpTreapNode
+        KeyFound                            As Boolean
+        prevItem                            As Object
+
+    End Type
+    
+    Private s                           As state
+
+        Public Function Deb() As CshpTreap
+            With New CshpTreap
+                Return .PopulatedInstance
+            End With
+        End Function
+
+        Public Function Deb(ByVal ipIdentifier As String) As CshpTreap
+            With New CshpTreap
+                Return .PopulatedInstance(ipIdentifier)
+            End With
+        End Function
+        
+        Friend Function PopulatedInstance(Optional ByVal ipIdentifier As String) As CshpTreap
+            Randomize
+            's.Priority = Rnd ' this should be the random number generator
+            s.HashCode = Rnd
+            s.Identifier = ipIdentifier
+            Return Me
+        End Function
+
+      
+        Public Sub Add(ByVal key As Variant, ByVal data As Variant)
+            ' If key Is Nothing OrElse data Is Nothing Then
+            '     Err.Raise 17 + vbObjectError, "CshpTreap.Add", "CshpTreap key and data must not be Nothing"
+            ' End If
+
+            ' create New node
+            Dim node As CshpTreapNode = CshpTreapNode.Deb(Rnd) 's.Priority.Nex
+            'If node Is Nothing Then Throw (CshpTreap.Deb.TreapException("Unable to create Treap Node"))
+
+            node.Key = key
+            node.Item = data
+
+          
+           s.KeyFound = False
+            Set s.treapTree = Me.InsertNode(node, s.treapTree)
+            If s.KeyFound Then
+                Err.Raise 457 + vbObjectError, "CShpTreap.Add", "A Node with the same key already exists"
+            Else
+                s.Count += 1
+            End If
+        End Sub
+
+        ''' <summary>
+        ''' InsertNode
+        ''' inserts a node into the tree - note recursive method
+        ''' this method rebalances the tree using the priorities
+        '''
+        ''' Note: The lower the number, the higher the priority<summary></summary></summary>        
+        Private Function InsertNode(ByVal node As CshpTreapNode, ByVal tree As CshpTreapNode) As CshpTreapNode
+        
+            If tree Is Nothing Then
+                Return node
+            End If
+
+            Dim result As Long = node.Key.CompareTo(tree.Key)
+
+            If result < 0 Then
+                Set tree.Left = Me.InsertNode(node, tree.Left)
+                If tree.Left.Priority < tree.Priority Then
+                    Set tree = tree.RotateRight()
+                End If
+            ElseIf result > 0 Then
+                Set tree.Right = Me.InsertNode(node, tree.Right)
+                If tree.Right.Priority < tree.Priority Then
+                    tree = tree.RotateLeft()
+                End If
+            Else
+                Set s.prevItem = tree.Item
+                tree.Item = node.Item
+            End If
+
+            Return tree
+        End Function
+
+        ''' <summary>
+        ''' GetData
+        ''' Gets the data associated with the specified key<summary></summary></summary>        
+        Public Function GetData(ByVal key As Variant) As Object
+            Dim treeNode As CshpTreapNode = s.treapTree
+            Dim result As Long
+
+            Do While treeNode IsNot Nothing
+                result = key.CompareTo(treeNode.Key)
+                If result Is 0 Then
+                    Return treeNode.Item
+                End If
+                
+                If result < 0 Then
+                    Set treeNode = treeNode.Left
+                Else
+                    Set treeNode = treeNode.Right
+                End If
+            Loop
+
+            Err.Raise 17 + vbObjectError, "CshpTreap.GetData", "Key not found"
+        End Function
+        ''' <summary>
+        ''' GetMinKey
+        ''' Returns the minimum key value<summary></summary></summary>        
+        Public Function GetMinKey() As Variant
+            Dim treeNode As CshpTreapNode = s.treapTree
+
+            If treeNode Is Nothing Then
+                Err.Raise 17 + vbObjectError, "CshpTreap.GetMinKey", "Treap is empty"
+            End If
+
+            Do While treeNode.Left IsNot Nothing
+                treeNode = treeNode.Left
+            Loop
+
+            Return treeNode.Key
+
+        End Function
+        ''' <summary>
+        ''' GetMaxKey
+        ''' Returns the maximum key value<summary></summary></summary>        
+        Public Function GetMaxKey() As Variant
+            Dim treeNode As CshpTreapNode = s.treapTree
+
+            If treeNode Is Nothing Then
+                Err.Raise 17 + vbObjectError, "CshpTreap.HetMaxKey", "Treap is empty"
+            End If
+
+            While treeNode.Right IsNot Nothing
+                treeNode = treeNode.Right
+            End While
+
+            Return treeNode.Key
+
+        End Function
+        ''' <summary>
+        ''' GetMinValue
+        ''' Returns the object having the minimum key value<summary></summary></summary>        
+        Public Function GetMinValue() As Object
+            Return Me.GetData(GetMinKey())
+        End Function
+        ''' <summary>
+        ''' GetMaxValue
+        ''' Returns the object having the maximum key<summary></summary></summary>        
+        Public Function GetMaxValue() As Object
+            Return Me.GetData(GetMaxKey())
+        End Function
+          
+        Public Function GetEnumerator() As CshpTreapEnumerator
+            Return Me.Elements(True)
+        End Function
+        
+        ''' <summary>
+        ''' Keys
+        ''' If ascending is True, the keys will be returned in ascending order, else
+        ''' the keys will be returned in descending order.<summary></summary></summary>        
+        Public Function Keys() As CshpTreapEnumerator
+            Return Me.Keys(True)
+        End Function
+        Public Function Keys(ByVal ascending As Boolean) As CshpTreapEnumerator
+            Return CshpTreapEnumerator.Deb(s.treapTree, True, ascending)
+        End Function
+        ''' <summary>
+        ''' Values
+        ''' .NET compatibility<summary></summary></summary>        
+        Public Function Items() As CshpTreapEnumerator
+            Return Me.Elements(True)
+        End Function
+        ''' <summary>
+        ''' Elements
+        ''' Returns an enumeration of the data objects.
+        ''' If ascending is true, the objects will be returned in ascending order,
+        ''' else the objects will be returned in descending order.<summary></summary></summary>        
+        Public Function Elements() As CshpTreapEnumerator
+            Return Me.Elements(True)
+        End Function
+        
+        Public Function Elements(ByVal ascending As Boolean) As CshpTreapEnumerator
+            Return CshpTreapEnumerator.Deb(s.treapTree, False, ascending)
+        End Function
+        ''' <summary>
+        ''' IsEmpty<summary></summary></summary>        
+        Public Function IsEmpty() As Boolean
+            Return s.treapTree Is Nothing
+        End Function
+        ''' <summary>
+        ''' Remove
+        ''' removes the key and Object<summary></summary></summary>        
+        Public Sub Remove(ByVal key As Variant)
+        
+            If key Is Nothing Then
+                Err.Raise 17 + vbObjectError, "CshpTreap.Remove", "Treap key is nothing"
+            End If
+
+            s.KeyFound = False
+
+            Set s.treapTree = Me.Delete(key, s.treapTree)
+
+            If s.KeyFound Then
+                s.Count -= 1
+            End If
+        End Sub
+        ''' <summary>
+        ''' RemoveMin
+        ''' removes the node with the minimum key<summary></summary></summary>        
+        Public Function RemoveMin() As Object
+            If s.treapTree Is Nothing Then
+                Err.Raise 17 + vbObjectError, "CshpTreap.RemoveMin", "Treap is nothing"
+            End If
+
+            ' start at top
+            Dim treeNode As CshpTreapNode = s.treapTree
+            Dim prevCshpTreapNode As CshpTreapNode
+
+            If treeNode.Left Is Nothing Then
+                ' remove top node by replacing with right
+                s.treapTree = treeNode.Right
+            Else
+                Do
+                    ' find the minimum node
+                    Set prevCshpTreapNode = treeNode
+                    Set treeNode = treeNode.Left
+                Loop While treeNode.Left IsNot Nothing
+                ' remove left node by replacing with right node
+                Set prevCshpTreapNode.Left = treeNode.Right
+            End If
+
+            s.Count -= 1
+
+            Return treeNode.Item
+
+        End Function
+      
+      
+        Public Function RemoveMax() As Object
+            If s.treapTree Is Nothing Then
+                Err.Raise 17 + vbObjectError, "CshpTreap.RemoveMax", "Treap is nothing"
+            End If
+
+            ' start at top
+            Dim treeNode As CshpTreapNode = s.treapTree
+            Dim prevCshpTreapNode As CshpTreapNode
+
+            If treeNode.Right Is Nothing Then
+                ' remove top node by replacing with left
+                Set s.treapTree = treeNode.Left
+            Else
+                Do
+                    ' find the maximum node
+                    Set prevCshpTreapNode = treeNode
+                    Set treeNode = treeNode.Right
+                Loop While treeNode.Right IsNot Nothing
+                ' remove right node by replacing with left node
+                prevCshpTreapNode.Right = treeNode.Left
+            End If
+
+            s.Count = s.Count - 1
+
+            Return treeNode.Item
+        End Function
+       
+          
+        Public Function RemoveAll() As CshpTreap
+            Me.s.treapTree = Nothing
+            s.Count = 0
+            Return Me
+        End Function
+       
+       
+        Public Function Count() As Long
+            Return s.Count
+        End Function
+      
+      
+        Private Function Delete(ByVal key As Variant, ByVal tNode As CshpTreapNode) As CshpTreapNode
+        
+            If tNode Is Nothing Then Return Nothing
+
+            Dim result As Long = key.CompareTo(tNode.Key)
+
+            If result < 0 Then
+                tNode.Left = Me.Delete(key, tNode.Left)
+            ElseIf result > 0 Then
+                tNode.Right = Me.Delete(key, tNode.Right)
+            Else
+               s.KeyFound = True
+                Set s.prevItem = tNode.Item
+                Set tNode = tNode.DeleteRoot()
+            End If
+
+            Return tNode
+        End Function
+       
+       
+        Public Function Equals(ByVal ipObject As Variant) As Boolean
+        
+            If ipObject Is Nothing Then
+                Return False
+            End If
+
+            If TypeName(ipObject) <> "Treap" Then
+                Return False
+            End If
+
+            If Me Is ipObject Then
+                Return True
+            End If
+
+            Return Me.ToString = ipObject.ToString
+
+        End Function
+        
+        ''' <summary>
+        ''' HashCode<summary></summary></summary>        
+        Public Function GetHashCode() As Long
+            Return s.HashCode
+        End Function
+        ''' <summary>
+        ''' ToString<summary></summary></summary>        
+        Public Function ToString() As String
+            Return s.Identifier
+        End Function
+    End Class

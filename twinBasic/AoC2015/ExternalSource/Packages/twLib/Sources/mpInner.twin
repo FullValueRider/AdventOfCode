@@ -1,0 +1,60 @@
+Class mpInner
+    
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+   
+    
+    Implements IMapper
+
+    
+    Private Const MY_TYPENAME               As String = "mpInner"
+    
+    
+    Private Type State
+
+        Mapper                  As IMapper
+            
+    End Type
+
+    Private s                   As State
+
+
+    '@Description("Calls Mapit on the lowest level item supporting mapit on The hostItem")
+
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+
+        Select Case VBA.TypeName(ipHostItem)
+            
+            Case "Hkvp", "Seq"
+                    
+                Return ipHostItem.MapIt(Me.Deb(s.Mapper))
+                        
+            Case Else
+                
+                Return s.Mapper.ExecMapper(ipHostItem)
+            
+        End Select
+        
+    End Function
+
+    '@DefaultMember
+    Public Function Deb(ByVal ipMapper As IMapper) As mpInner
+        With New mpInner
+            Return .ConstructInstance(ipMapper)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipMapper As IMapper) As mpInner
+        Set s.Mapper = ipMapper
+        Return Me
+    End Function
+    
+    
+    Public Function TypeName() As String Implements IMapper.TypeName
+        Return MY_TYPENAME
+    End Function
+    
+End Class

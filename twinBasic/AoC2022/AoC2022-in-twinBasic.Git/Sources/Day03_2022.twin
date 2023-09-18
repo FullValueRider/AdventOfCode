@@ -1,0 +1,71 @@
+Class Day03_2022
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+
+    Private Const Today             As String = "\2022\Day03.txt"
+    
+
+    Private Type State
+
+        Data                            As seq
+        Priority                         As hkvp
+    End Type
+
+    Private s                           As State
+
+    
+    Public Sub Execute()
+        
+        Part01
+       ' Part02
+            
+    End Sub
+
+ 
+    Private Sub Part01()
+
+        Initialise
+        Dim myPriorities As Long = 0
+        Dim myRucksacks As IterItems = IterItems.Deb(s.Data)
+        Do
+            Dim myrucksack As Seq = myRucksacks(0)
+            Dim myHalves As Seq = myrucksack.SplitAt(myrucksack.Count / 2 + 1)
+            myPriorities += s.Priority.Item(myHalves(1).Set(SetOf.InBoth, myHalves(2)).first)
+        Loop While myRucksacks.MoveNext
+        Dim myResult As Long = myPriorities
+        
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "7826", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+
+        Initialise
+        Dim myPriorities As Long = 0
+        Dim myRucksacks As IterItems = IterItems.Deb(s.Data).SetFTS(ipstep:=3)
+        Do
+           
+            myPriorities += s.Priority.Item(myRucksacks(0).Set(SetOf.InBoth, myRucksacks(1)).set(InBoth, myRucksacks(2)).first)
+        Loop While myRucksacks.MoveNext
+        Dim myResult As Long = myPriorities
+                
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "2577", myResult
+
+    End Sub
+
+    Private Sub Initialise()
+    
+        Set s.Data = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC & Today, vbCrLf)) _
+            .MapIt(mpSplitToChars(ToSeq))
+           
+        Set s.Priority = Hkvp.Deb.AddPairs(Seq.Deb(Strs.Lowercase & Strs.Uppercase).ToArray, Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52))
+     End Sub
+
+End Class

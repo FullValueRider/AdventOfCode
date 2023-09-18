@@ -1,0 +1,352 @@
+Class Hkvp
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '@Description("Dictionary derived from cHashD by Olaf Schmidt")
+    
+    Private Const MY_TYPENAME                       As String = "Hkvp"
+    
+    
+    Implements Chashd Via Host = New chashd
+  
+
+    Private CurrentIndex As Long
+    Private Const MinValue As Long = 65
+    Private Const MaxValue As Long = 123
+    Private Const E_INVALIDARGS As Long = &H80070057
+    Private Const S_OK As Long = 0
+    Private Const S_FALSE As Long = 1
+    
+    Public Enum MirrorType
+    
+        ByAllValues = 0                 ' Returns a Hkvp of Hkvp where the Outer Hkvp has the Host Values as Keys, and the InnerKvp are Host Keys vs Index 
+        ByFirstValue = 0                ' Returns an Hkvp of two Hkvp.  Hkvp(1) is first found Host Value vs Key, the second is Host Key vs subsequent found host values
+        
+    End Enum
+    
+    ' Private Sub New()
+    '     Set Host = cHashD.Deb
+    ' End Sub
+
+    Public Function Deb() As Hkvp
+        With New Hkvp
+            Return .ConstructInstance
+        End With
+    End Function
+
+    Friend Function ConstructInstance() As Hkvp
+        Return Me
+    End Function
+
+    ' Public Function ReInit(Optional ByVal ExpectedMaxCount As Long, Optional ByVal EnsureUniqueKeys As Boolean) As Hkvp
+    '     Return Host.ReInit(ExpectedMaxCount, EnsureUniqueKeys)
+    ' End Function
+    Public Function HoldsKey(ByRef ipKey As Variant) As Boolean
+        Return Host.Exists(ipKey)
+    End Function
+
+    Public Function LacksKey(ByRef ipKey As Variant) As Boolean
+        Return Not Me.Exists(ipKey)
+    End Function
+    
+    ' current fails if only one of the items is an object
+    Public Function HoldsItem(ByRef ipItem As Variant) As Boolean
+        
+        Dim myItem As Variant
+        Dim myItems As Variant = Me.Items
+        For Each myItem In myItems
+            If VBA.IsObject(ipItem) And VBA.IsObject(myItem) Then
+                If VarPtr(ipItem) = VarPtr(myItem) Then
+                    Return True
+               End If
+            ElseIf (Not VBA.IsObject(ipItem)) And (Not VBA.IsObject(myItem)) Then
+                If myItem = ipItem Then
+                    Return True
+                End If
+            End If
+        Next
+        Return False
+    End Function
+
+    Public Function LacksItem(ByRef ipItem As Variant) As Boolean
+        Dim myItem As Variant
+        Dim myItems As Variant = Me.Items
+        For Each myItem In myItems
+            If VBA.IsObject(ipItem) And VBA.IsObject(myItem) Then
+                If VarPtr(ipItem) = VarPtr(myItem) Then
+                    Return False
+               End If
+            ElseIf (Not VBA.IsObject(ipItem)) And (Not VBA.IsObject(myItem)) Then
+                If myItem = ipItem Then
+                    Return False
+                End If
+            End If
+        Next
+        
+        Return True
+        
+    End Function
+
+    Public Function AddPairs(ByRef ipKeys As Variant, ByRef ipItems As Variant) As Hkvp
+        
+        ' we need to test for not being an array and being a string to avoid
+        ' single string values being iterated as characters 
+        Dim myKeys As IterItems
+        If ArrayInfo.IsNotArray(ipKeys) And TypeInfo.IsString(ipKeys) Then
+        
+            Set myKeys = IterItems.Deb(Array(ipKeys))
+            
+        Else
+        	
+            Set myKeys = IterItems.Deb(ipKeys)
+            
+        End If
+        
+        
+        Dim myItems As IterItems
+        
+        If ArrayInfo.IsNotArray(ipItems) And TypeInfo.IsString(ipItems) Then
+            Set myItems = IterItems.Deb(Array(ipItems))
+        Else
+        	Set myItems = IterItems.Deb(ipItems)
+            
+        End If
+        Do
+             Add myKeys(0), myItems(0)
+        Loop While myKeys.MoveNext And myItems.MoveNext
+        
+        Return Me
+        
+    End Function
+    
+    Public Function Clone() As Hkvp
+        Return Hkvp.Deb.AddPairs(Me.Keys, Me.Items)
+    End Function
+    
+    Friend Function AddKnownArrayPairs(ByRef ipKeysArray As Variant, ByRef ipItemsArray As Variant) As Hkvp
+    
+        AddPairs ipKeysArray, ipItemsArray
+        ' Dim myItemIndex As Long = LBound(ipItemsArray)
+        ' Dim myKey As Variant
+        ' For Each myKey In ipKeysArray
+        
+        '     If myItemIndex <= UBound(ipItemsArray) Then
+            
+        '         Add myKey, ipItemsArray(myItemIndex)
+        '         myItemIndex += 1
+                
+        '     End If
+            
+        ' Next
+        
+        Return Me
+        
+    End Function
+
+    ' is this a pointless function for a dicttionary. We should only ever need to reverse the keys when extracted as an array (after sorting?)
+    Public Function Reverse() As Hkvp
+        Return Hkvp.Deb.AddPairs(Me.KeysSeq.Reverse, Me.ItemsSeq.Reverse)
+        ' Dim myI As IterItems = IterItems.Deb(Me).MoveToEnd
+        ' Do
+        '     myD.Add myI.Key, myI(0)
+        ' Loop While myI.MovePrev
+        ' Return myD
+    End Function
+    
+    Public Function TypeName() As String
+        Return MY_TYPENAME
+    End Function
+    
+     Public Function MapIt(ByVal ipMapper As IMapper) As Seq
+
+        Dim myH As Hkvp = Hkvp.Deb
+   
+        'Dim myI As IterNum = IterNum(FirstIndex, LastIndex)
+        Dim myI As IterItems = IterItems.Deb(Me)
+        Do
+            myH.Add myI.Key, ipMapper.ExecMapper(myI(0))    '(s.Host(myI.Item))
+        Loop While myI.MoveNext
+
+         Return myH
+
+    End Function
+    
+    Public Function FilterIt(ByVal ipComparer As IComparer) As Seq
+
+        Dim myH As Hkvp = Hkvp.Deb
+        Dim myI As IterItems = IterItems.Deb(Me)
+        Do
+            If ipComparer.ExecCmp(myI(0)) Then
+                myH.Add myI.Key, myI(0)
+            End If
+        Loop While myI.MoveNext
+        
+        Return myH
+        
+    End Function
+    
+    Public Function CountIt(ByVal ipComparer As IComparer) As Long
+        
+        Dim myCount As Long = 0
+        Dim myI As IterItems = IterItems.Deb(Me)
+        Do
+       	    DoEvents
+            If ipComparer.ExecCmp(myI(0)) Then
+                myCount += 1
+            End If
+        Loop While myI.MoveNext
+
+        Return myCount
+
+    End Function
+    
+    Public Function KeyOf(ByVal ipItem As Variant) As Variant
+        Return KeyByIndex(ItemsSeq.IndexOf(ipItem) - 1)
+    End Function
+    
+    Public Function ReduceIt(ByRef ipReducer As IReducer) As Variant
+        Return ipReducer.ExecReduction(Host.Items)
+    End Function
+
+    Public Function KeysSeq() As Seq
+        Return Seq.Deb(Host.Keys)
+    End Function
+    
+    Public Function ItemsSeq() As Seq
+        Return Seq.Deb(Host.Items)
+    End Function
+    
+    
+    Public Function FirstKey() As Variant
+        Return KeyByIndex(0)
+    End Function
+    
+    Public Function LastKey() As Variant
+        Return KeyByIndex(Count - 1)
+    End Function
+    
+    Public Function FirstItem() As Variant
+        Return Item(0)
+    End Function
+    
+    Public Function LastItem() As Variant
+        Return Item(Count - 1)
+    End Function
+    
+    Public Function FirstPair() As KVPair
+        Return KVPair.Deb(FirstKey, FirstItem)
+    End Function
+    
+    Public Function LastPair() As KVPair
+        Return KVPair.Deb(LastKey, LastItem)
+    End Function
+    
+    '@Description( returns a Kvp with values as keys.  Each Value is linked to a Kvp of Key vs Index for the host value
+    Public Function Mirror(Optional ByVal ipMirrorType As MirrorType = MirrorType.ByAllValues) As Hkvp
+        
+        If ipMirrorType = MirrorType.ByAllValues Then
+        
+            Return MirrorByAllValues
+        Else
+    
+            Return MirrorByFirstValue
+    
+        End If
+        
+    End Function
+    
+    
+    ' Public Function Merge(ByRef ipInput As Hkvp) As Hkvp
+    
+    '     Dim myInputs As IterItems = IterItems(ipInput)
+    '     Do
+    '     	Dim myItem As Variant = myInputs(0)
+    '         If HoldsKey(myInputs.Key) Then
+            
+    '             Item(myInputs.Key).add myItem
+            
+            
+    '         Else
+            	
+    '             Add myInputs.Key, myItem
+                
+                
+    '         End If
+            
+    '     Loop While myInputs.MoveNext
+    
+    ' End Function
+    
+    '@Description("Returns an Hkvp of two Hkvp.  Item(1) is an Hkvp of the first found Host value vs Host Key. .Item(2) is a copy of the original Hkvp with the first values removed (Host Key vs Host Value).")
+    Private Function MirrorByAllValues() As Hkvp
+    
+        Dim myHkvp As Hkvp = Hkvp.Deb
+        
+        Dim myIter As IterItems = IterItems.Deb(Host)
+        
+        Do
+        
+            If myHkvp.LacksKey(myIter(0)) Then
+            
+                myHkvp.Add myIter(0), Hkvp.Deb
+                
+                
+            End If
+               
+            myHkvp.Item(myIter(0)).add myIter.Key, myIter.Index
+                
+        Loop While myIter.MoveNext
+        
+        Return myHkvp
+
+    End Function
+    
+    Private Function MirrorByFirstValue() As Hkvp
+    
+        Const FirstValues As Long = 1
+        Const OtherValues As Long = 2
+        
+        Dim myHkvp As Hkvp = Hkvp.Deb
+        myHkvp.Add FirstValues, Hkvp.Deb
+        myHkvp.Add OtherValues, Hkvp.Deb
+        
+        Dim myIter As IterItems = IterItems.Deb(Host)
+        Do
+            If myHkvp.Item(FirstValues).LacksKey(myIter(0)) Then
+            
+                myHkvp.Item(FirstValues).add myIter(0), myIter.Key
+                
+                
+            Else
+            
+                myHkvp.Item(OtherValues).add myIter.Key, myIter(0)
+                    
+                    
+            End If
+            
+        Loop While myIter.MoveNext
+               
+        Return myHkvp
+        
+    End Function
+    
+    '@Description("Returns an Hkvp of Values vs Values count")
+    Public Function Freq() As Hkvp
+        
+        Dim myHkvp As Hkvp = Hkvp.Deb
+        Dim myIter As IterItems = IterItems.Deb(Host)
+        Do
+        	If myHkvp.HoldsKey(myIter(0)) Then
+                myHkvp.Item(myIter(0)) += 1
+            Else
+            	myHkvp.Add myIter(0), 1
+            End If
+        Loop While myIter.MoveNext
+        
+        Return myHkvp
+        
+    End Function
+    
+End Class

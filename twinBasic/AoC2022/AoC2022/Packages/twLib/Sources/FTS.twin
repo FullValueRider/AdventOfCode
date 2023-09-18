@@ -1,0 +1,103 @@
+Class FTS ' From To Step
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "A Class that provides from to step data to iterxxxx and other classes"
+
+    Private Const MY_TYPENAME                   As String = "FTS"
+
+    Private Type Properties
+
+        From                                    As Variant
+        To                                      As Variant
+        Step                                    As Double
+        Rank                                    As Long
+
+    End Type
+
+    Private p                                   As Properties
+
+
+    [ DefaultMember ]
+    Public Function Deb(Optional ByRef ipFrom As Variant = 0, Optional ByRef ipTo As Variant = Empty, Optional ByRef ipStep As Variant = 1, Optional ByVal ipRank As Long = 1) As FTS
+        With New FTS
+            Return .ConstructInstance(ipFrom, ipTo, ipStep, ipRank)
+        End With
+    End Function
+
+    Public Function ConstructInstance(ByRef ipFrom As Variant, ByRef ipTo As Variant, ByRef ipStep As Variant, ByVal ipRank As Long) As FTS
+
+        ' From and To are specified in terms of the offset from first index.
+        ' Consequently if ipFrom is specified as less than zero we can assign zero
+        ' if ipTo is not specified then it will remain empty and subsequently be 
+        ' set when it is used in the IterItems SetFTS method where we will know the size
+        ' of the 'collection'
+        '
+        ' ipRank numbering matches that used by LBound/Ubound so cannot be 0
+        ' thus we force ipRank to 1 if it is
+        p.Rank = IIf(ipRank < 1, 1, ipRank)
+        p.From = IIf(ipFrom < 0, 0, ipFrom)
+        p.To = ipTo
+        
+        p.Step = IIf(ipStep = 0, 1, ipStep)
+        
+        If VarInfo.IsNotEmpty(ipTo) Then
+            p.Step = VBA.Abs(p.Step) * IIf(ipFrom <= ipTo, 1, -1)
+        End If
+        
+        Return Me
+
+    End Function
+
+    Public Property Get Rank() As Long
+        Return p.Rank
+    End Property
+    
+    Public Property Let Rank(ByVal ipLong As Long)
+    	p.Rank = ipLong
+    End Property
+
+    Public Property Get From() As Variant
+        Return p.From
+    End Property
+    
+    Public Property Let From(ByVal ipItem As Variant)
+    	p.From = ipItem
+    End Property
+    
+    Public Property Set From(ByVal ipItem As Variant)
+    	Set p.From = ipItem
+    End Property
+
+    Public Property Get To() As Variant
+        Return p.To
+    End Property
+
+    Public Property Let To(ByVal ipItem As Variant)
+    	p.To = ipItem
+    End Property
+    
+    Public Property Set To(ByVal ipItem As Variant)
+    	Set p.To = ipItem
+    End Property
+    
+    Public Property Get Step() As Double
+        Return p.Step
+    End Property
+    
+    Public Property Let Step(ByVal ipItem As Double)
+    	p.Step = ipItem
+    End Property
+    
+    ' Public Property Set Step(ByVal ipItem As Double)
+    ' 	Set p.Step = ipItem
+    ' End Property
+    
+
+    Public Property Get TypeName() As String
+        Return MY_TYPENAME
+    End Property
+    
+End Class

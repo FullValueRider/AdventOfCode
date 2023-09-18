@@ -1,0 +1,50 @@
+Class mpExecDeb
+    
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    '@Description("Returns an instance of the predeclaredid by executing the Deb constructor method (Deb) using ipHostitem as the input for the Deb method")
+    Option Explicit
+   
+    Implements IMapper
+    
+    Private Const MY_TYPENAME           As String = "mpExecDeb"
+    
+    Private Type State
+            
+        PredeclaredId                       As object
+            
+            
+    End Type
+
+    Private s                               As State
+
+    ' Hostitem is an optional argument that can be provided to the deb method.  
+    ' Typically a string which the construct instance method can use to create the instance.
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+        Return s.PredeclaredId.Deb(ipHostItem)
+    End Function
+
+    '@DefaultMember
+    Public Function Deb(ByVal ipPredeclaredId As Object) As mpExecDeb
+        With New mpExecDeb
+            Set Deb = .ConstructInstance(ipPredeclaredId)
+        End With
+    End Function
+
+
+    Friend Function ConstructInstance(ByVal ipPredeclaredId As Object) As mpExecDeb
+      
+       Set s.PredeclaredId = ipPredeclaredId
+       
+       Return Me
+       
+    End Function
+
+
+    Public Function TypeName() As String Implements Imapper.TypeName
+        Return MY_TYPENAME
+    End Function
+    
+End Class

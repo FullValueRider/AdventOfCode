@@ -1,0 +1,244 @@
+Class Cops
+
+	' This class provides a sort algorith using the Quicksort1 method found on vbForums
+    'see https://www.vbforums.com/showthread.php?473677-VB6-Sorting-algorithms-(sort-array-sorting-arrays)&p=2909260#post2909260
+    
+    ' I did try Quicksort3 but found it crashed
+    
+    ' The class was written to sort arrays.  In practise it will sort any collection object that supports
+    ' reading and writing via a defaulmember e.g. Object.member() can be writtten as Object().  e.g. this excludes VBA native Collection which requires
+    ' an add after, remove to effect an Item = statement
+    
+    ' at present we rely on VBA/twinBasic internal methods for the >,=,< comparisons
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+    Option Explicit
+    
+    Public Enum SortOrder
+    	
+        Ascending
+        Descending
+        
+    End Enum
+    
+    Public Enum SetOf
+        InBoth
+        InHostOnly
+        InParamOnly
+        NotInBoth
+        Unique
+        All
+    End Enum
+    
+    Public Sub SortInPlace(ByRef ipSortable As Variant)
+        
+       ' Dim myS As Seq = Seq.Deb(ipArray)
+        QuickSort1 ipSortable
+            
+        ' If ipSortOrder = Descending Then
+        
+        '     myS.Reverse
+            
+        ' End If
+        
+        ' Select Case True
+        
+        '     Case TypeInfo.IsAString(ipArray):               ipArray = myS.Join(vbNullString)
+        '     Case TypeName(ipArray) = "Collection":            Set ipArray = myS.ToCollection
+        '     Case TypeInfo.Group(OfItemByKeysForeach).HoldsKey(TypeInfo.BaseType(ipArray))
+        
+        ' End Select
+    End Sub
+    
+
+    Private Sub QuickSort1(ByRef iopSortable As Variant, Optional ByVal ipLeft As Long, Optional ByVal ipRight As Long)
+        Dim myFirst As Long
+        Dim myLast As Long
+        Dim myMid As Variant
+        Dim mySwap As Variant
+
+
+        Dim myReversible As Meta = Meta.Deb(iopSortable)
+
+        Dim mySortable As Variant
+        If VBA.IsArray(iopSortable) Then
+            Set mySortable = ListArray.Deb(iopSortable)
+        Else
+            Set mySortable = iopSortable
+        End If
+
+
+        If ipRight = 0 Then
+            ipLeft = myReversible.FirstIndex(1) 'LBound(iopSortable)
+            ipRight = myReversible.LastIndex(1) 'UBound(iopSortable)
+        End If
+        myFirst = ipLeft
+        myLast = ipRight
+        myMid = mySortable((ipLeft + ipRight) \ 2)
+        Do
+            Do While mySortable(myFirst) < myMid And myFirst < ipRight
+                myFirst += 1
+            Loop
+            Do While myMid < mySortable(myLast) And myLast > ipLeft
+                myLast -= 1
+            Loop
+            
+            If myFirst <= myLast Then
+            
+                If VBA.IsObject(mySortable.Item(myFirst)) Then
+                    Set mySwap = mySortable.Item(myFirst)
+                    Set mySortable.Item(myFirst) = mySortable.Item(myLast)
+                    Set mySortable.Item(myLast) = mySwap
+                Else
+                    mySwap = mySortable.Item(myFirst)
+                    mySortable.Item(myFirst) = mySortable.Item(myLast)
+                    mySortable.Item(myLast) = mySwap
+                End If
+                myFirst += 1
+                myLast -= 1
+            End If
+        Loop Until myFirst > myLast
+        If ipLeft < myLast Then
+            QuickSort1 mySortable, ipLeft, myLast
+        End If
+        If myFirst < ipRight Then
+            QuickSort1 mySortable, myFirst, ipRight
+        End If
+    End Sub
+
+    ' Public Sub ReverseInPlace(ByRef ipReversible As Variant)
+
+    '     Dim myMeta As Meta = Meta.Deb(ipReversible)
+        
+    '     If myMeta.IsSIngleValue Then
+    '     	Exit Sub
+    '     End If
+        
+    '     If myMeta.IsArray Then
+        
+    '         If myMeta.IsListArray Then
+            	
+    '             Exit Sub
+                
+    '         Else
+            
+                
+                
+    '         End If
+            
+    '     End If
+        
+
+    '     Dim mySourceIndex As Long
+    '     Dim myDestIndex As Long = myReversible.LastIndex(1)
+        
+    '     Dim mySwapSource As Variant
+    '     Dim mySwapDest As Variant
+        
+    '     For mySourceIndex = myReversible.FirstIndex(1) To (myReversible.LastIndex(1) + 1) \ 2
+        
+    '         If VBA.IsObject(ipReversible.Item(mySourceIndex)) Then
+    '             Set mySwapSource = ipReversible.item(mySourceIndex)
+    '         Else
+    '             mySwapSource = ipReversible.item(mySourceIndex)
+    '         End If
+            
+    '         If VBA.IsObject(ipReversible.item(myDestIndex)) Then
+    '             Set mySwapDest = ipReversible.item(myDestIndex)
+    '         Else
+    '             mySwapDest = ipReversible.item(myDestIndex)
+    '         End If
+            
+            
+    '         If VBA.IsObject(mySwapSource) Then
+    '             Set ipReversible.Item(myDestIndex) = mySwapSource
+    '         Else
+    '             ipReversible.Item(myDestIndex) = mySwapSource
+    '         End If
+            
+    '         If VBA.IsObject(mySwapDest) Then
+    '             Set ipReversible.Item(mySourceIndex) = mySwapDest
+    '         Else
+    '             ipReversible.Item(mySourceIndex) = mySwapDest
+    '         End If
+            
+    '         myDestIndex -= 1
+            
+    '     Next
+        
+    ' End Sub
+
+
+     Public Function Set(ByVal ipSet As SetOf, ipLHS As Variant, ByRef ipRHS As Variant) As Seq
+    
+    	    Dim myLHS As Seq = Seq.Deb(ipLHS)
+            Dim myRHS As Seq = Seq.Deb(ipRHS)
+            
+            Select Case ipSet
+            
+                Case SetOf.InBoth:              Return Both(myLHS, myRHS)
+                Case SetOf.InHostOnly:          Return LHSOnly(myLHS, myRHS)
+                Case SetOf.InParamOnly:         Return LHSOnly(myRHS, myLHS) ' note reversal of params
+                Case SetOf.NotInBoth:           Return NotBoth(myLHS, myRHS)
+                Case SetOf.Unique:              Return MergeUnique(myLHS, myRHS)
+                
+            End Select
+            
+    End Function
+    
+   
+    Private Function LHSOnly(ByRef ipLHS As Seq, ByRef ipRHS As Seq) As Seq
+
+        Dim myResult As Seq = Seq.Deb
+        Dim myH As IterItems = IterItems.Deb(ipLHS.ToArray)
+        Do
+            If ipRHS.LacksItem(myH.GetItem) And myResult.LacksItem(myH.GetItem) Then
+                myResult.Add myH.GetItem
+            End If
+            
+        Loop While myH.MoveNext
+        
+        Return myResult
+        
+    End Function
+
+    Private Function Both(ByRef ipLHS As Seq, ByRef ipRHS As Seq) As Seq
+
+        Dim myResult As Seq = Seq.Deb
+        Dim myLHS As IterItems = IterItems(ipLHS)
+        Do
+            If ipRHS.HoldsItem(myLHS.GetItem) Then
+                myResult.Add myLHS.GetItem
+            End If
+        Loop While myLHS.MoveNext
+
+        Return myResult
+        
+    End Function
+
+
+    Private Function NotBoth(ByRef ipLHS As Seq, ByRef ipRHS As Seq) As Seq
+
+        Return Seq.Deb(Me.LHSOnly(ipLHS, ipRHS)).Merge(LHSOnly(ipRHS, ipLHS)) ' not the reversal of the parameters
+        
+    End Function
+
+    Private Function MergeUnique(ByRef ipLHS As Variant, ByRef ipRHS As Variant) As Seq
+        
+        Dim myresult As Seq = Seq.Deb(ipLHS)
+        Dim myI As IterItems = IterItems.Deb(Seq(CVar(ipRHS)))
+        Do
+        	DoEvents
+            If myresult.Count = 0 Then
+            	myresult.Add myI.GetItem
+            ElseIf myresult.LacksItem(myI.GetItem) Then
+                myresult.Add myI.GetItem
+            End If
+        Loop While myI.MoveNext
+        Return myresult
+    End Function
+    
+End Class

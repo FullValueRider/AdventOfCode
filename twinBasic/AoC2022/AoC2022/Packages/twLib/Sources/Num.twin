@@ -1,0 +1,36 @@
+Class Number
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "A Class that emulates a number as an object"
+    Option Explicit
+
+    Private Const MY_NAME                       As string = "Number"
+    
+    Private Type Properties
+        Value                                   As variant
+       
+    End Type
+    
+    Private P                                   As properties
+
+    [ DefaultMember ]
+    Public Function Deb(ByRef ipNumber As Variant) As Number
+        
+        If TypeInfo.IsNotNumber(ipNumber) Then
+            Err.Raise 17 + vbObjectError, "Number", Fmt.Text("'{0}' {1}: expecting a number", ipNumber, TypeName(ipNumber))
+        End If
+        
+        With New Number
+            Return .ConstructInstance(ipNumber)
+        End With
+        
+    End Function
+    
+    Friend Function ConstructInstance(ByRef ipNumber As Variant) As Number
+        P.Value = ipNumber
+        Return Me
+    End Function
+End Class

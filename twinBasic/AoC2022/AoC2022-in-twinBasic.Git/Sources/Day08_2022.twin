@@ -1,0 +1,170 @@
+Class Day08_2022
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+    ' The problem states that all the trees on the perimeter are visible
+    ' but we cannot discount theese from the soution as a perimiter
+    ' tree may be hiding an inner tree
+    ' There are constraints on the coordinate system becaue we are using a seq of seq
+    ' and not an array, therefore to access an tem in s.data we must specify the row before the column
+    ' byt for trees we save the coordinates as col,row (x,y)
+    ' Its also not a solution to scan along a rank untl we find a tree that is 
+    '   bigger than the next tree
+    ' we actually need to find the first max height tree in the rank and then delete all the trees upto and including the max tree
+    Private Const Today             As String = "\2022\Day08Test1.txt"
+    
+
+    Private Type State
+        Data                            As seq
+        InnerTrees                      As hkvp
+    End Type
+
+    Private s                           As State
+
+    
+    Public Sub Execute()
+        
+        Part01
+        'Part02
+            
+    End Sub
+
+
+    Private Sub Part01()
+
+        Initialise
+        
+        PopulateInnerTreeCoords
+        
+        Dim myCol As Long
+        For myCol = s.Data.First.fboindex To s.Data.First.lboindex
+            Debug.Print "NS"
+            DeleteLowTrees s.Data.FirstIndex, s.Data.LastIndex, 1, myCol, myCol - 1, 0
+            Debug.Print "SN"
+            DeleteLowTrees s.Data.LastIndex, s.Data.FirstIndex, -1, myCol, myCol - 1, 0
+        Next
+      
+        Dim myRow As Long
+        For myRow = s.Data.FBOIndex To s.Data.LBOIndex
+            Debug.Print "WE"
+            DeleteLowTrees myRow, myRow - 1, 0, s.Data.First.FirstIndex, s.Data.First.lastindex, 1
+            Debug.Print "EW"
+            DeleteLowTrees myRow, myRow - 1, 0, s.Data.First.LastIndex, s.Data.First.firstindex, -1
+        Next
+       
+        Dim myResult As Long = (s.Data.Count * s.Data.First.count) - s.InnerTrees.Count
+        
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "72017", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+
+        Initialise
+        
+        
+        Dim myResult As Long
+                
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "212520", myResult
+
+    End Sub
+    
+
+    Private Sub Initialise()
+    
+        Set s.Data = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC & Today, vbCrLf)) _
+          .MapIt(mpSplitToChars(ToSeq)) _
+          .MapIt(mpInner(mpConvert(ToLong)))
+           
+     End Sub
+
+    Public Sub RemoveTree(ByVal ipCol As Long, ByVal ipRow As Long)
+        Dim mycoord As String = Fmt.Text("{0},{1}", ipCol, ipRow)
+       ' Debug.Print "Proposing to Delete", ipCol, ipRow, mycoord, s.Data(ipRow)(ipCol)
+        If s.InnerTrees.HoldsKey(mycoord) Then
+           ' Debug.Print mycoord
+            s.InnerTrees.Remove mycoord
+        End If
+    End Sub
+
+    Private Sub PopulateInnerTreeCoords()
+    	
+        Set s.InnerTrees = Hkvp.Deb
+        Dim myRow As Long
+        For myRow = s.Data.FBOIndex To s.Data.LBOIndex
+        
+            Dim myCol As Long
+            For myCol = s.Data.First.fboindex To s.Data.First.lboindex
+            
+                s.InnerTrees.Add Fmt.Text("{0},{1}", myCol, myRow), 0
+                
+            Next
+            
+        Next
+        
+    End Sub
+    
+    '@Description("Generic rank scanner.  Normal use is that one of the increments will be zero")
+    Private Sub DeleteLowTrees(ByVal ipRowSTart As Long, ByVal ipRowEnd As Long, ByVal ipRowStep As Long, ByRef ipColstart As Long, ByVal ipcolend As Long, ByVal ipColStep As Long)
+    
+        ' FTS automatically defines the step when initialised and will not nitialise with a step of 0v
+        ' but we can use the step method to override to 0
+        
+        Dim myRow As Long = ipRowSTart
+        Dim mycol As Long = ipColstart
+        Dim myMax As Long = enums.Preset(MinLong)
+        Dim myMaxRow As Long
+        Dim myMaxCol As Long
+        Do While myRow <> ipRowEnd And mycol <> ipcolend
+                
+            DoEvents
+            
+            
+            Debug.Print s.Data(myRow)(mycol)
+            If s.Data(myRow)(mycol) > myMax Then
+                myMax = s.Data(myRow)(mycol)
+                myMaxRow = myRow
+                myMaxCol = mycol
+            End If
+            
+            mycol += ipColStep
+            myRow += ipRowStep
+           
+            
+        Loop
+        
+        myRow = myMaxRow
+        mycol = myMaxCol
+        
+        Do While myRow <> ipRowSTart And mycol <> ipColstart
+           
+        	RemoveTree mycol, myRow
+            myRow -= ipRowStep
+            mycol -= ipColStep
+        Loop
+        RemoveTree mycol, myRow
+    End Sub
+    
+End Class
+
+ ' If we have reached the end of the rank then the tree is visible
+            ' If VBA.IsNull(s.Data(ipRow + ipRowInc)(ipCol + ipColInc)) Then
+            '     RemoveTree ipCol, ipRow
+            '     Exit Do
+            ' End If
+            
+            
+            ' If s.Data(ipRow + ipRowInc)(ipCol + ipColInc) < s.Data(ipRow)(ipCol) Then
+            '     RemoveTree ipCol, ipRow
+            '     Exit Do
+            ' End If
+            
+            ' RemoveTree ipCol, ipRow
+            ' ipRow += ipRowInc
+            ' ipCol += ipColInc

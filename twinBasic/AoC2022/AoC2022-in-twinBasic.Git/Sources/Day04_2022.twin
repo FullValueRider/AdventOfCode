@@ -1,0 +1,142 @@
+Class Day04_2022
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+
+    Private Const Today             As String = "\2022\Day04.txt"
+    
+
+    Private Type State
+
+        Data                            As seq
+       
+    End Type
+
+    Private s                           As State
+
+    
+    Public Sub Execute()
+        
+        Part01
+        Part02
+            
+    End Sub
+
+ 
+    Private Sub Part01()
+
+        Initialise
+        
+        Dim myCount As Long = 0
+        Dim mySections As IterItems = IterItems.Deb(s.Data)
+        Do
+            Dim mySection As Seq = mySections(0).mapit(mpSplitToSubStr(ToSeq, Char.twHyphen)).mapit(mpInner(mpConvert(ToLong)))
+           
+            If mySection(1)(1) <= mySection(2)(1) Then
+            
+                If mySection(1)(2) >= mySection(2)(2) Then
+                
+                    myCount += 1
+                    Continue Do
+                End If
+            
+            End If
+            
+             If mySection(2)(1) <= mySection(1)(1) Then
+            
+                If mySection(2)(2) >= mySection(1)(2) Then
+                
+                    myCount += 1
+                    Continue Do
+                End If
+            
+            End If
+        	
+        Loop While mySections.MoveNext
+        Dim myResult As Long = myCount
+        
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "657", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+
+        Initialise
+        Dim myCount As Long = 0
+        Dim mySections As IterItems = IterItems.Deb(s.Data)
+        Do
+        
+            Dim mySection As Seq = mySections(0).mapit(mpSplitToSubStr(ToSeq, Char.twHyphen)).mapit(mpInner(mpConvert(ToLong)))
+            
+            If mySection(1)(1) <= mySection(2)(1) Then
+            
+                If mySection(1)(2) >= mySection(2)(1) Then
+                    myCount += 1
+                    Continue Do
+                End If
+            
+            End If
+            
+             If mySection(1)(1) <= mySection(2)(2) Then
+            
+                If mySection(1)(2) >= mySection(2)(2) Then
+                    myCount += 1
+                    Continue Do
+                End If
+            
+            End If
+            
+            If mySection(2)(1) <= mySection(1)(1) Then
+            
+                If mySection(2)(2) >= mySection(1)(1) Then
+                    myCount += 1
+                    Continue Do
+                End If
+            
+            End If
+            
+            If mySection(2)(1) <= mySection(1)(2) Then
+            
+                If mySection(2)(2) >= mySection(1)(2) Then
+                    myCount += 1
+                    Continue Do
+                End If
+            
+            End If
+        	
+        Loop While mySections.MoveNext
+        Dim myResult As Long = myCount
+                
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "938", myResult
+
+    End Sub
+
+    Private Sub Initialise()
+    
+        Set s.Data = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC & Today, vbCrLf)) _
+            .MapIt(mpSplitToSubStr(ToSeq, Char.twComma))
+           
+        
+     End Sub
+
+    Public Function UpgradetoDoubleDigits(ByRef ipString As String) As String
+    
+        Dim myArray As Variant = VBA.Split(ipString, Char.twHyphen)
+        If VBA.Len(myArray(0)) = 1 Then
+            myArray(0) = "0" & myArray(0)
+        End If
+        
+        If VBA.Len(myArray(1)) = 1 Then
+            myArray(1) = "0" & myArray(1)
+        End If
+    
+        Return VBA.Join(myArray, Char.twHyphen)
+    End Function
+    
+End Class

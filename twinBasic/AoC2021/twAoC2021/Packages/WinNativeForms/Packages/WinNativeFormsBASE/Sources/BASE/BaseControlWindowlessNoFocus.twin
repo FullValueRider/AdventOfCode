@@ -1,0 +1,57 @@
+[ ClassId ("57858BD8-4A90-461A-94F2-6D6D5F855A36") ]
+[ InterfaceId ("629884A1-C2C5-4A32-AA4C-3733648E913D") ]
+[ COMCreatable (False) ]
+Private Class BaseControlWindowlessNoFocus
+
+    Implements BaseControlRect Via BaseControlRect
+
+    [ Serialize (False) ]
+        Private RootWindowElementBase As WindowsControls.WindowElement
+    [ Description ("Determines how the sides of this control are anchored to its container") ]
+        Public ReadOnly Anchors As Anchors = New Anchors
+    [ Description ("Adjusts how the control is docked inside of its container") ]
+        Public ReadOnly Dock As VBRUN.DockModeConstants = VBRUN.DockModeConstants.vbDockNone
+    [ Description ("") ]
+        Public Visible As Boolean = True
+
+    Sub New(ByVal ControlType As ControlTypeConstants)
+        Set Me.BaseControlRect = New BaseControlRect(ControlType)
+    End Sub
+
+    Friend Function CreateRootWindowElement(ByVal _ControlContext As stdole.IUnknown) As WindowElement
+        Set Me.ControlContext = _ControlContext ' FIXME passed as IUnknown to prevent COM exposure of type
+        Set Me.RootWindowElementBase = Me.ControlContext.CreateWindowElement(vbNullString, vbNullString, 0, 0, False)
+        Return Me.RootWindowElementBase
+    End Function
+    
+    Public Sub ScheduleCallback(ByVal Callback As IScheduledCallback)
+        Me.ControlContext.ScheduleCallback(ObjPtr(Callback))
+    End Sub
+
+    Public Function CreateDeferredDispatchWrapper(ByRef Object As Object) As Object
+    	Return Me.ControlContext.CreateDeferredDispatchWrapper(Object)
+    End Function
+
+    [ DispId (-856) ]
+    Public Property Get Container() As Object
+        On Error Resume Next
+        Me.ControlContext.EnsureFormIsLoaded()
+    	Return Me.RootWindowElementBase.Container
+    End Property
+
+    Private Sub OnPropertyChanged_Visible() _
+            Handles Visible.OnPropertyLet
+
+        Me.ControlContext.EnsureFormIsLoaded()
+        Me.RootWindowElementBase.Container.Refresh()
+    End Sub
+
+    Private Sub OnTouchedFormProperties() _
+            Handles Anchors.OnPropertyGet, _
+                    Dock.OnPropertyGet, _
+                    Visible.OnPropertyGet
+                    
+        Me.ControlContext.EnsureFormIsLoaded()
+    End Sub
+
+End Class

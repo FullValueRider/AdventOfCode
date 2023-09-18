@@ -1,0 +1,152 @@
+Class ElfComDir
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+    Public Enum FileInfo
+    	
+        Size = 1
+        Name = 2
+        
+    End Enum
+    
+    Private Const ROOT                      As String = "/"
+    Private Type Properties
+    
+        Parent                              As elfcomdir
+        Name                                As string
+        Directories                         As Lookup ' name vs elfcomdir
+        Files                               As Lookup ' name vs size
+        Path                                As string
+    End Type
+    
+    Private p                               As properties
+    
+    Public Function Deb(ByRef ipName As String, Optional ByRef ipParent As ElfComDir = Nothing) As ElfComDir
+        With New ElfComDir
+            Return .ConstructInstance(ipName, ipParent)
+        End With
+    End Function
+    
+    Friend Function ConstructInstance(ByRef ipName As String, ByRef ipParent As ElfComDir) As ElfComDir
+        
+        p.Name = ipName
+        Set p.Parent = ipParent
+        
+        Set p.Directories = Lookup.Deb.SetReadWrite
+        Set p.Files = Lookup.Deb.SetReadWrite
+        If Parent IsNot Nothing Then
+            p.Path = Parent.Name & p.Name
+        End If
+        Return Me
+        
+    End Function
+    
+    Public Property Get Name() As String
+        Return p.Name
+    End Property
+    
+    Public Property Let Name(ByRef ipName As String)
+        p.Name = ipName
+    End Property
+    
+    
+    Public Property Get Dirs() As Lookup
+        Return p.Directories
+    End Property
+    
+    Public Property Set Dirs(ByRef ipDirectories As Lookup)
+        Set p.Directories = ipDirectories
+    End Property
+    
+    
+    Public Property Get Files() As Lookup
+    	Return p.Files
+    End Property
+        
+    Public Property Set Files(ByRef ipFiles As Lookup)
+        Set p.Files = ipFiles
+    End Property
+    
+    
+    Public Property Get Parent() As ElfComDir
+        Return p.Parent
+    End Property
+    
+    Public Property Set Parent(ByRef ipParent As ElfComDir)
+        Set p.Parent = ipParent
+    End Property
+    
+    Public Function cd(ByRef ipName As String) As ElfComDir
+    	
+        Select Case ipName
+        
+            Case ".."
+            
+                If p.Name = ROOT Then
+                    Return Me
+                Else
+                    Return p.Parent
+                End If
+                
+                
+            Case ROOT
+            
+                'Debug.Print Name, ROOT
+                If Name = ROOT Then
+                    Return Me
+                End If
+                
+                Dim myDir As ElfComDir = Me
+           
+                Do While myDir.Name <> ROOT
+                    Set myDir = myDir.Parent
+                Loop
+                
+                Return myDir
+                
+                
+            Case Else
+
+                Return p.Directories.Item(ipName)
+        
+        
+        End Select
+        
+    End Function
+    
+    Public Sub Size(ByRef ipDirSizes As Lookup)
+       
+        Dim mysize As Long = 0
+        
+        If p.Directories.Count > 0 Then
+            Dim myDirs As IterItems = IterItems.Deb(p.Directories)
+            Do
+                If myDirs(0) Is Nothing Then Continue Do
+                If myDirs.Count = 0 Then Continue Do
+                Dim mydir As ElfComDir = myDirs(0)
+                mydir.Size ipDirSizes
+                mysize += ipDirSizes.Last.Item(0)
+                
+            Loop While myDirs.MoveNext
+        End If
+        
+        If p.Files.Count > 0 Then
+            mysize += p.Files.ReduceIt(rdSum)
+        End If
+    
+        Dim myName As String = Name
+        ' Make the name unique
+        Do While ipDirSizes.HoldsKey(myName)
+            myName &= "_"
+        Loop
+        
+        ipDirSizes.Add myName, mysize
+     
+    End Sub
+    
+End Class

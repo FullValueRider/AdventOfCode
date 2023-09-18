@@ -1,0 +1,115 @@
+Class Rank
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "A Class that manages Rank information"
+    Option Explicit
+
+    Const MY_TYPENAME                                   As String = "Rank"
+
+    Public Enum RankItem
+        FirstIndex = 0
+        LastIndex
+        Count
+       
+    End Enum
+
+    Private Type Properties
+
+        Items(RankItem.FirstIndex To RankItem.Count)    As variant
+        IsNotQueryable As boolean
+        
+    End Type
+
+    Private p                                           As Properties
+
+    
+    '@DefaultMember
+    Public Function Deb() As Rank
+        With New Rank
+            Return .ConstructInstance(0, -1)
+        End With
+    End Function
+
+    Public Function Deb(ByRef ipSize As Long) As Rank
+        With New Rank
+            Return .ConstructInstance(0, ipSize - 1)
+        End With
+    End Function
+
+    Public Function Deb(ByRef ipFirstIndex As Long, ByRef ipLastIndex As Long) As Rank
+        With New Rank
+            Return .ConstructInstance(ipFirstIndex, ipLastIndex)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByRef ipFirstIndex As Long, ByRef ipLastIndex As Long) As Rank
+
+        p.IsNotQueryable = ipLastIndex < ipFirstIndex
+        p.Items(RankItem.FirstIndex) = ipFirstIndex
+        p.Items(RankItem.LastIndex) = ipLastIndex
+       
+        p.Items(RankItem.Count) = p.Items(RankItem.LastIndex) - p.Items(RankItem.FirstIndex) + 1
+      
+        Return Me
+        
+    End Function
+
+
+    Public Function IsQueryable() As Boolean
+        Return Not p.IsNotQueryable
+    End Function
+
+    Public Function IsNotQueryable() As Boolean
+        Return p.IsNotQueryable
+    End Function
+
+
+    Public Function TypeName() As String
+        Return MY_TYPENAME
+    End Function
+
+
+    Public Property Get FirstIndex() As Long
+        Return p.Items(RankItem.FirstIndex)
+    End Property
+
+
+    Public Property Get LastIndex() As Long
+        Return p.Items(RankItem.LastIndex)
+    End Property
+
+
+    Public Property Get Count() As Long
+        Return p.Items(RankItem.Count)
+    End Property
+
+   
+
+
+    Public Function ToArray() As Variant
+        Return p.Items
+    End Function
+
+
+    Public Function ToSeq() As Seq
+        Return Seq.Deb(p.Items)
+    End Function
+    
+
+    Public Function ToHvp() As Hkvp
+    
+    	Dim myH As Hkvp = Hkvp.Deb
+        
+        Dim myI As IIterator = IterItems(p.Items)
+        Do
+        	DoEvents
+            myH.Add myI.Index, myI.Item
+        Loop While myI.MoveNext
+        
+        Return myH
+        
+    End Function
+
+End Class

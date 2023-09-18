@@ -1,0 +1,38 @@
+Class IMapper
+    
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = False
+    Attribute VB_Exposed = True
+    Option Explicit
+
+    
+    
+    Public Enum ConvertOp
+  
+        ToByte = vbByte
+        ToCurrency = vbCurrency
+        ToDate = vbDate
+        ToDecimal = vbDecimal
+        ToDouble = vbDouble
+        ToInteger = vbInteger
+        ToLong = vbLong
+        ToLongLong = vbLongLong
+        ToLongPtr = ToLongLong
+        ToSingle = vbSingle
+        ToString = vbString
+        ToHexStr
+        ToOctStr
+        ToBinStr
+        ToTypeName                      ' Typename(ipHostItem)
+        ToTypeOrdinal                   ' enums.Types.TypenameToOrdinal(Lcase$(typename(ipHostItem)))
+        
+    End Enum
+    
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant
+    End Function
+    
+    Public Property Get TypeName() As String
+    End Property
+
+End Class

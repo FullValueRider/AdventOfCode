@@ -1,0 +1,60 @@
+Class Day15
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+
+    Const InputData                     As String = "Day15Test.txt"
+
+    Private Type State
+        
+        Data                            As seq
+    End Type
+
+    Private s                           As State
+
+   
+    Public Sub Execute()
+        
+        Part01
+        Part02
+        
+    End Sub
+
+
+    Public Sub Part01()
+    
+        Initialise
+        
+       
+        Dim myResult As Long = 0
+        Fmt.Dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "2768", myResult
+        
+    End Sub
+    
+    
+     Public Sub Part02()
+        
+        Initialise
+        
+        
+        
+        Dim myResult As LongLong = 0
+     
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "xxxx", myResult
+        
+    End Sub
+    
+    
+    Public Sub Initialise()
+    	
+        Dim myStrings As Variant = VBA.Split(Filer.GetFileAsString(AoC2021Data & InputData), vbCrLf & vbCrLf)
+        
+        
+        
+    End Sub
+
+End Class

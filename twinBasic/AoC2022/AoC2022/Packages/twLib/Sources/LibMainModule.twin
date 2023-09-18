@@ -1,0 +1,21 @@
+Module LibMainModule
+
+	Option Explicit
+
+    Public Const AoC As String = "C:\Users\slayc\source\repos\AdventOfCode\RawData"
+    
+    Public Sub Main()
+    
+        Dim myDuration As Variant = Timer
+
+        ' Day01_2020.Execute
+        ' Day02_2020.Execute
+        ' Day03_2020.Execute
+        ' Day04_2020.Execute
+        
+        myDuration = Timer - myDuration
+        Debug.Print "Executed in " & myDuration & " Seconds"
+        
+    End Sub
+
+End Module

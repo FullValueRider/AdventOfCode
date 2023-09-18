@@ -1,0 +1,105 @@
+Class Rank
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "A Class that manages Rank information"
+    Option Explicit
+
+    Const MY_TYPENAME                                   As String = "Rank"
+
+    Public Enum RankItem
+        FirstIndex = 0
+        LastIndex
+        Count
+       
+    End Enum
+
+    Private Type Properties
+
+        FirstIndex                                     As long
+        LastIndex                                       As Long
+        Count                                           As Long
+        
+    End Type
+
+    Private p                                           As Properties
+
+    
+    '@DefaultMember
+    Public Function Deb() As Rank
+        With New Rank
+            Return .ConstructInstance(0, -1)
+        End With
+    End Function
+
+    Public Function Deb(ByRef ipSize As Long) As Rank
+        With New Rank
+            Return .ConstructInstance(0, ipSize - 1)
+        End With
+    End Function
+
+    Public Function Deb(ByRef ipFirstIndex As Long, ByRef ipLastIndex As Long) As Rank
+        With New Rank
+            Return .ConstructInstance(ipFirstIndex, ipLastIndex)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByRef ipFirstIndex As Long, ByRef ipLastIndex As Long) As Rank
+
+        
+        p.FirstIndex = ipFirstIndex
+        p.LastIndex = ipLastIndex
+       
+        If p.LastIndex < p.FirstIndex Then
+            p.Count = -1
+        Else
+            p.Count = p.LastIndex - p.FirstIndex + 1
+        End If
+       
+        Return Me
+        
+    End Function
+
+
+    Public Function IsQueryable() As Boolean
+        Return p.Count > 0
+    End Function
+
+    Public Function IsNotQueryable() As Boolean
+        Return Not IsQueryable
+    End Function
+
+
+    Public Function TypeName() As String
+        Return MY_TYPENAME
+    End Function
+
+
+    Public Property Get FirstIndex() As Long
+        Return p.FirstIndex
+    End Property
+
+
+    Public Property Get LastIndex() As Long
+        Return p.LastIndex
+    End Property
+
+
+    Public Property Get Count() As Long
+        Return p.Count
+    End Property
+
+   
+
+
+    Public Function ToArray() As Variant
+        Return Array(p.FirstIndex, p.LastIndex, p.Count)
+    End Function
+
+
+    Public Function ToSeq() As Seq
+        Return Seq.Deb.AddItems(p.FirstIndex, p.LastIndex, p.Count)
+    End Function
+    
+End Class

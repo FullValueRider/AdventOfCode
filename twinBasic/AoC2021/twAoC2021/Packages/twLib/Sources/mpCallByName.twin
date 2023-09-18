@@ -1,0 +1,70 @@
+Class mpCallByName
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    '@Description("Implements call by name on the object provided by ipHostItem")
+    Option Explicit
+   
+    Implements IMapper
+    
+    Private Const MY_TYPENAME           As String = "mpCallByName"
+    
+    Private Type State
+            
+        MethodName                       As String
+        CallType                         As vbcalltype
+            
+    End Type
+
+    Private s                               As State
+
+    
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+    	
+        Dim myresult As Variant
+    	If TryCallByName(ipHostItem, s.MethodName, s.CallType, myresult) Then
+                Return myresult
+        End If
+    
+       
+    End Function
+    
+    Public Function TryCallByName(ByRef ipHostItem As Variant, ByVal ipMethodname As String, ByVal ipcalltype As VbCallType, opResult As Variant) As Boolean
+        
+        On Error Resume Next
+        Dim myresult As Variant = Array(VBA.CallByName(ipHostItem, s.MethodName, s.CallType))
+        If VBA.IsObject(myresult(0)) Then
+            Set opResult = myresult(0)
+        Else
+            opResult = myresult(0)
+        End If
+        
+        Dim myerrorflag As Boolean = Err.Number = 0
+        On Error GoTo 0
+        Return myerrorflag
+        
+    End Function
+
+    '@DefaultMember
+    Public Function Deb(ByVal ipMethodName As String, ByVal ipCallType As VbCallType) As mpCallByName
+        With New mpCallByName
+            Set Deb = .ConstructInstance(ipMethodName, ipCallType)
+        End With
+    End Function
+
+
+    Friend Function ConstructInstance(ByVal ipMethodName As String, ByVal ipcalltype As VbCallType) As mpCallByName
+      
+       s.MethodName = ipMethodName
+       s.CallType = ipcalltype
+       Return Me
+    End Function
+
+
+    Public Function TypeName() As String Implements Imapper.TypeName
+        Return MY_TYPENAME
+    End Function
+
+End Class

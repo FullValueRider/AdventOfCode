@@ -1,0 +1,58 @@
+Class mpDec
+    Attribute VB_Name = "mpDec"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+    Implements IMapper
+
+    
+    Private Const MY_TYPENAME               As String = "mpDec"
+    
+    
+    Private Type State
+            
+        Decrement                       As Variant
+            
+            
+    End Type
+
+    Private s                           As State
+
+    '@Description("Substracts the value from the HostItem.  If the host item is not a number then ipHostItem is returned")
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+            
+        If TypeInfo.IsNotNumber(ipHostItem) Then
+                
+            Return ipHostItem
+                
+                
+        Else
+                
+            Return ipHostItem - s.Decrement
+                
+                
+        End If
+        
+            
+    End Function
+    
+    '@DefaultMember
+    Public Function Deb(Optional ByVal ipDecrement As Variant = 1) As mpDec
+        With New mpDec
+            Set Deb = .ConstructInstance(ipDecrement)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipDecrement As Variant) As mpDec
+        s.Decrement = ipDecrement
+        Set ConstructInstance = Me
+    End Function
+
+    Public Property Get TYpeName() As String Implements IMapper.TypeName
+        Return MY_TYPENAME
+    End Property
+    
+End Class

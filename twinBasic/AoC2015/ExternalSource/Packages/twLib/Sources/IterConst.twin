@@ -1,0 +1,236 @@
+Class IterConst
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "Each iteration returns the Preset Value"
+    Option Explicit
+
+ 
+    Implements IIterator
+
+    Const MY_NAME                               As String = "IterConst"
+    
+    Private Type Properties
+
+        Item                                    As Variant
+        Span                                    As Span
+        Offset                                  As Double ' offset from p.span.From
+
+    End Type
+
+    Private p                                   As Properties
+
+   '@DefaultMember
+    Public Function Deb() As IterConst
+        With New IterConst
+        	Return .ConstructInstance(Empty, enums.Preset.Value(MinLong), enums.Preset.Value(MaxLong), 1)
+        End With
+    End Function
+    Public Function Deb(ByRef ipItem As Variant) As IterConst
+        With New IterConst
+            Return .ConstructInstance(ipItem, enums.Preset.Value(MinLong), enums.Preset.Value(MaxLong), 1)
+        End With
+    End Function
+    
+     
+    Public Function Deb _
+    ( _
+        ByRef ipItem As Variant, _
+        ByVal ipCount As Long _
+    ) As IterConst
+        With New IterConst
+            Set Deb = .ConstructInstance(ipItem, 1, ipCount, 1)
+        End With
+    End Function
+    
+    Public Function Deb _
+    ( _
+        ByRef ipItem As Variant, _
+        ByVal ipFrom As Long, _
+        ByVal ipTo As Long _
+    ) As IterConst
+        With New IterConst
+            Set Deb = .ConstructInstance(ipItem, ipFrom, ipTo, 1)
+        End With
+    End Function
+    
+    Public Function Deb _
+    ( _
+        ByRef ipItem As Variant, _
+        ByVal ipFrom As Long, _
+        ByVal ipTo As Long, _
+        ByVal ipStep As Long _
+    ) As IterConst
+        With New IterConst
+            Set Deb = .ConstructInstance(ipItem, ipFrom, ipTo, ipStep)
+        End With
+    End Function
+    
+    Public Function Deb(ByRef ipItem As Variant, ByRef ipSpan As Span) As IterConst
+        With New IterConst
+            Return .ConstructInstance(ipItem, ipSpan.From, ipSpan.To, ipSpan.Step)
+        End With
+    End Function
+
+
+    Friend Function ConstructInstance _
+    ( _
+        ByRef ipItem As Variant, _
+        ByVal ipFrom As Long, _
+        ByVal ipTo As Long, _
+        ByVal ipStep As Long _
+    ) As IterConst
+
+        ' Dim myFrom As Variant = IIf(VBA.IsEmpty(ipFrom), enums.Preset.Value(MinLong), ipFrom)
+        ' Dim myTo As Variant = IIf(VBA.IsEmpty(ipTo), enums.Preset.Value(MaxLong), ipTo)
+        Dim myStep As Variant = IIf(VBA.IsEmpty(ipStep), 1, VBA.Abs(ipStep))
+        myStep = VBA.Abs(myStep) * IIf(ipFrom <= ipTo, 1, -1)
+        Set p.Span = Span(ipFrom, ipTo, myStep)
+        If VBA.IsObject(ipItem) Then
+            Set p.Item = ipItem
+        Else
+        	p.Item = ipItem
+        End If
+        
+        p.Offset = 0
+            
+        Return Me
+        
+    End Function
+
+    Public Function SetSpan _
+    ( _
+        Optional ByRef ipFromOrSpan As Variant = Empty, _
+        Optional ByRef ipTo As Variant = Empty, _
+        Optional ByRef ipStep As Variant = 1, _
+        Optional ByVal ipRank As Long = 1 _
+    ) As IIterator Implements IIterator.SetSpan
+
+       ' Any input of iprank is ignored
+    
+        If VBA.TypeName(ipFromOrSpan) = Span.TypeName Then
+            Set p.Span = ipFromOrSpan
+        Else
+            
+            Dim myFrom As Variant = IIf(VBA.IsEmpty(ipFromOrSpan), enums.Preset.Value(MinLong), ipFromOrSpan)
+            Dim myTo As Variant = IIf(VBA.IsEmpty(ipTo), enums.Preset.Value(MaxLong), ipTo)
+            Dim mystep As Variant = IIf(ipStep = 0, 1, ipStep)
+            mystep = VBA.Abs(mystep) * IIf(myFrom <= ipTo, 1, -1)
+            Set p.Span = Span(myFrom, myTo, mystep)
+
+        End If
+        
+        p.Offset = 0
+        
+        Return Me
+
+    End Function
+    
+    Private Function CannotIncOffset() As Boolean
+        
+        If p.Span.Step > 0 Then
+            If p.Span.From + p.Offset + p.Span.Step > p.Span.To Then
+                Return True
+            End If
+        Else
+           If p.Span.From + p.Offset + p.Span.Step < p.Span.To Then
+                Return True
+            End If
+        End If
+        
+        Return False
+        
+    End Function
+    
+    
+    Private Function CannotDecOffset() As Boolean
+        
+        Err.Raise _
+            vbObjectError + 17, _
+            "IterConst.CannotDecOffset", _
+            "No implemented for IterConst"
+        
+    End Function
+
+    Public Function MoveNext() As Boolean Implements IIterator.MoveNext
+
+        If CannotIncOffset Then
+        	Return False
+        Else
+            p.Offset += p.Span.Step
+            Return True
+        End If
+        
+    End Function
+
+
+    Public Function MovePrev() As Boolean Implements IIterator.MovePrev
+        
+         Err.Raise _
+            vbObjectError + 17, _
+            "IterConst.CannotDecOffset", _
+            "No implemented for IterConst"
+        
+    End Function
+
+    'ipOffset is not used by IterConst
+    Public Function Index(Optional ipOffset As Long = 0) As Long Implements IIterator.Index
+        Return p.Offset
+    End Function
+    
+    Public Function Item(Optional ipOffset As Long = 0) As Variant Implements IIterator.Item
+        Return p.Item
+    End Function
+        
+    Public Function Key(Optional ipOffset As Long = 0) As Variant Implements IIterator.Key
+        Return p.Offset
+    End Function
+        
+
+   Public Function HasNext() As Boolean Implements IIterator.HasNext
+       Return IIf(CannotIncOffset, False, True)
+    End Function
+    
+    Public Function HasNoNext() As Boolean Implements IIterator.HasNoNext
+       Return IIf(CannotIncOffset, True, False)
+    End Function
+    
+    Public Function HasPrev() As Boolean Implements IIterator.HasPrev
+       Err.Raise _
+            vbObjectError + 17, _
+            "IterConst.CannotDecOffset", _
+            "No implemented for IterConst"
+    End Function
+    
+    Public Function HasNoPrev() As Boolean Implements IIterator.HasNoPrev
+       Err.Raise _
+            vbObjectError + 17, _
+            "IterConst.CannotDecOffset", _
+            "No implemented for IterConst"
+    End Function
+    
+    
+    Public Function Count() As Long Implements IIterator.Count
+        Return VBA.Abs(Abs(VBA.Abs(p.Span.To) - VBA.Abs(p.Span.From))) + 1
+    End Function
+    
+    
+   Public Function MoveToStart() As IIterator Implements IIterator.MoveToStart
+        p.Offset = 0
+        Return Me
+    End Function
+    
+    Public Function MoveToEnd() As IIterator Implements IIterator.MoveToEnd
+        Err.Raise _
+            vbObjectError + 17, _
+            "IterConst.CannotDecOffset", _
+            "No implemented for IterConst"
+    End Function
+    
+    
+    Public Property Get TypeName() As String Implements IIterator.TypeName
+        Return MY_NAME
+    End Property
+    
+End Class

@@ -1,0 +1,138 @@
+Public Class varArray
+    Public Cargo                       As Variant
+ End Class
+
+Public Class varEnumerable
+    Public Cargo                       As variant
+End Class
+
+Public Class VarObject
+    Public cargo                       As variant
+End Class
+
+Public Class varPrimitive
+     Public cargo                       As variant
+End Class
+
+Public Class VarAdmin
+    Public cargo                       As variant
+End Class
+
+    ' This is for emergency use only
+Public Class varVariant
+     Public Cargo                       As variant
+End Class
+
+Public Class VarForEach
+    Public Cargo                        As variant
+End Class
+
+
+Class VarInfo
+    Attribute VB_Name = "VarInfo"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "MetaData on  variants"
+    Option Explicit
+
+
+
+    ' Public Function IsMissing(ParamArray ipParamArray() As Variant) As Boolean
+        
+    '     If ArrayInfo.IsNotAllocated(ipParamArray) Then
+    '         Return True
+    '     End If
+        
+    '     Dim myPA As Variant = VarOp(CVar(ipParamArray))
+        
+        
+    '     ' ' Select Case myPR.ResultGroup
+            
+    '     ' '     Case GroupType.IsString, GroupType.IsNumber, GroupType.IsBoolean, GroupType.IsItemObject
+            
+    '     ' '         myPR.Cargo = Array(myPR.Cargo)
+                
+            
+    '     ' End Select
+        
+    '     ' Dim myArg As Variant
+    '     ' For Each myArg In myPR.Cargo
+    '     Dim myParam As IterItems = IterItems.Deb(myPA)
+    '     Do
+    '         If Not VBA.IsMissing(myParam.Item) Then Return False
+                
+    '     Loop While myParam.MoveNext
+            
+    ' Return True
+            
+    ' End Function
+
+    ' '@Description"Returns True if all parameters are are not missing")
+    ' Public Function IsNotMissing(ParamArray ipParamArray() As Variant) As Boolean
+        
+    '     Dim myPR As ParserResult = VariantParser.Deb(ipParamArray).ToItems(StringAsString)
+        
+    '     If myPR.IsNotAllocated Then
+    '         Return True
+    '     End If
+        
+    '     Select Case myPR.ResultGroup
+            
+    '         Case GroupType.IsString, GroupType.IsNumber, GroupType.IsBoolean, GroupType.IsItemObject
+            
+    '             myPR.Cargo = Array(myPR.Cargo)
+                
+            
+    '     End Select
+        
+    '     Dim myArg As Variant
+    '     For Each myArg In myPR.Cargo
+            
+    '         If VBA.IsMissing(myArg) Then Return False
+                
+    '     Next
+        
+    ' End Function
+    Public Function IsNotEmpty(ByRef ipItem As Variant) As Boolean
+        Return Not VBA.IsEmpty(ipItem)
+    End Function
+
+    '@Description("Converts a primitive value to the requested type")
+    Public Function ToType(ByVal ipType As VbVarType, ByVal ipValue As Variant) As Variant
+
+        If BailOut.When(TypeInfo.IsNotPrimitive(TypeInfo.BaseType(ipValue))) Then
+            Return vbNull
+        End If
+          
+        On Error GoTo exitToType
+        Select Case ipType:    
+                
+            Case vbBoolean:             Return VBA.CBool(ipValue)
+            Case vbByte:                Return VBA.CByte(ipValue)
+            Case vbCurrency:            Return VBA.CCur(ipValue)
+            Case vbDate::               Return VBA.CDate(ipValue)
+            Case vbDouble:              Return VBA.CDbl(ipValue)
+            Case vbDecimal:             Return VBA.CDec(ipValue)
+            Case vbInteger:             Return VBA.CInt(ipValue)
+            Case vbLong:                Return VBA.CLng(ipValue)
+            Case vbLongLong:            Return VBA.CLngLng(ipValue)
+            Case vbSingle:              Return VBA.CSng(ipValue)
+            Case vbString::             Return VBA.CStr(ipValue)
+            Case Else
+            
+                Err.Raise _
+                    enums.Message.Ord(InvalidType), _
+                    "VariantInfo.ToType", _
+                    "The requested conversion is not possible"
+                    
+        End Select
+        
+        exitToType:
+        
+            Return ipValue
+
+    End Function
+ 
+End Class

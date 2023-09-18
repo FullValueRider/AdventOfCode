@@ -1,0 +1,1 @@
+const AocData*           :string = "C:\\Users\\slayc\\source\\repos\\AdventOfCode\\RawData"

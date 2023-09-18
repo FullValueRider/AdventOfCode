@@ -1,0 +1,151 @@
+Class Guard
+
+    Option Explicit
+    '@PredeclaredId
+    '@Exposed
+	
+    Private Type Properties
+        SilentReturn                    As boolean
+        Component                       As String
+        Procedure                       As string
+    End Type
+    
+    Private p                           As Properties
+    
+    Private Sub Class_Initialize()
+        p.SilentReturn = True
+    End Sub
+    
+    
+    Public Property Get SilentReturn() As Boolean
+        SilentReturn = p.SilentReturn
+    End Property
+    
+    Public Property Let Silentreturn(ByVal ipFlag As Boolean)
+        p.SilentReturn = ipFlag
+    End Property
+    
+    Private Sub Throw(Optional ByVal ipMsgOrd As MsgOrd)
+    
+        Err.Raise _
+            17 + vbObjectError, _
+            p.Component & "." & p.Procedure, _
+            enums.Message.Value(ipMsgOrd)
+    End Sub
+    
+    Public Function IsNotInRange _
+    ( _ 
+        ByRef ipIndex As Long, _
+        ByRef ipEnumerable As Variant, _
+        Optional ipRank As Long = 1, _
+        Optional ByVal ipComponent As String, _
+        Optional ByVal ipProcedure As String _
+    ) As Boolean
+        
+        p.Component = ipComponent
+        p.Procedure = ipProcedure
+        
+        Dim myResult As Boolean
+        
+        If VBA.IsArray(ipEnumerable) Then
+            myResult = (ipIndex >= VBA.LBound(ipEnumerable, ipRank)) And (ipIndex <= VBA.UBound(ipEnumerable, ipRank))
+        Else
+           myResult = (ipIndex >= ipEnumerable.FirstIndex) And (ipIndex <= ipEnumerable.LastIndex)
+        End If
+        
+        If p.SilentReturn Then
+           Return myResult
+        End If
+        
+        If Not myResult Then
+            Throw MsgOrd.ParamArrayIsNotAllocated
+        End If
+        
+    End Function
+    
+    
+    Public Function IsNotAllocated(ByRef ipArray As Variant, Optional ByVal ipComponent As String, Optional ByVal ipProcedure As String) As Boolean
+        
+        p.Component = ipComponent
+        p.Procedure = ipProcedure
+        
+        Dim myResult As Boolean = ArrayInfo.IsNotAllocated(ipArray)
+        
+        If p.SilentReturn Then
+            Return myResult
+        End If
+        
+        If Not myResult Then
+            Throw MsgOrd.ArrayIsNotAllocated
+        End If
+        
+    End Function
+    
+    
+    Public Function IsNotQueryable(ByVal ipEnumerable As Variant, Optional ByVal ipComponent As String, Optional ByVal ipProcedure As String) As Boolean
+        
+        p.Component = ipComponent
+        p.Procedure = ipProcedure
+        
+        Dim myResult As Boolean = VBA.IsArray(ipEnumerable) And ArrayInfo.IsNotQueryable(ipEnumerable)
+       
+        If p.SilentReturn Then
+            Return myResult
+        End If
+        
+        If Not myResult Then
+            Throw MsgOrd.InvalidArray
+        End If
+    End Function
+    
+    
+    Public Function DisallowZero(ByVal ipValue As Variant) As Boolean
+        If p.SilentReturn Then
+            Return ipValue = 0
+        Else
+            Err.Raise 17
+        End If
+    End Function
+    
+    Public Function DisallowEmpty(ByVal ipValue As Variant) As Boolean
+        If p.SilentReturn Then
+            Return VBA.IsEmpty(ipValue)
+        Else
+            Err.Raise 17
+        End If
+    End Function
+    
+    
+    Public Function IsNotArray(ByRef ipArray As Variant, Optional ByVal ipComponent As String, Optional ByRef ipProcedure As String) As Boolean
+       
+        p.Component = ipComponent
+        p.Procedure = ipProcedure
+        
+        Dim myResult As Boolean = Not VBA.IsArray(ipArray)
+   
+        If p.SilentReturn Then
+                Return myResult
+        End If
+        
+       If Not myResult Then
+            Throw MsgOrd.IsNotArray
+        End If
+        
+    End Function
+    
+    Public Function TooManyRanks(ByRef iparray As Variant, ByRef ipC As String, ByRef ipP As String) As Boolean
+        
+        p.Component = ipC
+        p.Procedure = ipP
+        
+        Dim myResult As Boolean = ArrayInfo.Ranks(iparray) > 1
+        
+        If p.SilentReturn Then
+            Return myResult
+        End If
+
+        If Not myResult Then
+            Throw MsgOrd.InvalidRank
+        End If
+    End Function
+End Class

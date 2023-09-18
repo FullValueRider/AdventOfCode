@@ -1,0 +1,279 @@
+[ WindowsControl ("/miscellaneous/ProgressBarNew.png") ]
+[ ClassId ("60728020-5535-491E-BEDE-449A3CDE96EA") ]
+[ InterfaceId ("59880EA4-ED08-4DF7-8B8D-2F820FC3A395") ]
+[ COMCreatable (False) ]
+Class ProgressBar
+	
+	#Region "INHERITANCE"
+
+        [ WithDispatchForwarding ] Implements Control
+        Implements WindowsControls.IWindowsControl
+        Implements WinNativeFormsBase.BaseControlFocusable Via _BaseControl = New WinNativeFormsBase.BaseControlFocusable(ControlTypeConstants.vbProgressBar)
+        
+    #End Region
+    
+    Public Enum PrbOrientation
+        PrbOrientationHorizontal = 0
+        PrbOrientationVertical = 1
+    End Enum
+    
+    Public Enum PrbScrolling
+        PrbScrollingStandard = 0
+        PrbScrollingSmooth = 1
+        PrbScrollingMarquee = 2
+    End Enum
+    
+    Public Enum PrbState
+        PrbStateNormal = 1
+        PrbStateError = 2
+        PrbStatePaused = 3
+    End Enum
+        
+    #Region "STATE"
+    
+        [ CustomDesigner ("designer_SpectrumWindows") ]
+        [ Description ("") ]
+            Public BackColor As OLE_COLOR = VBRUN.SystemColorConstants.vbButtonFace
+        [ CustomDesigner ("designer_SpectrumWindows") ]
+        [ Description ("") ]
+            Public ForeColor As OLE_COLOR = VBRUN.SystemColorConstants.vbHighlight
+
+        [ Description ("") ]
+            Public MarqueeAnimation As Boolean = False
+        [ Description ("") ]
+            Public MarqueeSpeed As Long = 80
+        [ Description ("") ]
+            Public State As PrbState = PrbState.PrbStateNormal
+        [ Description ("") ]
+            Public ReadOnly SmoothReverse As Boolean = False
+        [ Description ("") ]
+            Public ReadOnly Orientation As PrbOrientation = PrbOrientation.PrbOrientationHorizontal
+        [ Description ("") ]
+            Public ReadOnly Scrolling As PrbScrolling = PrbScrolling.PrbScrollingStandard
+
+            Private WithEvents RootWindowElement As WindowsControls.WindowElement
+
+        [ Serialize (True, "Min") ]
+            Private Min_INIT As Long = 0
+        [ Serialize (True, "Max") ]
+            Private Max_INIT As Long = 100
+        [ Serialize (True, "Value") ]
+            Private Value_INIT As Long = 40
+        [ Serialize (True, "Step") ]
+            Private Step_INIT As Long = 10
+            
+    #End Region
+
+    #Region "EVENTS"
+    
+        [ Description ("") ]
+            Event Change()
+        [ DefaultDesignerEvent ]
+        [ Description ("") ]
+            Event Click()
+        [ Description ("") ]
+            Event DblClick()
+        [ Description ("") ]
+            Event MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            Event MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            Event MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+        [ Description ("") ]
+            Event Initialize()
+    
+    #End Region
+               
+    #Region "MEMBERS"
+
+        Public Sub New()
+            ' This constructor is useful for allowing control inheritance
+        End Sub
+        
+        Public Sub New(Serializer As WindowsControls.SerializationInfo)
+            If Not Serializer.Deserialize(Me) Then
+                ' InitializeDefaultValues
+            End If
+        End Sub
+        
+        Private Sub HandleInitialize(ByVal ControlContext As WindowsControls.WindowsControlContext) _
+                Implements IWindowsControl.Initialize
+            
+            ControlContext.SetControlArrayIndex(Me.IndexINIT)
+                
+            Dim styles As Long
+            Dim extendedStyles As Long
+                
+                styles += If(Me.Orientation = PrbOrientationVertical, PBS_VERTICAL, 0)
+                Select Case Me.Scrolling
+                    Case PrbScrollingSmooth: styles += PBS_SMOOTH
+                    Case PrbScrollingMarquee: styles += PBS_MARQUEE
+                End Select
+                styles += If(SmoothReverse = True, PBS_SMOOTHREVERSE, 0)
+                        
+            Set Me.RootWindowElement = CreateRootWindowElement(ControlContext, "msctls_progress32", vbNullString, styles, extendedStyles, True)
+        End Sub
+        
+        Private Sub HandleDestroy() _
+                Implements IWindowsControl.Destroy
+            
+            ' disconnect anything that causes a circular reference here
+        End Sub
+
+        Private Sub Class_Terminate()
+            'Debug.Print "ProgressBar.Class_Terminate"
+        End Sub
+		
+        Private Sub HandleCreate() _
+                Handles RootWindowElement.Create
+
+            Me.Min = Min_INIT
+            Me.Max = Max_INIT
+            Me.Value = Value_INIT
+            Me.Step = Step_INIT
+            SyncBackColor()
+            SyncForeColor()
+            SyncState()
+            SyncMarquee()
+            RaiseEvent Initialize()
+        End Sub
+        
+        Private Sub HandleMouseDoubleClick(ByVal Button As VBRUN.MouseButtonConstants, _
+                                            ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseDoubleClick
+                
+            RaiseEvent DblClick()
+        End Sub
+
+        Private Sub HandleMouseDown(ByVal Button As VBRUN.MouseButtonConstants, _
+                                        ByVal ShiftState As VBRUN.ShiftConstants, _
+                                        ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseDown
+            
+            RaiseEvent MouseDown(CInt(Button), CInt(ShiftState), X, Y)
+
+            RaiseEvent Click()          ' FIXME
+        End Sub
+        
+        Private Sub HandleMouseMove(ByVal Button As VBRUN.MouseButtonConstants, _
+                                        ByVal ShiftState As VBRUN.ShiftConstants, _
+                                        ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseMove
+                
+            RaiseEvent MouseMove(CInt(Button), CInt(ShiftState), X, Y)
+        End Sub
+        
+        Private Sub HandleMouseUp(ByVal Button As VBRUN.MouseButtonConstants, _
+                                    ByVal ShiftState As VBRUN.ShiftConstants, _
+                                    ByVal X As Single, ByVal Y As Single) _
+                Handles RootWindowElement.MouseUp
+                
+            RaiseEvent MouseUp(CInt(Button), CInt(ShiftState), X, Y)
+        End Sub
+        
+        Private Sub SyncBackColor() _
+                Handles BackColor.OnPropertyLet
+            
+            Me.ControlContext.EnsureFormIsLoaded()
+            WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_SETBKCOLOR, 0, TranslateColor(Me.BackColor))
+        End Sub
+
+        Private Sub SyncForeColor() _
+                Handles ForeColor.OnPropertyLet
+            
+            Me.ControlContext.EnsureFormIsLoaded()
+            WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_SETBARCOLOR, 0, TranslateColor(Me.ForeColor))
+        End Sub
+        
+        Private Sub SyncState() _
+                Handles State.OnPropertyLet
+            
+            Me.ControlContext.EnsureFormIsLoaded()
+            WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_SETSTATE, Me.State, 0)
+        End Sub
+        
+        Private Sub SyncMarquee() _
+                Handles MarqueeAnimation.OnPropertyLet, _
+                        MarqueeSpeed.OnPropertyLet
+                        
+            Me.ControlContext.EnsureFormIsLoaded()
+            WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_SETMARQUEE, If(Me.MarqueeAnimation, 1, 0), Me.MarqueeSpeed)
+        End Sub
+        
+        [ Serialize (False) ]
+        Public Property Get Min() As Long
+            Me.ControlContext.EnsureFormIsLoaded()
+            Return CLng(WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_GETRANGE, 1, 0))
+        End Property
+        
+        [ Serialize (False) ]
+        Public Property Let Min(ByVal Value As Long)
+            Me.ControlContext.EnsureFormIsLoaded()
+            WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_SETRANGE32, Value, Me.Max)
+        End Property
+        
+        [ Serialize (False) ]
+        Public Property Get Max() As Long
+            Me.ControlContext.EnsureFormIsLoaded()
+            Return CLng(WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_GETRANGE, 0, 0))
+        End Property
+        
+        [ Serialize (False) ]
+        Public Property Let Max(ByVal Value As Long)
+            Me.ControlContext.EnsureFormIsLoaded()
+            WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_SETRANGE32, Me.Min, Value)
+        End Property
+        
+        [ Serialize (False) ]
+        Public Property Get Step() As Long
+            Me.ControlContext.EnsureFormIsLoaded()
+            Return CLng(WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_GETSTEP, 0, 0))
+        End Property
+        
+        [ Serialize (False) ]
+        Public Property Let Step(ByVal Value As Long)
+            Me.ControlContext.EnsureFormIsLoaded()
+            WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_SETSTEP, Me.Step, 0)
+        End Property
+        
+        Public Sub StepIt()
+            Me.ControlContext.EnsureFormIsLoaded()
+            WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_STEPIT, 0, 0)
+            RaiseEvent Change
+        End Sub
+        
+        [ Serialize (False) ]
+        Public Property Get Value() As Long
+            Me.ControlContext.EnsureFormIsLoaded()
+            Return CLng(WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_GETPOS, 0, 0))
+        End Property
+        
+        [ Serialize (False) ]
+        Public Property Let Value(ByVal NewValue As Long)
+            If Me.Value <> NewValue Then
+                WinNativeFormsBASE.WindowsAPI.USER32_SendMessage(Me.RootWindowElement, PBM_SETPOS, NewValue, 0)
+                RaiseEvent Change
+            End If
+        End Property
+
+        Private Sub OnTouchedFormProperties() _
+                Handles BackColor.OnPropertyGet, _
+                        ForeColor.OnPropertyGet, _
+                        MarqueeAnimation.OnPropertyGet, _
+                        MarqueeSpeed.OnPropertyGet, _
+                        State.OnPropertyGet, _
+                        SmoothReverse.OnPropertyGet, _
+                        Orientation.OnPropertyGet, _
+                        Scrolling.OnPropertyGet
+                            
+            Me.ControlContext.EnsureFormIsLoaded()
+        End Sub
+        
+        [ Serialize (False) ]
+        Public Property Get Parent() As Form
+            Return ControlContext.GetForm
+        End Property
+
+    #End Region
+	
+End Class

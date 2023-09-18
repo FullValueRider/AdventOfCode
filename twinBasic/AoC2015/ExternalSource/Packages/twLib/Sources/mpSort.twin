@@ -1,0 +1,63 @@
+Class mpSort
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Private Const MY_TYPENAME                   As String = "mpSplitToChars"
+    
+    
+    ' Private Type State
+    
+    '    SortOrder                                As SortOrder
+    
+    ' End Type
+    
+    ' Private s                                   As State
+        
+    Implements IMapper
+
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+           
+        Select Case True
+        
+            Case TypeInfo.IsAnArray(ipHostItem, ArrayType.AsListArray)
+            
+                Cops.SortInPlace ipHostItem
+                
+            Case TypeInfo.IsAString(ipHostItem)
+            
+                ipHostItem = Strs.Sort(CStr(ipHostItem))
+                
+            Case Else
+            
+                On Error Resume Next
+                ipHostItem.Sort
+                On Error GoTo 0
+                
+        End Select
+        
+        Return ipHostItem
+        
+    End Function
+
+    '@DefaultMember
+    Public Function Deb() As mpSort 'Optional ByVal ipSortOrder As SortOrder = SortOrder.Ascending
+        With New mpSort
+            Return .ConstructInstance '(ipSortOrder
+        End With
+    End Function
+
+    Friend Function ConstructInstance() As mpSort 'ByVal ipSortOrder As SortOrder
+        'Set s.SortOrder = ipSortOrder
+        Set ConstructInstance = Me
+    End Function
+    
+    
+    Public Property Get TypeName() As String Implements Imapper.TypeName
+        Return MY_TYPENAME
+    End Property
+
+End Class

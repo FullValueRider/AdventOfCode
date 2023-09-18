@@ -1,0 +1,29 @@
+{
+	"rootFolder": "/NewProject",
+	"fs_expandedFolders": [
+		"/NewProject",
+		"/NewProject/Sources"
+	],
+	"openEditors": [],
+	"debugConsoleEntryHistory": [],
+	"variables_expandedCache": {
+		"/Locals": true
+	},
+	"watches": [],
+	"watches_expandedCache": {},
+	"outlinePanelOptions": {
+		"showClassFields": true,
+		"showModuleVariables": true,
+		"showEnumerations": true,
+		"showUDTs": true,
+		"showDLLs": true,
+		"showConstructors": true,
+		"showProperties": true,
+		"showProcedures": true,
+		"showVariables": true,
+		"showParameters": true
+	},
+	"debugPanelOptions": {
+		"invertDirection": false
+	}
+}

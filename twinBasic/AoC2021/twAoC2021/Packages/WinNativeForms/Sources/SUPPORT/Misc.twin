@@ -1,0 +1,132 @@
+Private Module Miscellaneous
+
+    Private DeclareWide PtrSafe Function StringFromGUID2 Lib "ole32" (ByRef rguid As WinNativeFormsBASE.GUID2, ByVal lpsz As LongPtr, ByVal cchMax As Long) As Long
+
+	Public Function GuidToString(guid As WinNativeFormsBASE.GUID2) As String
+        Dim retVal As String = String(38, " ")
+        StringFromGUID2(guid, StrPtr(retVal), 39)
+        Return retVal
+	End Function
+
+    Public Type ACCEL
+        fVirt As Byte                ' Also called the flags field 
+        key As Integer
+        cmd As Integer
+    End Type
+    
+    Public Enum BorderStyles
+    	BDR_RAISEDOUTER = 1
+        BDR_SUNKENOUTER = 2
+        BDR_RAISEDINNER = 4
+        BDR_SUNKENINNER = 8
+        
+        BDR_OUTER = (BDR_RAISEDOUTER Or BDR_SUNKENOUTER)
+        BDR_INNER = (BDR_RAISEDINNER Or BDR_SUNKENINNER)
+        BDR_RAISED = (BDR_RAISEDOUTER Or BDR_RAISEDINNER)
+        BDR_SUNKEN = (BDR_SUNKENOUTER Or BDR_SUNKENINNER)
+        
+        EDGE_RAISED = (BDR_RAISEDOUTER Or BDR_RAISEDINNER)
+        EDGE_SUNKEN = (BDR_SUNKENOUTER Or BDR_SUNKENINNER)
+        EDGE_ETCHED = (BDR_SUNKENOUTER Or BDR_RAISEDINNER)
+        EDGE_BUMP = (BDR_RAISEDOUTER Or BDR_SUNKENINNER)
+    End Enum
+    
+    Public Enum BorderFlags
+    	BF_LEFT = 1
+        BF_TOP = 2
+        BF_RIGHT = 4
+        BF_BOTTOM = 8
+        BF_DIAGONAL = 16
+        
+        BF_MIDDLE = &H0800&
+        BF_SOFT = &H1000&
+        BF_ADJUST = &H2000&
+        BF_FLAT = &H4000&
+        BF_MONO = &H8000&
+
+        BF_TOPLEFT = BF_TOP Or BF_LEFT
+        BF_TOPRIGHT = BF_TOP Or BF_RIGHT
+        BF_BOTTOMLEFT = BF_BOTTOM Or BF_LEFT
+        BF_BOTTOMRIGHT = BF_BOTTOM Or BF_RIGHT
+        BF_RECT = BF_LEFT Or BF_TOP Or BF_RIGHT Or BF_BOTTOM
+        
+        BF_DIAGONAL_ENDTOPRIGHT = BF_DIAGONAL Or BF_TOP Or BF_RIGHT
+        BF_DIAGONAL_ENDTOPLEFT = BF_DIAGONAL Or BF_TOP Or BF_LEFT
+        BF_DIAGONAL_ENDBOTTOMLEFT = BF_DIAGONAL Or BF_BOTTOM Or BF_LEFT
+        BF_DIAGONAL_ENDBOTTOMRIGHT = BF_DIAGONAL Or BF_BOTTOM Or BF_RIGHT
+    End Enum
+        
+    Public DeclareWide PtrSafe Function USER32_CreateAcceleratorTableW Lib "user32" Alias "CreateAcceleratorTableW" (ByRef paccel As ACCEL, ByVal cCount As Long) As LongPtr
+    Public DeclareWide PtrSafe Function USER32_DestroyAcceleratorTable Lib "user32" Alias "DestroyAcceleratorTable" (ByVal accelPtr As LongPtr) As Long
+    Public DeclareWide PtrSafe Function USER32_BringWindowToTop Lib "user32" Alias "BringWindowToTop" (ByVal hwnd As LongPtr) As Long
+
+    Public DeclareWide PtrSafe Function GDI32_RoundRect Lib "gdi32" Alias "RoundRect" (ByVal hdc As LongPtr, ByVal left As Long, ByVal top As Long, ByVal right As Long, ByVal bottom As Long, ByVal width As Long, ByVal Height As Long) As Long
+    Public DeclareWide PtrSafe Function GDI32_Rectangle Lib "gdi32" Alias "Rectangle" (ByVal hdc As LongPtr, ByVal left As Long, ByVal top As Long, ByVal right As Long, ByVal bottom As Long) As Long
+    Public DeclareWide PtrSafe Function GDI32_Ellipse Lib "gdi32" Alias "Ellipse" (ByVal hdc As LongPtr, ByVal left As Long, ByVal top As Long, ByVal right As Long, ByVal bottom As Long) As Long
+    Public DeclareWide PtrSafe Function GDI32_CreatePen Lib "gdi32" Alias "CreatePen" (ByVal iStyle As Long, ByVal cWidth As Long, ByVal color As Long) As LongPtr
+    Public DeclareWide PtrSafe Function GDI32_SetROP2 Lib "gdi32" Alias "SetROP2" (ByVal hdc As LongPtr, ByVal rop2 As Long) As Long
+    Public DeclareWide PtrSafe Function GDI32_CreateHatchBrush Lib "gdi32" Alias "CreateHatchBrush" (ByVal iHatch As Long, ByVal color As Long) As LongPtr
+    Public DeclareWide PtrSafe Function GDI32_GetStockObject Lib "gdi32" Alias "GetStockObject" (ByVal i As Long) As LongPtr
+    Public DeclareWide PtrSafe Function GDI32_Polygon Lib "gdi32" Alias "Polygon" (ByVal hdc As LongPtr, ByRef points As Any, ByVal CountOfPoints As Long) As Long
+    Public DeclareWide PtrSafe Function GDI32_MoveToEx Lib "gdi32" Alias "MoveToEx" (ByVal hdc As LongPtr, ByVal x As Long, ByVal y As Long, ByVal lppt As LongPtr) As Long
+    Public DeclareWide PtrSafe Function GDI32_LineTo Lib "gdi32" Alias "LineTo" (ByVal hdc As LongPtr, ByVal x As Long, ByVal y As Long) As Long
+
+    Public Const HS_HORIZONTAL As Long = 0
+    Public Const HS_VERTICAL As Long = 1
+    Public Const HS_FDIAGONAL As Long = 2
+    Public Const HS_BDIAGONAL As Long = 3
+    Public Const HS_CROSS As Long = 4
+    Public Const HS_DIAGCROSS As Long = 5
+
+    Public Const NULL_BRUSH As Long = 5
+
+    Public Const PS_SOLID As Long = 0
+    Public Const PS_DASH As Long = 1
+    Public Const PS_DOT As Long = 2
+    Public Const PS_DASHDOT As Long = 3
+    Public Const PS_DASHDOTDOT As Long = 4
+    Public Const PS_NULL As Long = 5
+    Public Const PS_INSIDEFRAME As Long = 6
+
+    Public Sub SetOutParamToNothing(ByVal valuePointer As LongPtr)
+        Dim nothingObject As LongPtr = 0
+        If valuePointer <> 0 Then
+            WinNativeFormsBASE.KERNEL32_CopyMemory(valuePointer, VarPtr(nothingObject), LenB(nothingObject))
+        End If
+    End Sub
+    
+    Private globalEmptyString As String ' = ""   FIXME not working in compiled builds
+    Public Function StrPtrSafe(ByRef s As String) As LongPtr
+    	Dim retVal As LongPtr = StrPtr(s)
+        If retVal = 0 Then retVal = StrPtr(globalEmptyString)
+        If retVal = 0 Then
+        	globalEmptyString = ""
+            retVal = StrPtr(globalEmptyString)
+        End If
+        Return retVal
+    End Function
+    
+    Public Sub SyncBorderStyle(objControl As Control)
+    	
+        Dim styles As Long = WinNativeFormsBASE.GetWindowLongW(objControl.hwnd, WinNativeFormsBASE.WindowProperties.GWL_STYLE)
+        Dim exStyles As Long = WinNativeFormsBASE.GetWindowLongW(objControl.hwnd, WinNativeFormsBASE.WindowProperties.GWL_EXSTYLE)
+        
+        styles = styles And Not WinNativeFormsBASE.WS_BORDER
+        exStyles = exStyles And Not WinNativeFormsBASE.WS_EX_CLIENTEDGE
+        
+        If objControl.BorderStyle = ControlBorderStyleConstants.vbFixedSingleBorder Then
+            If objControl.Appearance = AppearanceConstants.vbAppear3d Then
+                exStyles += WinNativeFormsBASE.GeneralConsts.WindowExtendedStyles.WS_EX_CLIENTEDGE
+            Else
+                styles += WinNativeFormsBASE.GeneralConsts.WindowStyles.WS_BORDER
+            End If
+        End If
+        
+        WinNativeFormsBASE.SetWindowLongW(objControl.hwnd, WinNativeFormsBASE.WindowProperties.GWL_STYLE, styles)
+        WinNativeFormsBASE.SetWindowLongW(objControl.hwnd, WinNativeFormsBASE.WindowProperties.GWL_EXSTYLE, exStyles)
+        
+        'this is needed to ensure windows cached stuff is updated after changing GWL_STYLE
+        USER32_SetWindowPos(objControl.hwnd, 0&, 0, 0, 0, 0, SetWindowPosFlags.SWP_NOSIZE Or SetWindowPosFlags.SWP_NOMOVE Or SetWindowPosFlags.SWP_NOZORDER Or SetWindowPosFlags.SWP_FRAMECHANGED Or SetWindowPosFlags.SWP_NOACTIVATE)
+        
+    End Sub
+End Module

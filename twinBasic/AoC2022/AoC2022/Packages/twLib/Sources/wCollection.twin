@@ -1,0 +1,178 @@
+Class wCollection
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+     ' a wrapper for the twinBasic/vba Collection object
+     ' that removbes some of the inconvenience
+     
+	Implements collection Via Host = New collection
+
+    Const MY_TYPENAME                   As String = "wCollection"
+    Const FIRST_INDEX                   As Long = 1
+    
+    
+    Public Function Deb(Optional ByRef ipListArray As Variant = Empty) As wCollection
+        With New wCollection
+            Return .ConstructInstance(ipListArray)
+        End With
+    End Function
+    
+    Public Function ConstructInstance(ByRef ipListArray As Variant) As wCollection
+        
+        If VBA.IsEmpty(ipListArray) Then
+            Return Me
+        End If
+        
+        Dim myitem As Variant
+        For Each myitem In ipListArray
+            Host.Add myitem
+        Next
+        
+        Return Me
+        
+    End Function
+    
+    
+    Public Function Clone() As wCollection
+    
+        Dim myItems As wCollection = wCollection.Deb
+        
+        Dim myItem As Variant
+        
+        For Each myItem In Host
+            myItems.Add myItem 'the paren are deliberate
+        Next
+        
+        Return myItems
+        
+    End Function
+    
+    Public Function Exists(ByRef ipItem As Variant) As Boolean
+    
+        Dim myIndex  As Long
+        For myIndex = 1 To Count
+        
+            If VBA.IsObject(ipItem) And VBA.IsObject(Host.Item(myIndex)) Then
+                If ObjPtr(ipItem) = ObjPtr(Host.Item(myIndex)) Then
+                    Return True
+                End If
+            ElseIf (Not VBA.IsObject(ipItem)) And (Not VBA.IsObject(Host.Item(myIndex))) Then
+                If Host.Item(myIndex) = ipItem Then
+                    Return True
+                End If
+            End If
+            
+        Next
+        
+        Return False
+        
+    End Function
+    
+    '@DefaultMember
+    Public Property Get Item(ByVal ipIndex As Variant) As Variant
+        Return Host.Item(ipIndex)
+    End Property
+    
+    Public Property Let Item(ByVal ipIndex As Variant, ByRef ipItem As Variant)
+    	Host.Add ipItem, after:=ipIndex
+        Host.Remove ipIndex
+    End Property
+    
+    Public Property Set Item(ByVal ipIndex As Variant, ByRef ipItem As Variant)
+    	Host.Add ipItem, after:=ipIndex
+        Host.Remove ipIndex
+    End Property
+    
+    Public Function HoldsItem(ByRef ipItem As Variant) As Boolean
+        Return Me.Exists(ipItem)
+    End Function
+    
+    Public Function LacksItem(ByRef ipItem As Variant) As Boolean
+        Return Not Me.Exists(ipItem)
+    End Function
+    
+    Public Function HoldsKey(ByRef ipKey As Long) As Boolean
+        Return IIf(ipKey > FIRST_INDEX And ipKey <= Count, True, False)
+    End Function
+    
+    Public Function HoldsKey(ByRef ipKey As String) As Boolean
+        
+        On Error Resume Next
+        Dim myVar As Variant = Array(Host.Item(ipKey))
+        Return Err.Number = 0
+       
+    End Function
+    
+    Public Function LacksKey(ByVal ipKey As Long) As Boolean
+        Return Not HoldsKey(ipKey)
+    End Function
+    
+    Public Function LacksKey(ByRef ipKey As String) As Boolean
+        Return Not Me.HoldsKey(ipKey)
+    End Function
+    
+    
+    Public Function Sort() As Variant
+    	Cops.SortInPlace Me
+        Return Me
+    End Function
+    
+    Public Function Reverse() As wCollection
+        Dim myReversed As wCollection = wCollection.Deb
+        Dim myItems As IterItems = IterItems.Deb(Me).MoveToEnd
+        Do
+        	myReversed.Add myItems(0)
+        Loop While myItems.MovePrev
+        Return myReversed
+    End Function
+    
+    
+    Public Function First() As Variant
+        Return Host.Item(FIRST_INDEX)
+    End Function
+    
+    Public Function Last() As Variant
+        Return Host.Item(Count)
+    End Function
+    
+    Public Function ToArray() As Variant
+    
+        If Count = 0 Then
+            Return Array()
+        Else
+                Dim myArray As Variant
+                ReDim myArray(0 To Count - 1)
+                Dim myIndex As Long
+                For myIndex = 0 To Count - 1
+                    If VBA.IsObject(Host.Item(myIndex + 1)) Then
+                                            Set myArray(myIndex) = Host.Item(myIndex + 1)
+                    Else
+                        myArray(myIndex) = Host.Item(myIndex + 1)
+                    End If
+                Next
+        
+            Return myArray
+        End If
+        
+    End Function
+    
+    '@Description("Returns the index of the first found Item")
+    Public Function IndexOf(ByRef ipItem As Variant) As Long
+    
+        Dim myIndex As Long
+        For myIndex = 1 To Count
+            Dim myHostItem As Variant = Host.Item(myIndex)
+            If myHostItem = ipItem Then
+                Return myIndex
+            End If
+        Next
+        
+    End Function
+    
+    Public Property Get TypeName() As String
+        Return MY_TYPENAME
+    End Property
+    
+End Class

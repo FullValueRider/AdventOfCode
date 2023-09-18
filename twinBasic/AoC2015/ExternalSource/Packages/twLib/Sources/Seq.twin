@@ -1,0 +1,1074 @@
+ Class Seq
+    ' Emulates the MS ArrayList as follows
+    ' 
+    ' Constructors:     Implemented with enhancement
+    '
+    ' PROPERTIES
+    ' ==========
+    ' Capacity:         Implemented
+    ' Count:            Implemented see also CountIt
+    ' IsFixedSize:      Not Implemented
+    ' IsReadOnly:       Not Implemented
+    ' IsSynchronsed:    Not Implemented
+    ' Item()            Implemented, Default Memeber
+    ' SyncRoot          Not Implemented
+    '
+    ' METHODS
+    ' =======
+    ' Adaptor:          Not Implemented but see AddRange
+    ' Add:              Implemented see also AddItems
+    ' AddRange:         Implemented with enhancement
+    ' BinarySearch:     Not Implemented See CountIt, FilterIt
+    ' Clear             Implemented Sugar foir RemoveAll 
+    ' Clone:            Implemented - shallow copy of objects
+    ' Contains          Implemented Sugar for HoldsItem, See Also LacksItem
+    ' CopyTo:           Implemented with enhancement, see also Slice
+    ' FixedSize:        Not Implemented
+    ' GetENumerator     Not Implemented, Use Items for enumeration
+    ' GetRange          Implemented Sugar for Slice
+    ' IndexOf           Implemented partially
+    ' Insert            Implemented
+    ' InsertRange:      Implemented with enhancements
+    ' LastIndexOf       Implemented with enhancements
+    ' ReadOnly:         Not Implemented
+    ' Remove:           Implemented
+    ' RemoveRange       Implemented, sugar for Remove
+    ' Repeat:           Implemented
+    ' Reverse:          Implemented Partially
+    ' SetRange:         Not Implemented
+    ' Sort:             Not Implemented
+    ' ToArray:          Implemented, Sugar for Items, for type conversion see Mapit
+    ' TrimToSize        Implemented
+    
+    ' Additional facilities
+    ' Where possible, methods are redefined as functions that return the instance of Me
+    ' to allow chaining of methods
+    '
+    ' AddItems Add multiple items in one statement
+    ' FirstIndex
+    ' LastIndex
+    ' LacksItem Sugar for 'Not HoldsItem'
+    ' Join, Returns a single string if the items are strings
+    ' CountIt
+    ' FilterIt
+    ' MaptIt
+    ' Slice
+    ' ToCollection
+    ' IsQueryable
+    ' IsNotQueryable
+    ' HasOneItem
+    ' HasItems
+    ' HasAnyItems
+    
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    Implements IIndexed
+    
+    Private Const MY_TYPENAME                       As String = "Seq"
+    Private Const DEFAULT_CHUNK                     As Long = 16
+    Private Const FIRST_INDEX                       As Long = 1
+    
+   
+	Private Type state
+    
+        Host                                        As variant
+        LastIndex                                   As long
+        Size                                        As long
+
+    End Type
+
+    Private s                                       As state
+
+    ' The following are accepted
+    
+    ' ParamArray which is interpretee as follows.
+    ' - No Items: empty seq of default size
+    ' - If more than one item: Items in paramArray. Capacity is the number of items
+    ' - If only one Item then
+    ' - If number: Empty seq with specified capacity
+    ' - If String: Items are characters: capcity is length of string
+    ' - If Array: Items as provided by For Each on the array
+    ' - Dictionaries: Items from the Items method.  Capcity is the count of the dictionary
+    ' - Collection: Items from the collection.  Capacity is collection Count
+    ' - Stack,Queue: Items as provided by the ToArray method, capcity is count.
+    
+     
+    Public Function Deb(ParamArray ipParamarray() As Variant) As Seq
+        With New Seq
+            Set Deb = .ConstructInstance(CVar(ipParamarray))
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByRef ipFPA As Variant) As Seq
+        
+        Dim myPR As ParserResult = VariantParser.Deb(ipFPA).ToForEach(StringToCharArray)
+        s.LastIndex = 0
+
+        Select Case True
+            
+            Case myPR.IsNotAllocated
+            
+                s.Size = DEFAULT_CHUNK
+                Resize
+                ' There is nothing to add to the newly created instance so
+                Return Me
+            Case myPR.Count < 1
+            
+                s.Size = DEFAULT_CHUNK
+                Resize
+                ' There is nothing to add to the newly created instance so
+                Return Me
+                
+            Case myPR.ResultGroup = OfStrings
+
+                s.Size = myPR.Count
+                Resize
+                AddKnownRange myPR.Cargo
+            
+            ' the case below fails when the cargo is not 0 based (i.e. an collection)
+            Case myPR.ResultGroup = OfNumbers
+               
+                ' A single number is treated as a capacity argument
+                s.Size = CLng(myPR.Cargo(0))
+                Resize
+                   
+           
+            Case myPR.ResultGroup = OfArray, myPR.ResultGroup = OfItemByForEach, myPR.ResultGroup = OfItemByToArrayForEach
+
+                s.Size = ((myPR.Count \ DEFAULT_CHUNK) + 1) * DEFAULT_CHUNK
+                Resize
+                AddKnownRange myPR.Cargo
+                
+            Case Else
+            
+                ' adding a non enumerable object/item
+
+                s.Size = DEFAULT_CHUNK
+                Resize
+                Add myPR.Cargo(0)
+                
+        End Select
+
+       
+        Return Me
+
+    End Function
+
+    'Description(Adds a single item, returns index at which added.  For compatability with arraylist)
+    Public Function Add(ByRef ipItem As Variant) As Long
+        
+         If VBA.IsObject(ipItem) Then
+            Set s.Host(GetNextIndex) = ipItem
+        Else
+            s.Host(GetNextIndex) = ipItem
+        End If
+       Return s.LastIndex
+       
+    End Function
+    '@Description("Adds one or more items without further processing")
+    Public Function AddItems(ParamArray ipParamArray() As Variant) As Seq
+
+        If ArrayInfo.IsNotAllocated(CVar(ipParamArray)) Then
+            Return Me
+        End If
+        
+        Return AddKnownRange(CVar(ipParamArray))
+        
+    End Function
+
+    
+    ' Friend Function AddPR(ByRef ipPr As ParserResult) As Seq
+    	
+    '     Dim myItem As Variant
+       
+    '     For Each myItem In ipPr.Cargo
+
+    '         If VBA.IsObject(myItem) Then
+                
+    '             Set s.Host(GetNextIndex) = myItem
+                
+                
+    '         Else
+                
+    '             s.Host(GetNextIndex) = myItem
+                
+                
+    '         End If
+
+    '     Next
+
+    '     Return Me
+
+    ' End Function
+    
+    Friend Function AddKnownRange(ByRef ipRange As Variant) As Seq
+    	
+        Dim myItem As Variant
+       
+        If TypeInfo.IsAString(ipRange) Then
+
+            Dim myIndex As Long
+            For myIndex = 1 To VBA.Len(ipRange)
+
+                s.Host(GetNextIndex) = VBA.Mid(ipRange, myIndex, 1)
+
+            Next
+            
+        Else
+            
+            For Each myItem In ipRange
+
+                If VBA.IsObject(myItem) Then
+                    
+                    Set s.Host(GetNextIndex) = myItem
+                    
+                    
+                Else
+                    
+                    s.Host(GetNextIndex) = myItem
+                    
+                    
+                End If
+
+            Next
+            
+
+        End If
+
+        Return Me
+
+    End Function
+
+    ' ' Adds enumerables and strings as described for Deb
+    Public Function AddRange(ByVal ipRange As Variant) As Seq
+
+        ' If VBA.IsEmpty(ipRange) Then Return Me
+        ' If VBA.IsArray(ipRange) AndAlso ArrayInfo.IsNotAllocated(ipRange) Then Return Me
+        ' If TypeInfo.Group(OfEnumerableObjects).HoldsKey(TypeInfo.BaseType(ipRange)) AndAlso ipRange.count = 0 Then Return Me
+
+        Dim myPR As ParserResult = VariantParser.Deb(ipRange).ToForEach(StringToCharArray)
+
+        If myPR.IsNotAllocated Or myPR.Count < 1 Then
+            Return Me
+        End If
+        
+        Return AddKnownRange(myPR.Cargo)
+
+    End Function
+
+
+    Public Function GetNextIndex() As Long
+
+        s.LastIndex += 1
+        If s.LastIndex > s.Size Then
+            	
+                s.Size += DEFAULT_CHUNK
+                Resize
+
+        End If
+
+       Return s.LastIndex
+
+    End Function
+
+    'toDo: updat so that we can request a slice as an array
+    Public Function ToArray() As Variant
+        
+        Dim myArray As Variant = s.Host
+        'S.Host is 1 based but we need to retturn an array that is zero
+        'based to be consistent with how arrays behave
+        If s.LastIndex = 0 Then
+            ReDim Preserve myArray(0 To 0)
+        Else
+            ReDim Preserve myArray(0 To s.LastIndex - 1)
+        End If
+        Return myArray
+
+    End Function
+
+    
+    Public Function Items() As Variant
+        Items = Me.ToArray
+    End Function
+
+    '@DefaultMember
+    Public Property Get Item(ByVal ipIndex As Long) As Variant Implements IIndexed.Item
+        Return s.Host(ipIndex)
+    End Property
+
+    Public Property Let Item(ByVal ipIndex As Long, ByRef ipItem As Variant) Implements IIndexed.Item
+        s.Host(ipIndex) = ipItem
+    End Property
+
+    Public Property Set Item(ByVal ipIndex As Long, ByRef ipItem As Variant) Implements IIndexed.Item
+    	Set s.Host(ipIndex) = ipItem
+    End Property
+
+    'chainable version of let and set
+
+    ' Public Function LetItem(ByVal ipIndex As Long, ByRef ipItem As Variant) As Seq
+    ' 	s.Host(ipIndex) = ipItem
+    '     Return Me
+    ' End Function
+
+    ' Public Function SetItem(ByVal ipIndex As Long, ByRef ipItem As Variant) As Seq
+    ' 	Assign s.Host(ipIndex), ipItem
+    ' End Function
+    
+
+    Public Function Insert(ByVal ipIndex As Long, ParamArray ipElements() As Variant) As Seq
+
+        If ArrayInfo.IsNotAllocated(ipElements) Then
+             Return Me
+        End If
+
+        Dim myPR As ParserResult = VariantParser.Deb(ipElements).ToForEach
+        
+        Return InsertRange(ipIndex, myPR.Cargo)
+            
+    End Function
+
+    ' may need to check insertion below for when string is supplied
+    Public Function InsertRange(ByVal ipIndex As Long, ParamArray ipParamarray() As Variant) As Seq
+   	
+        If ipIndex < 1 Or ipIndex > s.LastIndex Then
+            Return Me
+        End If
+      
+        If ArrayInfo.IsNotAllocated(CVar(ipParamarray)) Then
+            Return Me
+        End If
+        
+        Dim myPr As ParserResult = VariantParser.Deb(CVar(ipParamarray)).ToForEach(StringToCharArray)
+        
+
+        MoveUp ipIndex, myPr.Count
+
+        Dim myItem As Variant
+        For Each myItem In myPr.Cargo
+        	If VBA.IsObject(myItem) Then
+                Set s.Host(ipIndex) = myItem
+            Else
+                s.Host(ipIndex) = myItem
+            End If
+            ipIndex += 1
+        Next
+
+        s.LastIndex += myPr.Count
+
+        Return Me
+        
+   End Function
+
+   Public Function Remove(ByRef ipItem As Variant) As Seq
+    
+        Dim myIndex As Long
+        For myIndex = FIRST_INDEX To s.LastIndex
+            If s.Host(myIndex) = ipItem Then
+                Me.RemoveAt(myIndex)
+            End If
+        Next
+        
+        Return Me
+        
+    End Function
+    
+   
+    Public Function RemoveRange(ByVal ipIndex As Long, ByVal ipCount As Long) As Seq
+        Return Me.RemoveAt(ipCount, ipCount)
+    End Function
+    
+    
+    Public Function RemoveAt(ByVal ipIndex As Long, Optional ipCount As Long = 1) As Seq
+    
+        If ipIndex < 1 Or ipIndex > s.LastIndex Then Return Me
+        If ipCount < 1 Then Return Me
+            
+        If ipCount + ipIndex > s.LastIndex Then
+           Dim myIndex As Long
+           For myIndex = ipIndex To s.LastIndex
+                s.Host(myIndex) = Empty
+           Next
+           s.LastIndex = ipIndex - 1
+           Return Me
+        End If
+        
+        MoveDown ipIndex, ipIndex + ipCount
+       
+        If s.LastIndex < 0 Then
+            s.Size = DEFAULT_CHUNK
+            Resize
+        End If
+            
+        Return Me
+    End Function
+    
+    Public Function Repeat(ByVal ipIterator As IIterator) As Seq
+        
+        Dim myS As Seq = Seq.Deb
+        Do
+            DoEvents
+            myS.Add ipIterator.Item
+        Loop While ipIterator.MoveNext
+        
+        Return myS
+        
+    End Function
+    
+    ' Copyto does not work as it stand because VBA does a copy
+    ' in when we do VarArray.cargo= Array
+    ' If we use Variant, then we cannot use twinbasics overloading
+    ' so we will need to write a function to allow us to access
+    ' the safearray structure so we can do diret writes.
+    '@Description("Makes a shallow copy of the seq in the provided array")
+    Public Function CopyTo(ByRef ipVarArray As varArray) As Seq
+       
+       ' Dim myArray As Variant = ipVarArray.Cargo
+        If Guard.IsNotArray(ipVarArray.Cargo, CurrentComponentName, CurrentProcedureName) Then Return Me
+        If Guard.IsNotAllocated(ipVarArray.Cargo, CurrentComponentName, CurrentProcedureName) Then Return Me
+        If Guard.TooManyRanks(ipVarArray.Cargo, CurrentComponentName, CurrentProcedureName) Then Return Me
+        'If Guard.SizeMismatch(s.LastIndex > ArrayInfo.Count(myArray), CurrentComponentName, CurrentProcedureName) Then Return Me
+       
+        Dim myArrayIndex  As Long = VBA.LBound(ipVarArray.Cargo)
+        Dim myArrayCount As Long = ArrayInfo.Count(ipVarArray.Cargo)
+    
+        Dim mySeqIndex As Long
+        For mySeqIndex = FIRST_INDEX To s.LastIndex
+            
+            If VBA.IsObject(s.Host(mySeqIndex)) Then
+                Set ipVarArray.Cargo(myArrayIndex) = s.Host(mySeqIndex)
+            Else
+                ipVarArray.Cargo(myArrayIndex) = s.Host(mySeqIndex)
+            End If
+            
+            myArrayIndex += 1
+            
+        Next
+        
+        Return Me
+        
+    End Function
+    
+    
+    Public Function CopyTo(ByRef ipVarArray As varArray, ByVal IpArrayStartIndex As Long) As Seq
+        
+        Dim myArray As Variant = ipVarArray.Cargo
+        If Guard.IsNotArray(myArray, CurrentComponentName, CurrentProcedureName) Then Return Me
+        If Guard.IsNotAllocated(myArray, CurrentComponentName, CurrentProcedureName) Then Return Me
+        If Guard.TooManyRanks(myArray, CurrentComponentName, CurrentProcedureName) Then Return Me
+        'If Guard.SizeMismatch(s.LastIndex > ArrayInfo.Count(myArray), CurrentComponentName, CurrentProcedureName) Then Return Me
+        Dim myArrayIndex  As Long = IpArrayStartIndex
+        Dim myArrayCount As Long = ArrayInfo.Count(ipVarArray)
+    
+        Dim mySeqIndex As Long
+        For mySeqIndex = FIRST_INDEX To s.LastIndex
+            
+            If VBA.IsObject(s.Host(mySeqIndex)) Then
+                Set ipVarArray(myArrayIndex) = s.Host(mySeqIndex)
+            Else
+                myArray(myArrayIndex) = s.Host(mySeqIndex)
+            End If
+            
+            myArrayIndex += 1
+            
+        Next
+        
+        Return Me
+    End Function
+    
+    Public Function CopyTo _
+    ( _ 
+        ByVal ipSeqStartIndex As Long, _
+        ByRef ipVarArray As varArray, _
+        ByVal ipArrayStartIndex As Long, _
+        ByVal ipArrayCOunt As Long _
+    ) As Seq
+    
+        Dim myArray As Variant = ipVarArray.Cargo
+        If Guard.IsNotArray(myArray, CurrentComponentName, CurrentProcedureName) Then Return Me
+        If Guard.IsNotAllocated(myArray, CurrentComponentName, CurrentProcedureName) Then Return Me
+        If Guard.TooManyRanks(myArray, CurrentComponentName, CurrentProcedureName) Then Return Me
+        'If Guard.SizeMismatch(s.LastIndex > ArrayInfo.Count(myArray), CurrentComponentName, CurrentProcedureName) Then Return Me
+        
+        Dim myArrayIndex As Long = ipArrayStartIndex
+        Dim myArrayCount As Long = ArrayInfo.Count(ipVarArray)
+    
+        Dim mySeqIndex As Long
+        For mySeqIndex = ipSeqStartIndex To s.LastIndex
+            
+            If VBA.IsObject(s.Host(mySeqIndex)) Then
+                Set ipVarArray(myArrayIndex) = s.Host(mySeqIndex)
+            Else
+                myArray(myArrayIndex) = s.Host(mySeqIndex)
+            End If
+            
+            myArrayIndex += 1
+            
+        Next
+        
+        Return Me
+    End Function
+    
+    Public Function CopyTo _
+    ( _
+        ByRef ip1SeqStartor2Array As Variant, _
+        Optional ByRef ip1Arrayor2ArrayStart As Variant = Empty, _
+        Optional ByRef ip1ArrayStartor2Count As Variant = Empty, _
+        Optional ByRef ipCount As Variant = Empty, _
+        Optional ByRef ipEnd As Variant = Empty _
+    ) As Seq
+    
+        ' 8 combinations are allowed, ipEnd must be specified by name if used.
+        ' 1. seqstart, array
+        ' 2. seqstart, Array, arraystart
+        ' 3. seqstart, array, arraystart, arraycount
+        ' 4. seqstart, array, arraystart ipEnd:=arrayend
+        ' 5. Array
+        ' 6. Array, Arraystart
+        ' 7. Array, ArrayStart, ArrayCount
+        ' 8. Array, ArrayStart, ipEnd:=ArrayEnd 
+        Dim mySeqStart As Variant
+        Dim myArrayStart As Variant
+        Dim myArrayCount As Variant
+        Dim myArrayEnd As Variant
+
+        If VBA.IsArray(ip1SeqStartor2Array) Then
+
+            mySeqStart = 1
+            myArrayStart = ip1Arrayor2ArrayStart
+            myArrayCount = ip1ArrayStartor2Count
+            myArrayEnd = ipEnd
+
+            Return CopyToWithSeqStart(mySeqStart, ip1SeqStartor2Array, myArrayStart, myArrayCount, myArrayEnd)
+        Else
+
+            mySeqStart = ip1SeqStartor2Array
+            myArrayStart = ip1ArrayStartor2Count
+            myArrayCount = ipCount
+            myArrayEnd = ipEnd
+
+            Return CopyToWithSeqStart(mySeqStart, ip1Arrayor2ArrayStart, myArrayStart, myArrayCount, myArrayEnd)
+        End If
+        	
+        
+        
+    End Function
+    
+    ' Public Function CopyToArrayOnly(ByRef ipArray As Variant) As Seq
+        
+    '     Dim myArrayIndex As Long = VBA.LBound(ipArray)
+    '     Dim mySeqIndex As Long
+    '     For mySeqIndex = FIRST_INDEX To s.LastIndex
+            
+    '         If VBA.IsObject(s.Host(mySeqIndex)) Then
+    '             Set ipArray(myArrayIndex) = s.Host(mySeqIndex)
+                
+    '         Else
+    '             ipArray(myArrayIndex) = s.Host(mySeqIndex)
+    '         End If
+    '         myArrayIndex += 1
+            
+    '     Next
+    ' End Function
+    
+    ' Public Function CopyToWithArrayStart(ByRef ipArray As Variant, ByRef ipArrayStartIndex As Long) As Seq
+        
+    '     Dim myArrayIndex As Long = ipArrayStartIndex
+    '     Dim mySeqIndex As Long
+    '     For mySeqIndex = FIRST_INDEX To s.LastIndex
+            
+    '         If VBA.IsObject(s.Host(mySeqIndex)) Then
+    '             Set ipArray(myArrayIndex) = s.Host(mySeqIndex)
+                
+    '         Else
+    '             ipArray(myArrayIndex) = s.Host(mySeqIndex)
+    '         End If
+    '         myArrayIndex += 1
+            
+    '     Next
+        
+    ' End Function
+    
+    Public Function CopyToWithSeqStart _
+    ( _
+        ByVal ipSeqStart As Long, _
+        ByRef ipArray As Variant, _
+        ByRef ipArrayStartIndex As Variant, _
+        ByRef ipArrayRun As Variant, _
+        ByRef ipArrayEndIndex As Variant _
+    ) As Seq
+        
+        Dim myArrayStartIndex As Long
+        Dim myArrayEndIndex As Long
+        Dim myStartEnd As Variant
+        myStartEnd = ResolveStartRunEnd(ipArray, ipArrayStartIndex, ipArrayRun, ipArrayEndIndex)
+
+        Dim myOffset As Long
+        For myOffset = 0 To myStartEnd(2) - 1
+            
+            If ipSeqStart + myOffset > s.LastIndex Then
+                Exit For
+            End If
+
+            If VBA.IsObject(s.Host(ipSeqStart + myOffset)) Then
+                Set ipArray(myStartEnd(0) + myOffset) = s.Host(ipSeqStart + myOffset)
+            Else
+                ipArray(myStartEnd(0) + myOffset) = s.Host(ipSeqStart + myOffset)
+            End If
+            
+            
+        Next
+        
+    End Function
+    
+    Public Function ResolveStartRunEnd(ByRef iparray As Variant, ByRef ipStart As Variant, ByRef ipRun As Variant, ByRef ipEnd As Variant) As Variant
+
+        Dim myStart As Long
+        Dim myEnd As Long
+
+        Dim myArrayStart As Long = LBound(iparray, 1)
+        Dim myArrayEnd As Long = UBound(iparray, 1)
+
+        If VBA.IsEmpty(ipStart) Or ipStart < myArrayStart Then
+            myStart = myArrayStart
+        Else
+        	myStart = ipStart
+        End If
+
+        If VBA.IsEmpty(ipEnd) Or (ipEnd > myArrayEnd) Then
+            myEnd = myArrayEnd
+        Else
+        	myEnd = ipEnd
+        End If
+
+        ' If run is provided it trumps end
+        If VBA.IsEmpty(ipRun) Or (myStart + ipRun - 1 > myArrayEnd) Then
+            myEnd = myArrayEnd
+        Else
+        	myEnd = myStart + ipRun - 1
+        End If
+
+        Return Array(myStart, myEnd, myEnd - myStart + 1)
+
+    End Function
+
+
+   
+   Public Function GetRange(ByVal ipStartIndex As Long, Optional ByVal ipRun As Variant = Empty, ByVal ipEndIndex As Variant = Empty) As Seq
+        Return Slice(ipStartIndex, ipRun, ipEndIndex)
+   End Function
+   
+    Public Function Slice _
+    ( _
+        ByVal ipStartIndex As Long, _
+        Optional ipRun As Variant = Empty, _
+        Optional ipEndIndex As Variant = Empty _
+    ) As Seq
+        If ipStartIndex < 1 Or ipStartIndex > Me.LastIndex Then
+             Return Seq.Deb
+        End If
+        
+        Dim mystartindex As Long = ipStartIndex
+        
+        Dim myEndIndex As Long
+        If VBA.IsEmpty(ipEndIndex) And VBA.IsEmpty(ipRun) Then
+            myEndIndex = Me.LastIndex
+        ElseIf Not VBA.IsEmpty(ipEndIndex) Then
+            
+            If ipEndIndex < ipStartIndex Then
+                Return Seq.Deb
+            Else
+                myEndIndex = ipEndIndex
+            End If
+    
+        Else
+            
+            If ipRun = 0 Then
+                 Return Seq.Deb
+            End If
+            ipRun = VBA.Abs(ipRun) - 1
+            myEndIndex = ipRun + ipStartIndex
+        End If
+            
+        Dim myS As Seq = Seq.Deb
+        Dim myIndex As Long
+        For myIndex = mystartindex To myEndIndex
+            If myIndex <= s.LastIndex Then
+                
+                myS.AddItems s.Host(myIndex)
+                
+            Else
+                
+                myS.AddItems Empty
+                
+            End If
+            
+        Next
+        
+        Return myS
+        
+    End Function
+    
+    Public Function Clone() As Seq
+        Return Seq.Deb.AddRange(Me.Items)
+    End Function
+    
+    Public Function Clear() As Seq
+        RemoveAll
+        Return Me
+    End Function
+    
+    Public Function RemoveAll() As Seq
+        Dim myIndex As Long
+        For myIndex = LastIndex To FirstIndex Step -1
+            s.Host(myIndex) = Empty
+        Next
+        s.LastIndex = 0
+        s.Size = DEFAULT_CHUNK
+        Resize
+        Return Me
+    End Function
+    
+    Public Function Contains(ByRef ipItem As Variant) As Boolean
+        Return Me.HoldsItem(ipItem)
+    End Function
+
+    Private Sub MoveDown(ByVal ipToIndex As Long, ByVal ipFromIndex As Long)
+      
+        Dim myOffset As Long = 0
+        Do Until ipFromIndex + myOffset > s.LastIndex
+            
+            s.Host(ipToIndex + myOffset) = s.Host(ipFromIndex + myOffset)
+            myOffset += 1
+            
+        Loop
+        s.Host(s.LastIndex) = Empty
+        s.LastIndex -= ((ipFromIndex - ipToIndex))
+        
+    End Sub
+    
+    
+    Private Sub MoveUp(ByVal ipIndex As Long, Optional ByVal ipCount As Long = 1)
+    	
+        If ipCount < 1 Then Exit Sub
+        If ipIndex < 1 Or ipIndex > s.LastIndex Then Exit Sub
+
+        If s.LastIndex + ipCount > s.Size Then
+        	
+            s.Size += DEFAULT_CHUNK
+            Resize
+
+        End If
+
+        Dim myIndex As Long
+        For myIndex = s.LastIndex To ipIndex Step -1
+
+            s.Host(myIndex + ipCount) = s.Host(myIndex)
+
+        Next
+
+        
+    End Sub
+
+    Public Function HoldsItem(ByRef ipItem As Variant) As Boolean Implements IIndexed.HoldsItem
+        Dim myIndex As Long
+        For myIndex = 1 To s.LastIndex
+            If s.Host(myIndex) = ipItem Then Return True
+          
+        Next
+        Return False
+    End Function
+
+    Public Function LacksItem(ByRef ipItem As Variant) As Boolean Implements IIndexed.LacksItem
+        LacksItem = Not HoldsItem(ipItem)
+    End Function
+
+    Public Function MapIt(ByVal ipMapper As IMapper) As Seq
+
+        Dim myAL As Seq = Seq.Deb
+   
+        'Dim myI As IterNum = IterNum(FirstIndex, LastIndex)
+        Dim myI As IterItems = IterItems(Me)
+        Do
+            DoEvents
+            myAL.Add ipMapper.ExecMapper(myI.Item)    '(s.Host(myI.Item))
+        Loop While myI.MoveNext
+
+        Return myAL
+
+    End Function
+
+    Public Function FilterIt(ByVal ipComparer As IComparer) As Seq
+
+        Dim mySeq As Seq = Seq.Deb
+        Dim myI As IterItems = IterItems(Me)
+        Do
+            DoEvents
+            If ipComparer.ExecCmp(myI.Item) Then mySeq.Add myI.Item
+        Loop While myI.MoveNext
+        Return mySeq
+        
+    End Function
+    
+    Public Function CountIt(ByVal ipComparer As IComparer) As Long
+        
+        Dim myCount As Long = 0
+        Dim myIndex As Long
+        For myIndex = FirstIndex To LastIndex
+            If ipComparer.ExecCmp(s.Host(myIndex)) Then myCount += 1
+        Next
+
+        Return myCount
+
+    End Function
+    
+    Public Function ReduceIt(ByRef ipReducer As IReducer) As Variant
+        Return ipReducer.ExecReduction(Me)
+    End Function
+    
+    Public Function First() As Variant
+        Return s.Host(FIRST_INDEX)
+    End Function
+    
+    Public Function Last() As Variant
+        Return s.Host(s.LastIndex)
+    End Function
+    
+    Public Function FirstIndex() As Long
+        FirstIndex = FIRST_INDEX
+    End Function
+
+    Public Function LastIndex() As Long
+        LastIndex = s.LastIndex
+    End Function
+    
+    Public Function Count() As Long
+        Count = s.LastIndex
+    End Function
+    
+    Public Property Get Capacity() As Long
+        Capacity = s.Size
+    End Property
+    
+    '@("Resizes the host array to the specifies capacity, existting values in the capacity range are preserved")
+    Public Property Let Capacity(ByVal ipCapacity As Long)
+        s.Size = ipCapacity
+        Resize
+    End Property
+    
+
+    Public Function IndexOf _
+    ( _
+        ByVal ipItem As Variant, _
+        Optional ipStartIndex As Variant = Empty, _
+        Optional ipRun As Variant = Empty, _
+        Optional ipEndIndex As Variant = Empty _
+    ) As Long
+
+        Dim myStartIndex As Long
+        Dim myEndIndex As Long
+        
+        Select Case True
+            
+            Case TypeInfo.IsNumber(ipStartIndex, ipRun)
+                
+                myStartIndex = ipStartIndex
+                myEndIndex = ipStartIndex + ipRun - 1
+                
+            Case TypeInfo.IsNumber(ipStartIndex, ipEndIndex)
+            
+                myStartIndex = ipStartIndex
+                myEndIndex = ipEndIndex
+                
+            Case TypeInfo.IsANumber(ipStartIndex)
+            
+                myStartIndex = ipStartIndex
+                myEndIndex = s.LastIndex
+                
+            Case TypeInfo.IsANumber(ipRun)
+            
+                myStartIndex = FIRST_INDEX
+                myEndIndex = FIRST_INDEX + ipRun - 1
+                
+                
+            Case TypeInfo.IsANumber(ipEndIndex)
+            
+                myStartIndex = FIRST_INDEX
+                myEndIndex = ipEndIndex
+                
+            Case Else
+            
+                myStartIndex = FIRST_INDEX
+                myEndIndex = s.LastIndex
+                
+        End Select
+        
+        Dim myIndex As Long
+        For myIndex = myStartIndex To myEndIndex
+            If s.Host(myIndex) = ipItem Then Return myIndex
+        Next
+        Return -1
+    End Function
+
+    Public Function LastIndexOf(ByVal ipItem As Variant) As Long
+
+        Dim myIndex As Long
+        For myIndex = s.LastIndex To FIRST_INDEX Step -1
+            If s.Host(myIndex) = ipItem Then Return myIndex
+        Next
+        Return -1
+    End Function
+    
+    Public Function Join(Optional ByVal ipSeparator As String = char.twcomma) As String
+        
+       ' If TypeInfo.IsString(s.Host.item(0)) Then
+            On Error Resume Next
+            Dim myString As String = VBA.Join(Me.ToArray, ipSeparator)
+            On Error GoTo 0
+            Return myString
+
+
+        ' Else
+        	
+        '     Return vbNullString
+
+
+        ' End If
+    	
+    End Function
+    
+    Public Function TrimToSize() As Seq
+        ReDim Preserve s.Host(FIRST_INDEX To s.LastIndex)
+        Return Me
+    End Function
+    
+    
+    Private Sub Resize()
+        ReDim Preserve s.Host(1 To s.Size)
+    End Sub
+
+    
+    Public Function TypeName() As String
+        Return MY_TYPENAME
+    End Function
+
+    Public Function IsQueryable() As Boolean
+        Return Count > 0
+    End Function
+    
+    Public Function IsNOtQueryable() As Boolean
+        Return Count < 1
+    End Function
+    
+    Public Function HasItems() As Boolean
+        Return Count > 1
+    End Function
+    
+    Public Function HasAnyItems() As Boolean
+        Return Count > 0
+    End Function
+    
+    Public Function HasOneItem() As Boolean
+        Return Count = 1
+    End Function
+    
+    Public Function ToCollection() As Collection
+        Dim myC As Collection
+        Dim myI As IterItems = IterItems(Me)
+        Do
+            myC.Add myI.Item
+        Loop While myI.MoveNext
+        Return myC
+    End Function
+    
+    Public Function Push(ByRef ipItem As Variant) As Long
+        Return Add(ipItem)
+    End Function
+    
+    Public Function PushItems(ParamArray ipParamArray() As Variant) As Seq
+        Return AddItems(CVar(ipParamArray))
+    End Function
+    
+    Public Function PushRangs(ByRef ipRange As Variant) As Seq
+        Return AddRange(ipRange)
+    End Function
+    
+    Public Function Queue(ByRef ipItem As Variant) As Long
+        Return Add(ipItem)
+    End Function
+    
+    Public Function QueueItems(ParamArray ipParamArray() As Variant) As Seq
+        Return AddItems(CVar(ipParamArray))
+    End Function
+    
+    Public Function QueueRange(ByRef ipRange As Variant) As Seq
+        Return AddRange(ipRange)
+    End Function
+    
+    Public Function Pop(Optional ipCount As Long = 1) As Variant
+        
+        If ipCount < 1 Then
+            Return Null
+        End If
+        
+        Dim myA As Variant = Me.Slice(s.LastIndex - ipCount + 1, s.LastIndex).ToArray
+        Me.RemoveAt(s.LastIndex - ipCount + 1, ipCount)
+        If ipCount = 1 Then
+            Return myA(0)
+        Else
+        	Return myA
+        End If
+        
+    End Function
+    
+    Public Function Dequeue(Optional ipCount As Long = 1) As Variant
+        
+        If ipCount < 1 Then
+            Return Null
+        End If
+        
+        Dim myA As Variant = Slice(FIRST_INDEX, iprun:=ipCount).ToArray
+        Me.RemoveAt(FIRST_INDEX, ipCount)
+        Return IIf(ipCount = 1, myA(0), myA)
+       
+    End Function
+    
+    Public Function Sort() As Variant
+        Cops.SortInPlace Me
+        Return Me
+    End Function
+    
+    Public Function Reverse() As Seq
+        Cops.ReverseInPlace Me
+        Return Me
+    End Function
+    
+    Public Function InHostOnly(ByRef ipSeq As Seq) As Seq
+        Return Cops.LHSOnly(Me, ipSeq)
+    End Function
+    
+    Public Function InParamOnly(ByRef ipSeq As Seq) As Seq
+        Return Cops.LHSOnly(ipSeq, Me)
+    End Function
+    
+    Public Function InBoth(ByRef ipSeq As Seq) As Seq
+        Return Cops.Both(Me, ipSeq)
+    End Function
+    
+    Public Function NotInBoth(ByRef ipSeq As Seq) As Seq
+        Return Cops.NotBoth(Me, ipSeq)
+    End Function
+    
+    Public Function Merge(ByRef ipSeq As Seq) As Seq
+        Return Cops.Merge(Me, ipSeq)
+    End Function
+    
+    Public Function Host() As Variant Implements IIndexed.Host
+        Return Items
+    End Function
+    
+ End Class

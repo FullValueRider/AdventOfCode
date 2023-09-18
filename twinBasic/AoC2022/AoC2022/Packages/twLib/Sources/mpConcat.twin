@@ -1,0 +1,72 @@
+Class mpConcat
+
+    Attribute VB_Name = "mpDec"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+	Public Enum ConcatType
+        Prepend
+        Append
+    End Enum
+
+    Implements IMapper
+
+    
+    Private Const MY_TYPENAME               As String = "mpConcat"
+    
+    
+    Private Type State
+            
+        String                          As string
+        ConcatType                     As ConcatType
+            
+    End Type
+
+    Private s                           As State
+
+    '@Description("Substracts the value from the HostItem.  If the host item is not a number then ipHostItem is returned")
+    Public Function ExecMapper(Byref ipHostItem As Variant) As Variant Implements IMapper.ExecMapper
+            
+        If TypeInfo.IsNotString(ipHostItem) Then
+                
+            Return ipHostItem
+                
+                
+        Else
+            
+            If s.ConcatType = Append Then
+            
+                Return ipHostItem & s.String
+                
+                
+            Else
+            
+                Return s.String & ipHostItem
+                
+                
+            End If
+                
+        End If
+        
+    End Function
+    
+    '@DefaultMember
+    Public Function Deb(Optional ByVal ipString As String, Optional ipConcatType As ConcatType = append) As mpConcat
+        With New mpConcat
+            Set Deb = .ConstructInstance(ipString, ipConcatType)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipString As String, ByVal ipConcatType As ConcatType) As mpConcat
+        s.String = ipString
+        s.ConcatType = ipConcatType
+        Set ConstructInstance = Me
+    End Function
+
+    Public Property Get TYpeName() As String Implements IMapper.TypeName
+        Return MY_TYPENAME
+    End Property
+End Class

@@ -1,0 +1,204 @@
+Class Day11
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+
+    Const InputData           As String = "Day11.txt"
+
+
+    Private Type State
+        
+        Map                             As variant
+        Visited                         As Hkvp
+        FirstMin                        As Long
+        FirstMax                        As Long
+        SecondMin                       As Long
+        SecondMax                       As Long
+        Stop                            As boolean
+    End Type
+
+    Private s                           As State
+
+
+    Public Sub Execute()
+        
+        Part01
+        Part02
+        
+    End Sub
+
+
+    Public Sub Part01()
+    
+        Initialise
+        Dim myResult As Long = 0
+    
+        Dim myCycle As Long
+        For myCycle = 1 To 100
+        
+            Dim myFlashers As Seq = IncrementMap
+            
+            If myFlashers.IsQueryable Then
+                myResult += ProcessPrimedOctopuses(myFlashers)
+            End If
+        
+        Next
+        
+        Fmt.Dbg "The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "1705", myResult
+        
+    End Sub
+
+
+    Public Sub Part02()
+    
+        Initialise
+        Dim myResult As Long = 0
+         s.Stop = False
+         
+        Dim myCycle As Long
+        Do
+            myCycle += 1
+            Dim myFlashers As Seq = IncrementMap
+            
+            If myFlashers.IsQueryable Then
+                ProcessPrimedOctopuses myFlashers
+            End If
+           
+        Loop Until s.Stop
+        
+        myResult = myCycle
+        
+    Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(InputData, 4, 2), "1317792", myResult
+        
+    End Sub
+
+
+    Private Sub Initialise()
+    
+        Dim myData As Seq = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC2021Data & InputData))
+        s.FirstMin = 1
+        s.FirstMax = myData.Count
+        s.SecondMin = 1
+        s.SecondMax = VBA.Len(myData.First)
+        ReDim s.Map(s.FirstMin To s.FirstMax, s.SecondMin To s.SecondMax)
+        Dim myFirst As Long
+        For myFirst = s.FirstMin To s.FirstMax
+        	
+            Dim mySecond As Long
+            For mySecond = s.SecondMin To s.SecondMax
+                s.Map(myFirst, mySecond) = CLng(VBA.Mid(myData(myFirst), mySecond, 1))
+            Next
+            
+        Next
+        
+    End Sub
+    
+    
+    Private Function IncrementMap() As Seq
+        
+        Dim myS As Seq = Seq.Deb
+        
+        Dim myFirst As Long
+        For myFirst = s.FirstMin To s.FirstMax
+        
+            Dim mySecond As Long
+            For mySecond = s.SecondMin To s.SecondMax
+            
+                s.Map(myFirst, mySecond) += 1
+                If s.Map(myFirst, mySecond) > 9 Then
+                    myS.Add Array(myFirst, mySecond)
+                End If
+                
+            Next
+            
+        Next
+    
+        Return myS
+    
+    End Function
+    
+    
+    Private Function ProcessPrimedOctopuses(ByRef ipFlashers As Seq) As Long
+        'ipFlashers is a sequence of points whose value is > 9
+        Dim myScore As Long = 0
+        Do While ipFlashers.IsQueryable
+        
+            If MapIsZero Then
+                s.Stop = True
+                Exit Function
+            End If
+            
+        	Dim myFlasherCoord As Variant = ipFlashers.Dequeue
+            
+            ' check if coordinate has already flashed
+            If s.Map(myFlasherCoord(0), myFlasherCoord(1)) < 10 Then
+                Continue Do
+            End If
+            
+            myScore += 1
+            s.Map(myFlasherCoord(0), myFlasherCoord(1)) = 0
+            
+            ' Get a list of neighbours whose value has increased to 9
+            Dim myNeighbours As Seq = Area.GetAdjacentCoordinatesInTable(myFlasherCoord(0), myFlasherCoord(1), s.Map, SearchArea.Eightway)
+            ' add new flashers to the list of flashers
+            ' Because of problems mergineg seq that contain arrays we will just add the range
+            ' on the basis that the checking the map eliminates duplicate coords
+            ipFlashers.AddRange(UpdateNeighbours(myNeighbours))
+            
+        Loop
+
+        Return myScore
+        
+    End Function
+    
+    
+    Public Function UpdateNeighbours(ByRef ipNeighbours As Seq) As Seq
+    	Dim myS As Seq = Seq.Deb
+        Dim myNeighbour As IterItems = IterItems(ipNeighbours)
+        Do
+        	Dim myCoord As Variant = myNeighbour.Item
+            ' octopus can only flash once per step so if an octopus
+            ' has value 0 we can't increase the value
+            If s.Map(myCoord(0), myCoord(1)) > 0 Then
+                s.Map(myCoord(0), myCoord(1)) += 1
+            End If
+            
+            
+            If s.Map(myCoord(0), myCoord(1)) > 9 Then
+                myS.Add myCoord
+            End If
+        Loop While myNeighbour.MoveNext
+        Return myS
+    End Function
+    
+    ' Private Sub Showmap()
+        
+    '     Debug.Print "_"
+    '     Debug.Print "-"
+    '     Dim myFirst As Long
+    '     For myFirst = s.FirstMin To s.FirstMax
+            
+    '         Dim mysecond As Long
+    '         For mysecond = s.SecondMin To s.SecondMax
+    '             Debug.Print Strs.PadLeft(s.Map(myFirst, mysecond), 3, " ") ;
+    '         Next
+    '         Debug.Print
+    '     Next
+        
+    ' End Sub
+    
+    Public Function MapIsZero() As Boolean
+        Dim myItem As Variant
+        For Each myItem In s.Map
+            If myItem > 0 Then
+                Return False
+            End If
+        Next
+        Return True
+    End Function
+    
+End Class

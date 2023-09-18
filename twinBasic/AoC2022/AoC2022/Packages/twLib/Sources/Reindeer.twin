@@ -1,0 +1,74 @@
+Class Reindeer
+
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+    
+    
+    Private Const FLYING As Boolean = True
+    Private Const NOT_FLYING As boolean = False
+    
+    Public Enum ReindeerInfo
+        
+        Name = 1
+        FlightSpeed
+        FlightTime
+        RestTime
+        
+    End Enum
+        
+    
+    Private Type State
+    
+    	Activity                    As boolean
+        Name                        As string
+        FlightSpeed                 As long
+        FlightTime                  As Long
+        RestTime                    As Long
+        
+    End Type
+    
+    Private s                       As state
+    
+    
+    Public Function Deb(ByRef ipInfo As Seq) As Reindeer
+        With New Reindeer
+            Return .ConstructInstance(ipInfo)
+        End With
+    End Function
+    
+    Friend Function ConstructInstance(ByRef ipInfo As Seq) As Reindeer
+        
+        s.Name = ipInfo.Item(ReindeerInfo.Name)
+        s.FlightSpeed = VBA.CLng(ipInfo.Item(ReindeerInfo.FlightSpeed))
+        s.FlightTime = VBA.CLng(ipInfo.Item(ReindeerInfo.FlightTime))
+        s.RestTime = VBA.CLng(ipInfo.Item(ReindeerInfo.RestTime))
+        s.Activity = FLYING
+        
+        Return Me
+        
+    End Function
+    
+    Public Function Distance(ByRef ipTime As Long) As Long
+    	
+        Dim myResult As Long = (ipTime \ (s.FlightTime + s.RestTime)) * s.FlightSpeed * s.FlightTime
+        
+        Dim myRemainder As Long = ipTime Mod (s.FlightTime + s.RestTime)
+        
+        If myRemainder < s.FlightTime Then
+        
+            myResult += myRemainder * s.FlightSpeed
+        
+        Else
+        	
+            myResult += s.FlightTime * s.FlightSpeed
+            
+        End If
+        
+        Return myResult
+        
+    End Function
+
+End Class

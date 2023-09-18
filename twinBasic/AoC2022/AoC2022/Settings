@@ -1,0 +1,41 @@
+{
+	"configuration.inherits": "Defaults",
+	"project.appTitle": "AoC2022",
+	"project.buildPath": "${SourcePath}\\Build\\${ProjectName}_${Architecture}.${FileExtension}",
+	"project.buildType": "Standard EXE",
+	"project.description": "AdventOfCode2022",
+	"project.exportPathIsV2": true,
+	"project.id": "{A7267A8A-714B-43FD-9019-C026F7842E92}",
+	"project.isConsoleApplication": true,
+	"project.name": "AoC2022",
+	"project.optionExplicit": true,
+	"project.references": [
+		{
+			"id": "{00020430-0000-0000-C000-000000000046}",
+			"lcid": 0,
+			"name": "OLE Automation",
+			"path32": "C:\\Windows\\SysWow64\\stdole2.tlb",
+			"path64": "C:\\Windows\\System32\\stdole2.tlb",
+			"versionMajor": 2,
+			"versionMinor": 0
+		},
+		{
+			"id": "{B768C096-6072-450A-84A8-01D07F690907}",
+			"licence": "",
+			"name": "[IMPORTED] Lib",
+			"path32": "/Packages/twLib",
+			"path64": "/Packages/twLib",
+			"symbolId": "twLib",
+			"versionBuild": "0",
+			"versionMajor": "1",
+			"versionMinor": "0",
+			"versionRevision": "129"
+		}
+	],
+	"project.startupObject": "Sub Main",
+	"project.warnings": {
+		"errors": [],
+		"ignored": []
+	},
+	"runtime.useUnicodeStandardLibrary": true
+}

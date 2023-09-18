@@ -1,0 +1,66 @@
+Class mpSetIf
+    Attribute VB_Name = "mpSetIf"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '@PredeclaredId
+    '@Exposed
+    '@Folder("VBALib.Mappers")
+        
+    Implements IMapper
+
+        
+    Private Const MY_TYPENAME               As String = "mpSetIf"
+
+    Private Type State
+    
+    Comparer                                As IComparer
+    DefaultItem                             As Variant
+    
+    End Type
+
+
+    Private s                               As State
+
+    '@Description("If the comparer is true returns the default item else returns the host item")
+    Public Function ExecMapper(ByVal ipHostItem As Variant) As Variant Implements Imapper.ExecMapper
+        Return If(s.Comparer.ExecCmp(ipHostItem), s.DefaultItem, ipHostItem)
+    End Function
+
+
+    Public Function Deb(Optional ByVal ipComparer As IComparer, Optional ByVal ipReset As Variant = 0) As mpSetIf
+        With New mpSetIf
+            Set Deb = .ConstructInstance(ipComparer, ipReset)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipComparer As IComparer, ByVal ipDefaultItem As Variant) As mpSetIf
+        
+        If s.Comparer Is Nothing Then
+        
+            Set s.Comparer = cmpEQ.Deb(0)
+        
+        Else
+        
+            Set s.Comparer = ipComparer
+        
+        End If
+        
+        If VBA.IsObject(ipDefaultItem) Then
+            Set s.DefaultItem = ipDefaultItem
+        Else
+            s.DefaultItem = ipDefaultItem
+        End If
+            
+        Return Me
+       
+    End Function
+
+   
+    Public Property Get TypeName() As String Implements IMapper.TypeName
+        Return MY_TYPENAME
+    End Property
+
+End Class

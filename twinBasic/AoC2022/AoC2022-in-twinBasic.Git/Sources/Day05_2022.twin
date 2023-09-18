@@ -1,0 +1,161 @@
+Class Day05_2022
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+
+    Private Const Today             As String = "\2022\Day05Test.txt"
+    
+    Private Enum Instruction
+        Count = 1
+        MoveFrom
+        MoveTo
+    End Enum
+
+    Private Type State
+
+        Data                            As seq
+        Boxes                           As lookup
+        Instructions                    As seq
+    End Type
+
+    Private s                           As State
+
+    
+    Public Sub Execute()
+        
+      ' Part01
+        Part02
+            
+    End Sub
+
+ 
+    Private Sub Part01()
+
+        Initialise
+        
+        Dim myinstructions As IterItems = IterItems.Deb(s.Instructions)
+        Do
+        	Dim myfrom As String = myinstructions(0)(Instruction.MoveFrom)
+            Dim myTo As String = myinstructions(0)(Instruction.MoveTo)
+            Dim mymoves As Long
+            For mymoves = 1 To CLng(myinstructions(0)(Instruction.Count))
+                s.Boxes.Item(myTo).add s.Boxes.Item(myfrom).pop
+            Next
+        Loop While myinstructions.MoveNext
+        
+        Dim mylastboxes As String
+        Dim mystacks As IterItems = IterItems.Deb(s.Boxes)
+        Do
+            Dim mystack As Seq = mystacks(0)
+            If mystack.Count > 0 Then
+        	    mylastboxes &= mystack.Last
+            End If
+        Loop While mystacks.MoveNext
+        
+        Dim myResult As String = mylastboxes
+        
+        Debug.Print Fmt.Text("The answer to Day {0} part 1 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "FRDSQRRCD", myResult)
+        
+    End Sub
+    
+
+    Private Sub Part02()
+
+        Initialise
+        
+        Dim myinstructions As IterItems = IterItems.Deb(s.Instructions)
+        Do
+        	Dim myfrom As String = myinstructions(0)(Instruction.MoveFrom)
+            Dim myTo As String = myinstructions(0)(Instruction.MoveTo)
+            Dim myCount As Long = CLng(myinstructions(0)(Instruction.Count))
+            Dim myStartAt As Long = s.Boxes.Item(myfrom).count - myCount + 1
+            Fmt.Dbg "From: {0}{nl}", s.Boxes.Item(myfrom)
+            Fmt.Dbg "To: {0}{nl}", s.Boxes.Item(myTo)
+            If s.Boxes.Item(myfrom).count = 0 Then Continue Do
+            If s.Boxes.Item(myTo).count = 0 Then Continue Do
+            ' Dim myfromseq As Seq = s.Boxes.Item(myfrom)
+            ' Dim mytoseq As Seq = s.Boxes.Item(myTo)
+            Dim myslices As Seq = s.Boxes.Item(myfrom).splitat(myStartAt)
+            
+            Fmt.Dbg " remainer, Transfer: {0}{nl}", myslices ' slices are correct
+            
+            s.Boxes.Item(myTo).AddRange myslices(2)
+            Set s.Boxes.Item(myfrom) = myslices(1)
+            ' at this point s.boxes.item(myTo) and s.boxes.Item(myfrom) are correctly updated
+            Fmt.Dbg "Final From: {0}{nl}", s.Boxes.Item(myfrom)
+            Fmt.Dbg "Final To: {0}{nl}", s.Boxes.Item(myTo)
+            
+       
+        Loop While myinstructions.MoveNext
+        
+       Dim mylastboxes As String
+        Dim mystacks As IterItems = IterItems.Deb(s.Boxes)
+        Do
+            Dim mystack As Seq = mystacks(0)
+            If mystack.Count > 0 Then
+        	    mylastboxes &= mystacks(0).last
+            End If
+        Loop While mystacks.MoveNext
+                
+        Dim myResult As String = mylastboxes
+        
+        Fmt.Dbg "The answer to Day {0} part 2 is {1}.  Found is {2}", VBA.Mid$(Today, 10, 2), "1795", myResult
+
+    End Sub
+
+    Private Sub Initialise()
+    
+        Set s.Data = Seq.Deb(Filer.GetFileAsArrayOfStrings(AoC & Today, vbCrLf & vbCrLf)) _
+            .MapIt(mpInner(mpSplitToSubStr(ToSeq, vbCrLf))) _
+        
+        ' process the string representation of the stacks of boxes to remove extraneous characters
+        ' and invert   
+        Dim myboxes As Seq = s.Data.First
+        Dim myNewBoxes As Seq = Seq.Deb
+        Dim myrows As IterItems = IterItems.Deb(myboxes).MoveToEnd
+        Do
+            Dim myNewRow As String = vbNullString
+            Dim myChars As IterItems = IterItems.Deb(myrows(0)).SetFTS(1, ipstep:=4)
+            Do
+                myNewRow &= myChars(0)
+                
+            Loop While myChars.MoveNext
+            myNewBoxes.Add myNewRow
+        Loop While myrows.MovePrev
+        Set myNewBoxes = myNewBoxes.MapIt(mpSplitToChars(ToSeq))
+        
+        ' now do a rotate in place so that we have the columns as strings
+        Dim myStacks As Seq = Seq.Deb.Repeat(VBA.Space(myNewBoxes.Count), CLng(myNewBoxes.First.count)).MapIt(mpSplitToChars(ToSeq))
+        Dim myRow As Long
+        For myRow = 1 To myNewBoxes.Count
+        
+            Dim mycol As Long
+            For mycol = 1 To myNewBoxes.First.count
+            	
+                myStacks(mycol)(myRow) = myNewBoxes(myRow)(mycol)
+            Next
+        Next
+        
+        Set s.Boxes = Lookup.Deb.SetReadWrite
+        Dim mynewstacks As IterItems = IterItems.Deb(myStacks)
+        Do
+        
+            Dim mystack As Seq = mynewstacks(0)
+           ' Set mystack = mystack.RemoveAll(Char.twSpace)
+            s.Boxes.Add mystack.First, mystack.Remove(Char.twSpace, -1).Slice(2)
+            
+        Loop While mynewstacks.MoveNext
+        
+        ' now provess the instruction for morement
+        Set s.Instructions = s.Data.Last _
+            .mapit(mpReplacer(Array("move ", vbNullString), Array(" from", vbNullString), Array(" to", vbNullString))) _
+            .mapit(mpSplitToSubStr(ToSeq, Char.twSpace))
+     End Sub
+     
+
+End Class

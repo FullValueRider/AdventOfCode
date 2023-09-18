@@ -1,0 +1,59 @@
+Class mpConvert
+    Attribute VB_Name = "mpConvert"
+    Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = False
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+
+    Implements IMapper
+
+    Private Const MY_TYPENAME               As String = "mpConvert"
+
+
+    Private Type State
+    
+        Conversion                      As ConvertOp
+        
+        
+    End Type
+
+    Private s                           As State
+
+
+ 
+
+    '@Description("Converts tthe items in the Lyst to Long Integers.  If the input item cannot be converted the string "NaN" is returned")
+    Public Function ExecMapper(Byref ipHostItem As Variant) As Variant Implements Imapper.ExecMapper
+            
+        Select Case s.Conversion
+            
+            Case ToHexStr:      Return Hex$(ipHostItem)
+            Case ToOctStr:      Return Oct$(ipHostItem)
+            Case ToLongPtr:     Return CLngPtr(ipHostItem)
+            Case ToTypeName:    Return VBA.TypeName(ipHostItem)
+            Case ToTypeOrdinal: Return enums.Types.TypeNameToOrd(VBA.LCase(VBA.TypeName(ipHostItem)))
+            Case Else:          Return VarInfo.ToType(s.Conversion, ipHostItem)
+            
+        End Select
+        
+    End Function
+    
+    '@DefaultMember
+    Public Function Deb(ByVal ipConversion As ConvertOp) As mpConvert
+        With New mpConvert
+           Return .ConstructInstance(ipConversion)
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByVal ipToType As ConvertOp) As mpConvert
+        s.Conversion = ipToType
+        Return Me
+    End Function
+    
+    
+    Public Property Get TypeName() As String Implements Imapper.TypeName
+        Return MY_TYPENAME
+    End Property
+    
+End Class

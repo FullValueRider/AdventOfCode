@@ -1,0 +1,314 @@
+Class Lookup
+    '@ModuleDescription("Simple dictionary for static lookups.  No Let/Set item property)
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+	' A very simple dictionary intended for
+    ' as set of data that is created and used as a lookup table
+    '
+    Const NO_SUCH_KEY                       As Long = -1
+    Const MY_TYPENAME                       As String = "Lookup"
+    
+    
+    Private Type State
+    	Keys                                As wCollection
+        Items                               As wcollection
+    End Type
+
+    Private s                               As State
+    
+    Private Type Properties
+    	Writeable                           As Boolean
+    End Type
+    
+    Private p                               As Properties
+    
+    
+    Public Function Deb() As Lookup
+        With New Lookup
+            Return .ConstructInstance
+        End With
+    End Function
+    
+    Friend Function ConstructInstance() As Lookup
+        Set s.Keys = wCollection.Deb
+        Set s.Items = wCollection.Deb
+        p.Writeable = False
+        
+        Return Me
+        
+    End Function
+    
+    '@Enumerator
+    Public Function NewEnum() As IUnknown
+        Return s.Keys.[_NewEnum]
+    End Function
+    
+    Public Function Add(ByRef ipKey As Variant, ipItem As Variant) As Lookup
+        
+        If s.Keys.HoldsItem(ipKey) Then
+        	Err.Raise 457 + vbObjectError, "Lib.Lookup.Add", "Key already exists"
+        End If
+        
+        s.Keys.Add ipKey
+        s.Items.Add ipItem
+        
+        Return Me
+        
+    End Function
+    
+    
+    Public Function AddPairs(ByRef ipKeysAsArray As Variant, ByRef ipItemsAsArray As Variant) As Lookup
+    
+        Dim myKeysIndex As Variant
+        Dim myItemsindex As Long = LBound(ipItemsAsArray)
+        
+        For myKeysIndex = LBound(ipKeysAsArray) To UBound(ipKeysAsArray)
+    
+            If myItemsindex > UBound(ipItemsAsArray) Then
+                Return Me
+            End If
+            
+            If s.Keys.HoldsItem(ipKeysAsArray(myKeysIndex)) Then
+        	    Err.Raise 457 + vbObjectError, "Lib.Lookup.AddPairs"
+            End If
+            
+            s.Keys.Add ipKeysAsArray(myKeysIndex)
+            s.Items.Add ipItemsAsArray(myItemsindex)
+            
+            myItemsindex += 1
+            
+        Next
+        
+        Return Me
+        
+    End Function
+        
+        
+    Public Function HoldsKey(ByVal ipKey As Variant) As Boolean
+        Return s.Keys.HoldsItem(ipKey)
+    End Function
+    
+    Public Function LacksKey(ByRef ipKey As Variant) As Boolean
+        Return s.Keys.LacksItem(ipKey)
+    End Function
+    
+    Public Function HoldsItem(ByRef ipItem As Variant) As Boolean
+        Return s.Items.HoldsItem(ipItem)
+    End Function
+    
+    Public Function LacksItem(ByRef ipItem As Variant) As Boolean
+        Return s.Items.LacksItem(ipItem)
+    End Function
+    
+    Public Function Count() As Long
+        Return s.Keys.Count
+    End Function
+    
+    Public Function IsQueryable() As Boolean
+        Return s.Keys.Count > 0
+    End Function
+
+    Public Function IsReadWrite() As Boolean
+        Return p.Writeable
+    End Function
+    
+    Public Function SetReadOnly() As Lookup
+        p.Writeable = False
+        Return Me
+    End Function
+    
+    Public Function SetReadWrite() As Lookup
+    	p.Writeable = True
+        Return Me
+    End Function
+    
+    Public Property Get First() As KVPair
+        Return KVPair.Deb(s.Keys.First, s.Items.First)
+    End Property
+    
+    Public Property Get Last() As KVPair
+        Return KVPair.Deb(s.Keys.Last, s.Items.Last)
+    End Property
+    
+    '@DefaultMember
+    Public Property Get Item(ByRef ipKey As Variant) As Variant
+        Dim myIndex As Long = IndexOfKey(ipKey)
+        Return s.Items(myIndex)
+    End Property
+    
+    Public Property Set Item(ByRef ipKey As Variant, ipValue As Variant)
+        If p.Writeable Then
+            Set s.Items(IndexOfKey(ipKey)) = ipValue
+        Else
+        	Err.Raise 17 + vbObjectError, "Lookup.SetItem", "Write to Lookup is not enabled"
+        End If
+    End Property
+    
+    Public Property Let Item(ByRef ipKey As Variant, ipValue As Variant)
+        If p.Writeable Then
+            s.Items(IndexOfKey(ipKey)) = ipValue
+        Else
+        	Err.Raise 17 + vbObjectError, "Lookup.SetItem", "Write to Lookup is not enabled"
+        End If
+    End Property
+    
+    Public Function KeyByValue(ByRef ipItem As Variant) As Variant
+        Return s.Keys.Item(s.Items.IndexOf(ipItem))
+    End Function
+    
+ 
+    Public Function MinPair() As KVPair
+        Dim myItemIndex As Long = s.Items.IndexOf(Me.ReduceIt(rdMin))
+        Return KVPair.Deb(s.Keys.Item(myItemIndex), s.Items.Item(myItemIndex))
+    
+    End Function
+    
+    
+    Public Function MaxPair() As KVPair
+        Dim myvalue As Long = Me.ReduceIt(rdMax.Deb)
+        Dim myItemIndex As Long = s.Items.IndexOf(myvalue)
+        Return KVPair.Deb(s.Keys.Item(myItemIndex), s.Items.Item(myItemIndex))
+    End Function
+    
+    Public Function SortByItem() As Lookup
+        Dim myItems As wCollection = s.Items.Clone
+        myItems.Sort
+        Dim myKeys As wCollection = wCollection.Deb
+        Dim myItem As Variant
+        For Each myItem In myItems
+            myKeys.Add Me.KeyByValue(myItem)
+        Next
+        Set s.Items = myItems
+        Set s.Keys = myKeys
+        Return Me
+    End Function
+    
+    Public Function SortByKey() As Lookup
+        Dim myKeys As wCollection = s.Keys.Clone
+        myKeys.Sort
+        Dim myItems As wCollection = wCollection.Deb
+        Dim myKey As Variant
+        For Each myKey In myKeys
+            myItems.Add Me.Item(myKey)
+        Next
+        Set s.Items = myItems
+        Set s.Keys = myKeys
+    End Function
+    
+    Public Function MapIt(ByVal ipMapper As IMapper) As Lookup
+
+        Dim myL As Lookup = Lookup.Deb
+   
+        'Dim myI As IterNum = IterNum(FirstIndex, LastIndex)
+        Dim myI As IterItems = IterItems.Deb(Me)
+        Do
+            myL.Add myI.Key, ipMapper.ExecMapper(myI(0))    '(s.Host(myI.Item))
+        Loop While myI.MoveNext
+
+         Return myL
+
+    End Function
+    
+    Public Function FilterIt(ByVal ipComparer As IComparer) As Lookup
+
+        Dim myL As Lookup = Lookup.Deb
+        Dim myI As IterItems = IterItems.Deb(Me)
+        Do
+            If ipComparer.ExecCmp(myI(0)) Then
+                myL.Add myI.Key, myI(0)
+            End If
+        Loop While myI.MoveNext
+        
+        Return myL
+        
+    End Function
+    
+    Public Function CountIt(ByVal ipComparer As IComparer) As Long
+        
+        Dim myCount As Long = 0
+        Dim myI As IterItems = IterItems.Deb(Me)
+        Do
+       	    DoEvents
+            If ipComparer.ExecCmp(myI(0)) Then
+                myCount += 1
+            End If
+        Loop While myI.MoveNext
+
+        Return myCount
+
+    End Function
+    
+    Public Function ReduceIt(ByRef ipReducer As IReducer) As Variant
+        Return ipReducer.ExecReduction(Me.Items)
+    End Function
+    
+    Private Function IndexOfKey(ByRef ipKey As Variant) As Long
+        
+        Dim myKey As Variant
+        Dim myIndex As Long = 1
+        For Each myKey In s.Keys
+            If myKey = ipKey Then
+            	Return myIndex
+            End If
+            myIndex += 1
+        Next
+        
+        Return NO_SUCH_KEY
+        
+    End Function
+    
+    
+    Public Function TypeNAme() As String
+        Return MY_TYPENAME
+    End Function
+    
+    Public Function Keys() As Variant
+        Return s.Keys.ToArray
+        ' Dim myA As Variant
+        ' ReDim myA(0 To s.Keys.Count - 1)
+        ' Dim myIndex As Long
+        ' Dim myKey As Variant
+        ' For Each myKey In s.Keys
+        '     If VBA.IsObject(myKey) Then
+        '         Set myA(myIndex) = myKey
+        '     Else
+        '         myA(myIndex) = myKey
+        '     End If
+        '     myIndex += 1
+        ' Next
+    
+        ' Return myA
+    
+    End Function
+    
+    Public Function KeysColl() As wCollection
+        Return s.Keys
+    End Function
+    
+    Public Function ItemsColl() As wCollection
+        Return s.Items
+    End Function
+    
+    Public Function Items() As Variant
+    
+        Return s.Items.ToArray
+        ' Dim myA As Variant
+        ' ReDim myA(0 To s.Keys.Count - 1)
+        ' Dim myIndex As Long
+        ' Dim myItem As Variant
+        ' For Each myItem In s.Items
+        '     If VBA.IsObject(myItem) Then
+        '         Set myA(myIndex) = myItem
+        '     Else
+        '         myA(myIndex) = myItem
+        '     End If
+        '     myIndex += 1
+        ' Next
+    
+        ' Return myA
+    
+    End Function
+    
+    
+End Class

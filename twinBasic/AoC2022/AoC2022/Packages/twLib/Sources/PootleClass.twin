@@ -1,0 +1,10 @@
+Class PootleClass
+
+	Implements COllection Via Host = New collection' add your member fields and procedures here
+
+
+    Public Sub Test(ByVal ipItem As Long)
+        Add ipItem
+        Host.Add ipItem
+    End Sub
+End Class

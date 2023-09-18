@@ -1,0 +1,69 @@
+Class rdMax
+
+	Attribute VB_GlobalNameSpace = False
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+    Option Explicit
+    
+    Implements IReducer
+    
+    Const MY_TYPENAME                  As String = "rdMax"
+    
+    Private Type State
+        Index                           As Variant
+        Max                             As LongLong
+        FTS                             As FTS
+    End Type
+    
+    Private s                           As state
+    
+    '@DefaultMember
+    Public Function Deb(Optional ByRef ipIndex As Variant = Empty, Optional ipFTS As FTS = Nothing) As rdMax
+        With New rdMax
+            Return .ConstructInstance(ipIndex, ipFTS)
+        End With
+    End Function
+    
+    Public Function ConstructInstance(ByRef ipIndex As Variant, ByRef ipFTS As FTS = Nothing) As rdMax
+        s.Max = enums.Preset.Value(MinLongLong)
+        s.Index = ipIndex
+        Return Me
+    End Function
+
+    Public Function ExecReduction(ByRef ipHostItems As Variant) As Variant Implements IReducer.ExecReduction
+        
+        Dim myI As IterItems = IterItems.Deb(ipHostItems).SetFTS(s.FTS)
+        Do
+        	
+            Dim myItem As Variant
+            DoEvents
+            If VBA.IsEmpty(s.Index) Then
+                s.Max = IIf(s.Max > myI(0), s.Max, myI(0))
+                
+            Else
+               
+                If TypeInfo.IsString(myI(0)) Then
+                    myItem = VBA.Mid(myI(0), s.Index, 1)
+                    s.Max = IIf(s.Max > myItem, s.Max, myItem)
+                Else
+                    myItem = myI(0)(s.Index)
+                    s.Max = IIf(s.Max > myItem, s.Max, myItem)
+                    
+                End If
+            End If
+                    
+            
+        Loop While myI.MoveNext
+    
+        Return s.Max
+        
+    End Function
+    
+    
+    Public Property Get TypeName() As String Implements IReducer.TypeName
+    	Return MY_TYPENAME
+    End Property
+
+End Class
